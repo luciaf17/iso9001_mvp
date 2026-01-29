@@ -1,12 +1,12 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 
 
 class AuditEvent(models.Model):
     """Modelo para trazabilidad transversal de eventos del sistema."""
     
     actor = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         verbose_name="Actor",

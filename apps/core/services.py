@@ -8,13 +8,19 @@ def log_audit_event(*, actor, action, instance, metadata=None):
     Args:
         actor: Usuario que ejecuta la acción (User instance o None)
         action: Descripción de la acción realizada
-        instance: Instancia del modelo afectado
+        instance: Instancia del modelo afectado (debe estar guardada)
         metadata: Diccionario con información adicional (opcional)
     
     Returns:
         AuditEvent: El evento de auditoría creado
+    
+    Raises:
+        ValueError: Si la instancia no tiene pk (no está guardada)
     """
-    object_type = instance.__class__.__name__
+    if instance.pk is None:
+        raise ValueError("La instancia debe estar guardada en la base de datos (pk no puede ser None)")
+    
+    object_type = f'{instance._meta.app_label}.{instance.__class__.__name__}'
     object_id = instance.pk
     
     audit_event = AuditEvent.objects.create(

@@ -28,10 +28,24 @@ class AuditEventTestCase(TestCase):
         self.assertIsNotNone(event)
         self.assertEqual(event.actor, user)
         self.assertEqual(event.action, 'user_update')
-        self.assertEqual(event.object_type, 'User')
+        self.assertEqual(event.object_type, 'auth.User')
         self.assertEqual(event.object_id, target_user.pk)
         self.assertEqual(event.metadata, metadata)
         self.assertIsNotNone(event.timestamp)
         
         # Verificar que se guardó en la base de datos
         self.assertEqual(AuditEvent.objects.count(), 1)
+    
+    def test_log_audit_event_raises_on_unsaved_instance(self):
+        """Verifica que log_audit_event lanza ValueError si la instancia no está guardada."""
+        user = User.objects.create_user(username='testuser', password='testpass')
+        unsaved_user = User(username='unsaved')
+        
+        with self.assertRaises(ValueError) as context:
+            log_audit_event(
+                actor=user,
+                action='create',
+                instance=unsaved_user
+            )
+        
+        self.assertIn('pk no puede ser None', str(context.exception))
