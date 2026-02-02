@@ -106,6 +106,7 @@ Esto permite demostrar trazabilidad ante auditoría ISO.
 ---
 
 ## 8. Estado actual del proyecto
-- Setup Django + PostgreSQL: OK
-- Git y GitHub: OK
-- CORE-01 AuditEvent: EN DESARROLLO
+- CORE-01 AuditEvent: COMPLETADO
+- DOCS-01 Modelos Control Documental: COMPLETADO
+- DOCS-02 Servicio de aprobación: COMPLETADO
+
