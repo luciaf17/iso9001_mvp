@@ -1,0 +1,33 @@
+<tr style="border-bottom: 1px solid #dee2e6;">
+    <td style="padding: 0.75rem;"><strong>{{ version.version_number }}</strong></td>
+    <td style="padding: 0.75rem;">
+        <span style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.875rem; 
+            {% if version.status == 'APPROVED' %}background: #d4edda; color: #155724;
+            {% elif version.status == 'DRAFT' %}background: #fff3cd; color: #856404;
+            {% elif version.status == 'OBSOLETE' %}background: #f8d7da; color: #721c24;
+            {% else %}background: #d1ecf1; color: #0c5460;{% endif %}">
+            {{ version.get_status_display }}
+        </span>
+    </td>
+    <td style="padding: 0.75rem;">{{ version.effective_date }}</td>
+    <td style="padding: 0.75rem;">{{ version.created_at|date:"d/m/Y H:i" }}</td>
+    <td style="padding: 0.75rem;">
+        {% if version.file %}
+        <a href="{{ version.file.url }}" target="_blank" style="color: #3498db; text-decoration: none;">Descargar</a>
+        {% else %}-{% endif %}
+    </td>
+    <td style="padding: 0.75rem;">
+        {% if can_approve and version.status != 'APPROVED' %}
+        <form method="post" action="{% url 'docs:docs_version_approve' version.pk %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" 
+                hx-post="{% url 'docs:docs_version_approve' version.pk %}"
+                hx-target="#version-list"
+                hx-swap="outerHTML"
+                style="background: #28a745; color: white; padding: 0.25rem 0.75rem; border: none; border-radius: 4px; cursor: pointer; font-size: 0.875rem;">
+                Aprobar
+            </button>
+        </form>
+        {% else %}-{% endif %}
+    </td>
+</tr>

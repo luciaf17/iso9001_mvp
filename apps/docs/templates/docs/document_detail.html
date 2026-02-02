@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}{{ document.code }} - ISO 9001 MVP{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <a href="{% url 'docs:docs_list' %}" style="color: #6c757d; text-decoration: none;">← Volver a documentos</a>
+    {% if can_edit %}
+    <a href="{% url 'docs:docs_edit' pk=document.id %}" style="background: #2c3e50; color: white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 4px;">Editar documento</a>
+    {% endif %}
+</div>
+
+<div style="background: #f8f9fa; padding: 1.5rem; border-radius: 4px; margin-bottom: 2rem;">
+    <h1 style="margin-bottom: 1rem;">{{ document.code }} - {{ document.title }}</h1>
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+        <div><strong>Tipo:</strong> {{ document.get_doc_type_display }}</div>
+        <div><strong>Proceso:</strong> {{ document.process|default:"-" }}</div>
+        <div><strong>Propietario:</strong> {{ document.owner.username }}</div>
+        <div><strong>Estado:</strong> {% if document.is_active %}Activo{% else %}Inactivo{% endif %}</div>
+    </div>
+</div>
+
+{% if current_version %}
+<div style="background: #d4edda; border: 1px solid #c3e6cb; padding: 1rem; border-radius: 4px; margin-bottom: 2rem;">
+    <strong>Versión vigente:</strong> v{{ current_version.version_number }} ({{ current_version.effective_date }})
+</div>
+{% endif %}
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <h2>Versiones</h2>
+    <a href="{% url 'docs:docs_version_new' document.pk %}" style="background: #3498db; color: white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 4px;">+ Nueva Versión</a>
+</div>
+
+{% include 'docs/partials/version_list.html' with versions=versions document=document can_approve=can_approve %}
+{% endblock %}

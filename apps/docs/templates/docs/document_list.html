@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Documentos - ISO 9001 MVP{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h1>Documentos del SGC</h1>
+    {% if user.is_authenticated and can_create %}<a href="{% url 'docs:docs_new' %}" style="background: #3498db; color: white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 4px;">+ Nuevo documento</a>{% endif %}
+</div>
+
+<div style="background: #f8f9fa; padding: 1rem; border-radius: 4px; margin-bottom: 2rem;">
+    <form method="get" style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem;">
+        <div>
+            <label for="doc_type" style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Tipo de Documento</label>
+            <select name="doc_type" id="doc_type" style="width: 100%; padding: 0.5rem; border: 1px solid #ced4da; border-radius: 4px;">
+                <option value="">-- Todos --</option>
+                {% for value, label in doc_types %}
+                <option value="{{ value }}" {% if selected_doc_type == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="process_id" style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Proceso</label>
+            <select name="process_id" id="process_id" style="width: 100%; padding: 0.5rem; border: 1px solid #ced4da; border-radius: 4px;">
+                <option value="">-- Todos --</option>
+                {% for process_id, process_code in processes %}
+                <option value="{{ process_id }}" {% if selected_process_id == process_id|stringformat:"s" %}selected{% endif %}>{{ process_code }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div style="display: flex; align-items: flex-end;">
+            <button type="submit" style="background: #3498db; color: white; padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer;">Filtrar</button>
+        </div>
+    </form>
+</div>
+
+{% if documents %}
+<table style="width: 100%; border-collapse: collapse;">
+    <thead>
+        <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+            <th style="padding: 0.75rem; text-align: left;">Código</th>
+            <th style="padding: 0.75rem; text-align: left;">Título</th>
+            <th style="padding: 0.75rem; text-align: left;">Tipo</th>
+            <th style="padding: 0.75rem; text-align: left;">Proceso</th>
+            <th style="padding: 0.75rem; text-align: left;">Vigente</th>
+            <th style="padding: 0.75rem; text-align: left;">Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for doc in documents %}
+        <tr style="border-bottom: 1px solid #dee2e6;">
+            <td style="padding: 0.75rem;"><strong>{{ doc.code }}</strong></td>
+            <td style="padding: 0.75rem;">{{ doc.title }}</td>
+            <td style="padding: 0.75rem;">{{ doc.get_doc_type_display }}</td>
+            <td style="padding: 0.75rem;">{{ doc.process|default:"-" }}</td>
+            <td style="padding: 0.75rem;">{% if doc.current_version %}v{{ doc.current_version.version_number }}{% else %}-{% endif %}</td>
+            <td style="padding: 0.75rem;">
+                <a href="{% url 'docs:docs_detail' doc.pk %}" style="color: #3498db; text-decoration: none; margin-right: 0.75rem;">Ver</a>
+                {% if doc.current_version and doc.current_version.file %}
+                <a href="{{ doc.current_version.file.url }}" style="color: #2c3e50; text-decoration: none;" download>Descargar vigente</a>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p style="color: #6c757d; text-align: center; padding: 3rem;">No hay documentos que coincidan con los filtros.</p>
+{% endif %}
+{% endblock %}

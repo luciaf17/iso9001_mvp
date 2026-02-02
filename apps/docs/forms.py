@@ -6,6 +6,11 @@ from .models import Document, DocumentVersion
 class DocumentForm(forms.ModelForm):
 	"""Formulario para crear/editar documentos."""
 
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		if self.instance and self.instance.pk:
+			self.fields["code"].disabled = True
+
 	class Meta:
 		model = Document
 		fields = ["code", "title", "doc_type", "process", "owner", "is_active"]
@@ -24,6 +29,10 @@ class DocumentVersionForm(forms.ModelForm):
 	class Meta:
 		model = DocumentVersion
 		fields = ["version_number", "file", "effective_date", "review_due_date", "notes"]
+		widgets = {
+			"effective_date": forms.DateInput(attrs={"type": "date"}),
+			"review_due_date": forms.DateInput(attrs={"type": "date"}),
+		}
 
 	def __init__(self, *args, document=None, created_by=None, **kwargs):
 		if document is None:
