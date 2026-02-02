@@ -109,4 +109,7 @@ Esto permite demostrar trazabilidad ante auditoría ISO.
 - CORE-01 AuditEvent: COMPLETADO
 - DOCS-01 Modelos Control Documental: COMPLETADO
 - DOCS-02 Servicio de aprobación: COMPLETADO
+- DOCS-04 Admin: COMPLETADO
+- DOCS-04 Forms: COMPLETADO
+
 
