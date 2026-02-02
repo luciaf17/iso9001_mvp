@@ -117,3 +117,29 @@ class DocumentVersionFormTests(TestCase):
 		self.assertEqual(version.document, self.document)
 		self.assertEqual(version.created_by, self.creator)
 		self.assertEqual(version.version_number, "1.0")
+
+	def test_editing_same_version_does_not_trigger_duplicate_error(self):
+		version = DocumentVersion.objects.create(
+			document=self.document,
+			version_number="1.0",
+			file="documents/test.pdf",
+			effective_date=date.today(),
+			status=DocumentVersion.Status.DRAFT,
+			created_by=self.creator,
+		)
+
+		form = DocumentVersionForm(
+			data={
+				"version_number": "1.0",  # mismo número
+				"effective_date": date.today(),
+				"notes": "Actualización de notas",
+			},
+			files={"file": self._make_file()},
+			instance=version,           # 👈 edición
+			document=self.document,
+			created_by=self.creator,
+		)
+
+		self.assertTrue(form.is_valid(), form.errors)
+
+    
