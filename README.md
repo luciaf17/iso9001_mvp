@@ -111,5 +111,5 @@ Esto permite demostrar trazabilidad ante auditoría ISO.
 - DOCS-02 Servicio de aprobación: COMPLETADO
 - DOCS-04 Admin: COMPLETADO
 - DOCS-04 Forms: COMPLETADO
-
+- DOCS-05 UI básica + HTMX: COMPLETADO
 
