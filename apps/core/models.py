@@ -2,6 +2,30 @@ from django.db import models
 from django.conf import settings
 
 
+class Process(models.Model):
+    """Proceso del Sistema de Gestión de la Calidad."""
+    
+    code = models.CharField(
+        max_length=30,
+        unique=True,
+        verbose_name="Código",
+        help_text="Identificador único del proceso (ej: CAL, VEN, etc.)"
+    )
+    name = models.CharField(
+        max_length=120,
+        unique=True,
+        verbose_name="Nombre"
+    )
+    
+    class Meta:
+        ordering = ["code"]
+        verbose_name = "Proceso"
+        verbose_name_plural = "Procesos"
+    
+    def __str__(self):
+        return f"{self.code} - {self.name}"
+
+
 class AuditEvent(models.Model):
     """Modelo para trazabilidad transversal de eventos del sistema."""
     
