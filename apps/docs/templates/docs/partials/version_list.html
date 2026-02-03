@@ -4,10 +4,14 @@
         <thead>
             <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
                 <th style="padding: 0.75rem; text-align: left;">Versión</th>
+                <th style="padding: 0.75rem; text-align: left;">Motivo del cambio</th>
                 <th style="padding: 0.75rem; text-align: left;">Estado</th>
                 <th style="padding: 0.75rem; text-align: left;">Vigencia</th>
                 <th style="padding: 0.75rem; text-align: left;">Creado el</th>
                 <th style="padding: 0.75rem; text-align: left;">Archivo</th>
+                <th style="padding: 0.75rem; text-align: left;">Aprobado por</th>
+                <th style="padding: 0.75rem; text-align: left;">Aprobado el</th>
+                <th style="padding: 0.75rem; text-align: left;">Comentario</th>
                 <th style="padding: 0.75rem; text-align: left;">Acciones</th>
             </tr>
         </thead>
@@ -15,6 +19,7 @@
             {% for version in versions %}
             <tr style="border-bottom: 1px solid #dee2e6;">
                 <td style="padding: 0.75rem;"><strong>{{ version.version_number }}</strong></td>
+                <td style="padding: 0.75rem;">{% if version.notes %}{{ version.notes }}{% else %}-{% endif %}</td>
                 <td style="padding: 0.75rem;">
                     <span style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.875rem; 
                         {% if version.status == 'APPROVED' %}background: #d4edda; color: #155724;
@@ -31,6 +36,15 @@
                     <a href="{{ version.file.url }}" target="_blank" style="color: #3498db; text-decoration: none;">Descargar</a>
                     {% else %}-{% endif %}
                 </td>
+                {% if version.approval %}
+                <td style="padding: 0.75rem;">{{ version.approval.approved_by }}</td>
+                <td style="padding: 0.75rem;">{{ version.approval.approved_at|date:"d/m/Y" }}</td>
+                <td style="padding: 0.75rem;">{% if version.approval.comment %}{{ version.approval.comment }}{% else %}-{% endif %}</td>
+                {% else %}
+                <td style="padding: 0.75rem;">-</td>
+                <td style="padding: 0.75rem;">-</td>
+                <td style="padding: 0.75rem;">-</td>
+                {% endif %}
                 <td style="padding: 0.75rem;">
                     {% if user.is_authenticated and can_approve and version.status != 'APPROVED' and version.status != 'OBSOLETE' %}
                     <form method="post"

@@ -29,6 +29,12 @@ class DocumentVersionForm(forms.ModelForm):
 	class Meta:
 		model = DocumentVersion
 		fields = ["version_number", "file", "effective_date", "review_due_date", "notes"]
+		labels = {
+			"notes": "Motivo del cambio",
+		}
+		help_texts = {
+			"notes": "Describí brevemente el motivo del cambio, alcance o qué se modificó.",
+		}
 		widgets = {
 			"effective_date": forms.DateInput(attrs={"type": "date"}),
 			"review_due_date": forms.DateInput(attrs={"type": "date"}),
