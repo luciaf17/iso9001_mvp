@@ -1,5 +1,6 @@
 from django import forms
 
+from apps.core.models import Process
 from .models import Document, DocumentVersion
 
 
@@ -10,10 +11,14 @@ class DocumentForm(forms.ModelForm):
 		super().__init__(*args, **kwargs)
 		if self.instance and self.instance.pk:
 			self.fields["code"].disabled = True
+		self.fields["processes"].queryset = Process.objects.filter(is_active=True).order_by("code")
 
 	class Meta:
 		model = Document
-		fields = ["code", "title", "doc_type", "process", "owner", "is_active"]
+		fields = ["code", "title", "doc_type", "processes", "owner", "is_active"]
+		widgets = {
+			"processes": forms.CheckboxSelectMultiple,
+		}
 
 	def clean_code(self):
 		code = self.cleaned_data.get("code", "")

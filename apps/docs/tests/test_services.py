@@ -43,9 +43,9 @@ class ApproveDocumentVersionTests(TestCase):
             code="PR-01",
             title="Procedimiento de prueba",
             doc_type=Document.DocType.PROCEDURE,
-            process=self.process,
             owner=self.admin,
         )
+        self.doc.processes.add(self.process)
 
         self.v1 = DocumentVersion.objects.create(
             document=self.doc,

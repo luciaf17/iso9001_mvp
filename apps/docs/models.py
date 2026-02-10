@@ -27,13 +27,11 @@ class Document(models.Model):
         choices=DocType.choices,
         verbose_name="Tipo de documento"
     )
-    process = models.ForeignKey(
+    processes = models.ManyToManyField(
         "core.Process",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
         related_name="documents",
-        verbose_name="Proceso"
+        blank=True,
+        verbose_name="Procesos",
     )
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,

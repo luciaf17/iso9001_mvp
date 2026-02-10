@@ -14,7 +14,17 @@
     <h1 style="margin-bottom: 1rem;">{{ document.code }} - {{ document.title }}</h1>
     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
         <div><strong>Tipo:</strong> {{ document.get_doc_type_display }}</div>
-        <div><strong>Proceso:</strong> {{ document.process|default:"-" }}</div>
+        <div><strong>Procesos asociados:</strong>
+            {% if document.processes.all %}
+            <ul style="margin: 0.5rem 0 0 1rem;">
+                {% for process in document.processes.all %}
+                <li>{{ process.code }} - {{ process.name }}</li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            -
+            {% endif %}
+        </div>
         <div><strong>Propietario:</strong> {{ document.owner.username }}</div>
         <div><strong>Estado:</strong> {% if document.is_active %}Activo{% else %}Inactivo{% endif %}</div>
     </div>

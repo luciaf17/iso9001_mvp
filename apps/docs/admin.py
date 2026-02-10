@@ -16,16 +16,17 @@ class DocumentVersionInline(admin.TabularInline):
 @admin.register(Document)
 class DocumentAdmin(admin.ModelAdmin):
     """Administración de documentos del SGC."""
-    list_display = ('code', 'title', 'doc_type', 'process', 'is_active', 'created_at')
-    list_filter = ('doc_type', 'process', 'is_active')
+    list_display = ('code', 'title', 'doc_type', 'processes_summary', 'is_active', 'created_at')
+    list_filter = ('doc_type', 'processes', 'is_active')
     search_fields = ('code', 'title')
     inlines = [DocumentVersionInline]
+    filter_horizontal = ("processes",)
     fieldsets = (
         ('Información General', {
             'fields': ('code', 'title', 'doc_type')
         }),
         ('Clasificación', {
-            'fields': ('process', 'owner')
+            'fields': ('processes', 'owner')
         }),
         ('Estado', {
             'fields': ('is_active',)
@@ -36,6 +37,11 @@ class DocumentAdmin(admin.ModelAdmin):
         }),
     )
     readonly_fields = ('created_at',)
+
+    def processes_summary(self, obj):
+        return ", ".join(obj.processes.values_list("code", flat=True))
+
+    processes_summary.short_description = "Procesos"
 
 
 @admin.register(DocumentVersion)

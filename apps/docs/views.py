@@ -5,6 +5,8 @@ from django.core.exceptions import PermissionDenied
 from django.views.decorators.http import require_http_methods
 from django.http import HttpResponse
 
+from apps.core.models import Process
+from apps.core.services import log_audit_event
 from .models import Document, DocumentVersion
 from .forms import DocumentForm, DocumentVersionForm
 from .services import approve_document_version, user_can_approve
@@ -32,7 +34,7 @@ def get_current_version(document):
 @login_required
 def document_list(request):
     """Lista de documentos filtrable."""
-    documents = Document.objects.filter(is_active=True).select_related('process', 'owner').order_by('code')
+    documents = Document.objects.filter(is_active=True).select_related('owner').prefetch_related('processes').order_by('code')
     
     # Aplicar filtros GET
     doc_type = request.GET.get('doc_type')
@@ -41,7 +43,7 @@ def document_list(request):
     if doc_type:
         documents = documents.filter(doc_type=doc_type)
     if process_id:
-        documents = documents.filter(process_id=process_id)
+        documents = documents.filter(processes__id=process_id).distinct()
     
     # Agregar versión vigente a cada documento
     for doc in documents:
@@ -50,7 +52,7 @@ def document_list(request):
     context = {
         'documents': documents,
         'doc_types': Document.DocType.choices,
-        'processes': Document.objects.values_list('process__id', 'process__code').distinct().order_by('process__code'),
+        'processes': Process.objects.filter(is_active=True).order_by('code'),
         'can_create': can_create_document(request.user),
         'selected_doc_type': doc_type,
         'selected_process_id': process_id,
@@ -69,6 +71,14 @@ def document_create(request):
         form = DocumentForm(request.POST)
         if form.is_valid():
             document = form.save()
+            log_audit_event(
+                actor=request.user,
+                action="docs.document.created",
+                instance=document,
+                metadata={
+                    "process_ids": list(document.processes.values_list("id", flat=True)),
+                },
+            )
             messages.success(request, f'Documento {document.code} creado exitosamente.')
             return redirect('docs:docs_detail', pk=document.pk)
     else:
@@ -80,7 +90,7 @@ def document_create(request):
 @login_required
 def document_detail(request, pk):
     """Detalle de un documento con sus versiones."""
-    document = get_object_or_404(Document.objects.select_related('process', 'owner'), pk=pk)
+    document = get_object_or_404(Document.objects.select_related('owner').prefetch_related('processes'), pk=pk)
     versions = document.versions.all().select_related('created_by', 'approval').order_by('-created_at')
     current_version = get_current_version(document)
     can_edit = (
@@ -115,7 +125,15 @@ def document_edit(request, pk):
     if request.method == 'POST':
         form = DocumentForm(request.POST, instance=document)
         if form.is_valid():
-            form.save()
+            document = form.save()
+            log_audit_event(
+                actor=request.user,
+                action="docs.document.updated",
+                instance=document,
+                metadata={
+                    "process_ids": list(document.processes.values_list("id", flat=True)),
+                },
+            )
             messages.success(request, 'Documento actualizado correctamente')
             return redirect('docs:docs_detail', pk=document.pk)
     else:

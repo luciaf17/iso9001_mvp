@@ -3,6 +3,7 @@ from datetime import date, timedelta
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.urls import reverse
 
 from apps.core.models import Organization, Process, Site
 from apps.docs.forms import DocumentForm, DocumentVersionForm
@@ -33,7 +34,7 @@ class DocumentFormTests(TestCase):
 				"code": "  doc-001 ",
 				"title": "Manual de Calidad",
 				"doc_type": Document.DocType.MANUAL,
-				"process": self.process.pk,
+				"processes": [self.process.pk],
 				"owner": self.owner.pk,
 				"is_active": True,
 			}
@@ -42,6 +43,38 @@ class DocumentFormTests(TestCase):
 		self.assertTrue(form.is_valid())
 		document = form.save()
 		self.assertEqual(document.code, "DOC-001")
+		self.assertTrue(document.processes.filter(pk=self.process.pk).exists())
+
+
+class DocumentDetailProcessTests(TestCase):
+	def setUp(self):
+		self.user = User.objects.create_user(username="viewer", password="x")
+		self.organization = Organization.objects.create(name="Org Test")
+		self.site = Site.objects.create(organization=self.organization, name="Site Test")
+		self.process = Process.objects.create(
+			organization=self.organization,
+			site=self.site,
+			code="CAL",
+			name="Calidad",
+			process_type=Process.ProcessType.SUPPORT,
+			level=Process.Level.PROCESS,
+			is_active=True,
+		)
+		self.document = Document.objects.create(
+			code="DOC-001",
+			title="Manual de Calidad",
+			doc_type=Document.DocType.MANUAL,
+			owner=self.user,
+			is_active=True,
+		)
+		self.document.processes.add(self.process)
+
+	def test_detail_shows_associated_processes(self):
+		self.client.force_login(self.user)
+		response = self.client.get(reverse("docs:docs_detail", args=[self.document.pk]))
+		self.assertContains(response, "Procesos asociados")
+		self.assertContains(response, self.process.code)
+		self.assertContains(response, self.process.name)
 
 
 class DocumentVersionFormTests(TestCase):

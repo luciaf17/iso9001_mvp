@@ -20,11 +20,11 @@
             </select>
         </div>
         <div>
-            <label for="process_id" style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Proceso</label>
+            <label for="process_id" style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Procesos</label>
             <select name="process_id" id="process_id" style="width: 100%; padding: 0.5rem; border: 1px solid #ced4da; border-radius: 4px;">
                 <option value="">-- Todos --</option>
-                {% for process_id, process_code in processes %}
-                <option value="{{ process_id }}" {% if selected_process_id == process_id|stringformat:"s" %}selected{% endif %}>{{ process_code }}</option>
+                {% for process in processes %}
+                <option value="{{ process.id }}" {% if selected_process_id == process.id|stringformat:"s" %}selected{% endif %}>{{ process.code }} - {{ process.name }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -41,7 +41,7 @@
             <th style="padding: 0.75rem; text-align: left;">Código</th>
             <th style="padding: 0.75rem; text-align: left;">Título</th>
             <th style="padding: 0.75rem; text-align: left;">Tipo</th>
-            <th style="padding: 0.75rem; text-align: left;">Proceso</th>
+            <th style="padding: 0.75rem; text-align: left;">Procesos</th>
             <th style="padding: 0.75rem; text-align: left;">Vigente</th>
             <th style="padding: 0.75rem; text-align: left;">Acciones</th>
         </tr>
@@ -52,7 +52,15 @@
             <td style="padding: 0.75rem;"><strong>{{ doc.code }}</strong></td>
             <td style="padding: 0.75rem;">{{ doc.title }}</td>
             <td style="padding: 0.75rem;">{{ doc.get_doc_type_display }}</td>
-            <td style="padding: 0.75rem;">{{ doc.process|default:"-" }}</td>
+            <td style="padding: 0.75rem;">
+                {% if doc.processes.all %}
+                <ul style="margin: 0.25rem 0 0 1rem;">
+                    {% for process in doc.processes.all %}
+                    <li>{{ process.code }} - {{ process.name }}</li>
+                    {% endfor %}
+                </ul>
+                {% else %}-{% endif %}
+            </td>
             <td style="padding: 0.75rem;">{% if doc.current_version %}v{{ doc.current_version.version_number }}{% else %}-{% endif %}</td>
             <td style="padding: 0.75rem;">
                 <a href="{% url 'docs:docs_detail' doc.pk %}" style="color: #3498db; text-decoration: none; margin-right: 0.75rem;">Ver</a>
