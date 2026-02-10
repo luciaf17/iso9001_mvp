@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.core.exceptions import PermissionDenied
 
-from apps.core.models import AuditEvent, Process
+from apps.core.models import AuditEvent, Organization, Process, Site
 from apps.docs.models import Document, DocumentVersion
 from apps.docs.services import approve_document_version
 
@@ -13,7 +13,17 @@ User = get_user_model()
 
 class ApproveDocumentVersionTests(TestCase):
     def setUp(self):
-        self.process = Process.objects.create(code="CAL", name="Calidad")
+        self.organization = Organization.objects.create(name="Org Test")
+        self.site = Site.objects.create(organization=self.organization, name="Site Test")
+        self.process = Process.objects.create(
+            organization=self.organization,
+            site=self.site,
+            code="CAL",
+            name="Calidad",
+            process_type=Process.ProcessType.SUPPORT,
+            level=Process.Level.PROCESS,
+            is_active=True,
+        )
 
         self.admin = User.objects.create_user(username="admin", password="x")
         self.quality = User.objects.create_user(username="quality", password="x")

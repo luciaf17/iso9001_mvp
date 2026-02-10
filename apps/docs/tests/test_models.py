@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-from apps.core.models import Process
+from apps.core.models import Organization, Process, Site
 from apps.docs.forms import DocumentForm, DocumentVersionForm
 from apps.docs.models import Document, DocumentVersion
 
@@ -15,7 +15,17 @@ User = get_user_model()
 class DocumentFormTests(TestCase):
 	def setUp(self):
 		self.owner = User.objects.create_user(username="owner", password="x")
-		self.process = Process.objects.create(code="CAL", name="Calidad")
+		self.organization = Organization.objects.create(name="Org Test")
+		self.site = Site.objects.create(organization=self.organization, name="Site Test")
+		self.process = Process.objects.create(
+			organization=self.organization,
+			site=self.site,
+			code="CAL",
+			name="Calidad",
+			process_type=Process.ProcessType.SUPPORT,
+			level=Process.Level.PROCESS,
+			is_active=True,
+		)
 
 	def test_document_form_normalizes_code(self):
 		form = DocumentForm(

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Editar contexto{% endblock %}
+
+{% block extra_css %}
+<style>
+    .context-card { max-width: 820px; background: #ffffff; border: 1px solid #e2e6ea; border-radius: 10px; padding: 1.5rem; box-shadow: 0 6px 16px rgba(33, 37, 41, 0.06); }
+    .context-card h1 { margin-bottom: 0.75rem; }
+    .context-meta { margin-bottom: 1.25rem; color: #5c6b77; }
+    .context-actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem; }
+    .context-actions button { padding: 0.5rem 1rem; border: 1px solid #2c3e50; background: #2c3e50; color: #fff; border-radius: 4px; cursor: pointer; font-weight: 600; }
+    .context-actions a { padding: 0.5rem 1rem; border: 1px solid #cbd5dd; background: #ffffff; color: #2c3e50; border-radius: 4px; text-decoration: none; font-weight: 600; }
+    .context-actions button:hover, .context-actions a:hover { opacity: 0.9; }
+    .form-errors { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="context-card">
+    <h1>Editar contexto</h1>
+    <div class="context-meta">Organizacion: {{ organization.name }}</div>
+
+    {% if form.errors %}
+    <div class="form-errors">
+        <strong>Revisar los errores del formulario.</strong>
+        {{ form.non_field_errors }}
+    </div>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div class="context-actions">
+            <a href="{% url 'core:context_detail' %}">Cancelar</a>
+            <button type="submit">Guardar</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -197,3 +197,80 @@ class AuditEvent(models.Model):
     def __str__(self):
         actor_name = self.actor.username if self.actor else "Sistema"
         return f"{actor_name} - {self.action} - {self.object_type}#{self.object_id}"
+
+
+class OrganizationContext(models.Model):
+    organization = models.OneToOneField(
+        Organization,
+        on_delete=models.PROTECT,
+        related_name="context",
+        verbose_name="Organizacion",
+    )
+    site = models.ForeignKey(
+        Site,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="organization_contexts",
+        verbose_name="Sede",
+    )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="organization_contexts",
+        verbose_name="Responsable",
+    )
+    review_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de revision",
+    )
+    summary = models.TextField(
+        blank=True,
+        verbose_name="Resumen",
+    )
+    quality_policy_doc = models.ForeignKey(
+        "docs.Document",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="context_quality_policy",
+        verbose_name="Politica de calidad",
+    )
+    process_map_doc = models.ForeignKey(
+        "docs.Document",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="context_process_map",
+        verbose_name="Mapa de procesos",
+    )
+    org_chart_doc = models.ForeignKey(
+        "docs.Document",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="context_org_chart",
+        verbose_name="Organigrama",
+    )
+    context_analysis_doc = models.ForeignKey(
+        "docs.Document",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="context_analysis",
+        verbose_name="Analisis de contexto",
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Actualizado",
+    )
+
+    class Meta:
+        verbose_name = "Contexto de la organizacion"
+        verbose_name_plural = "Contextos de la organizacion"
+
+    def __str__(self):
+        return f"Contexto - {self.organization}"

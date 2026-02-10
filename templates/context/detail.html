@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Contexto de la organizacion{% endblock %}
+
+{% block extra_css %}
+<style>
+    .context-card { max-width: 820px; background: #ffffff; border: 1px solid #e2e6ea; border-radius: 10px; padding: 1.5rem; box-shadow: 0 6px 16px rgba(33, 37, 41, 0.06); }
+    .context-card h1 { margin-bottom: 0.75rem; }
+    .context-meta { margin-bottom: 1.25rem; color: #5c6b77; }
+    .context-grid { display: grid; grid-template-columns: 160px 1fr; gap: 0.5rem 1.25rem; }
+    .context-label { font-weight: 600; color: #2c3e50; }
+    .context-value { color: #2f3a45; }
+    .context-actions { display: flex; justify-content: flex-end; margin-top: 1.5rem; }
+    .context-actions a { padding: 0.5rem 1rem; border: 1px solid #2c3e50; background: #2c3e50; color: #fff; border-radius: 4px; text-decoration: none; font-weight: 600; }
+    .context-actions a:hover { opacity: 0.9; }
+    .context-doc { display: flex; gap: 0.4rem; align-items: baseline; flex-wrap: wrap; }
+    .context-doc a { color: #2c3e50; text-decoration: none; font-weight: 600; }
+    .context-doc a:hover { text-decoration: underline; }
+    .readonly-note { margin-top: 1rem; color: #5c6b77; font-size: 0.95rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="context-card">
+    <h1>Contexto de la organizacion</h1>
+    <div class="context-meta">Organizacion: {{ organization.name }}</div>
+    <div class="context-grid">
+        <div class="context-label">Sede</div>
+        <div class="context-value">{{ context_obj.site|default:"No asignado" }}</div>
+
+        <div class="context-label">Responsable</div>
+        <div class="context-value">{{ context_obj.owner|default:"No asignado" }}</div>
+
+        <div class="context-label">Fecha de revision</div>
+        <div class="context-value">{{ context_obj.review_date|date:"d/m/Y"|default:"No asignado" }}</div>
+
+        <div class="context-label">Resumen</div>
+        <div class="context-value">
+            {% if context_obj.summary %}
+            {{ context_obj.summary|linebreaksbr }}
+            {% else %}
+            No asignado
+            {% endif %}
+        </div>
+
+        <div class="context-label">Politica de calidad</div>
+        <div class="context-value">
+            {% if context_obj.quality_policy_doc %}
+            <div class="context-doc">
+                <a href="{% url 'docs:docs_detail' context_obj.quality_policy_doc.id %}">{{ context_obj.quality_policy_doc.code }}</a>
+                <span>{{ context_obj.quality_policy_doc.title }}</span>
+            </div>
+            {% else %}
+            No asignado
+            {% endif %}
+        </div>
+
+        <div class="context-label">Mapa de procesos</div>
+        <div class="context-value">
+            {% if context_obj.process_map_doc %}
+            <div class="context-doc">
+                <a href="{% url 'docs:docs_detail' context_obj.process_map_doc.id %}">{{ context_obj.process_map_doc.code }}</a>
+                <span>{{ context_obj.process_map_doc.title }}</span>
+            </div>
+            {% else %}
+            No asignado
+            {% endif %}
+        </div>
+
+        <div class="context-label">Organigrama</div>
+        <div class="context-value">
+            {% if context_obj.org_chart_doc %}
+            <div class="context-doc">
+                <a href="{% url 'docs:docs_detail' context_obj.org_chart_doc.id %}">{{ context_obj.org_chart_doc.code }}</a>
+                <span>{{ context_obj.org_chart_doc.title }}</span>
+            </div>
+            {% else %}
+            No asignado
+            {% endif %}
+        </div>
+
+        <div class="context-label">Analisis de contexto</div>
+        <div class="context-value">
+            {% if context_obj.context_analysis_doc %}
+            <div class="context-doc">
+                <a href="{% url 'docs:docs_detail' context_obj.context_analysis_doc.id %}">{{ context_obj.context_analysis_doc.code }}</a>
+                <span>{{ context_obj.context_analysis_doc.title }}</span>
+            </div>
+            {% else %}
+            No asignado
+            {% endif %}
+        </div>
+
+        <div class="context-label">Ultima actualizacion</div>
+        <div class="context-value">{{ context_obj.updated_at|date:"d/m/Y H:i" }}</div>
+    </div>
+
+    {% if can_edit %}
+    <div class="context-actions">
+        <a href="{% url 'core:context_edit' %}">Editar</a>
+    </div>
+    {% else %}
+    <div class="readonly-note">Solo Admin/Calidad pueden editar este contexto.</div>
+    {% endif %}
+</div>
+{% endblock %}
