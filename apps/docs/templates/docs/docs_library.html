@@ -103,6 +103,10 @@
                             {% endfor %}
                         </div>
                     </div>
+                {% else %}
+                    <div class="ms-3 mb-2">
+                        <small class="text-muted">(sin documentos vigentes)</small>
+                    </div>
                 {% endif %}
                 
                 <!-- Subprocesos (Nivel 2) -->
@@ -142,6 +146,10 @@
                                                 </div>
                                             </div>
                                         {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <div class="ms-2 mb-1">
+                                        <small class="text-muted">(sin documentos vigentes)</small>
                                     </div>
                                 {% endif %}
                                 
