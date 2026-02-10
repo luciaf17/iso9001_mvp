@@ -22,12 +22,27 @@
     .process .code { font-weight: 700; }
     .process .type { color: #5c6b77; margin-left: 0.35rem; font-size: 0.95rem; }
     .process .tag { display: inline-block; margin-left: 0.5rem; padding: 0.15rem 0.4rem; border: 1px solid #c8d1da; border-radius: 999px; font-size: 0.8rem; color: #2c3e50; background: #eef3f7; }
+    .process-actions { margin-left: 0.75rem; display: inline-flex; gap: 0.4rem; }
+    .action-link { font-size: 0.85rem; text-decoration: none; padding: 0.2rem 0.5rem; border-radius: 4px; border: 1px solid #cbd5dd; color: #2c3e50; background: #ffffff; }
+    .action-link:hover { background: #eef3f7; }
+    .action-form { display: inline; }
+    .action-button { font-size: 0.85rem; padding: 0.2rem 0.5rem; border-radius: 4px; border: 1px solid #e0b0b0; background: #fff5f5; color: #8b2e2e; cursor: pointer; }
+    .action-button:hover { background: #ffecec; }
+    .new-process { margin-bottom: 1rem; }
+    .new-process a { display: inline-block; padding: 0.45rem 0.9rem; border-radius: 4px; background: #2c3e50; color: #fff; text-decoration: none; font-weight: 600; }
+    .new-process a:hover { opacity: 0.9; }
     .empty { padding: 1rem; background: #f5f6f7; border-radius: 6px; color: #55616d; }
 </style>
 {% endblock %}
 
 {% block content %}
 <h1 class="page-title">Mapa de Procesos</h1>
+
+{% if can_edit %}
+<div class="new-process">
+    <a href="{% url 'org:process_new' %}">Nuevo proceso</a>
+</div>
+{% endif %}
 
 <form method="get" class="filters">
     <label>
@@ -64,6 +79,18 @@
         <div class="process-line">
             <span class="code">{{ process.code }}</span> - <span class="name">{{ process.name }}</span>
             <span class="type">({{ process.get_process_type_display }})</span>
+            {% if can_edit %}
+            <span class="process-actions">
+                <a class="action-link" href="{% url 'org:process_edit' process.id %}">Editar</a>
+                <a class="action-link" href="{% url 'org:process_child_new' process.id %}">+ Subproceso</a>
+                {% if process.is_active %}
+                <form class="action-form" method="post" action="{% url 'org:process_deactivate' process.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="action-button">Desactivar</button>
+                </form>
+                {% endif %}
+            </span>
+            {% endif %}
         </div>
 
         {% if process.children.all %}
@@ -72,6 +99,18 @@
             <li class="process level-2">
                 <div class="process-line">
                     <span class="code">{{ child.code }}</span> - <span class="name">{{ child.name }}</span>
+                    {% if can_edit %}
+                    <span class="process-actions">
+                        <a class="action-link" href="{% url 'org:process_edit' child.id %}">Editar</a>
+                        <a class="action-link" href="{% url 'org:process_child_new' child.id %}">+ Sector</a>
+                        {% if child.is_active %}
+                        <form class="action-form" method="post" action="{% url 'org:process_deactivate' child.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="action-button">Desactivar</button>
+                        </form>
+                        {% endif %}
+                    </span>
+                    {% endif %}
                 </div>
 
                 {% if child.children.all %}
@@ -85,6 +124,17 @@
                             <span class="tag">
                                 {% if code_tag %}[{{ code_tag }}]{% endif %}
                                 {% if name_tag and code_tag %} [{{ name_tag }}]{% elif name_tag %}[{{ name_tag }}]{% endif %}
+                            </span>
+                            {% endif %}
+                            {% if can_edit %}
+                            <span class="process-actions">
+                                <a class="action-link" href="{% url 'org:process_edit' grandchild.id %}">Editar</a>
+                                {% if grandchild.is_active %}
+                                <form class="action-form" method="post" action="{% url 'org:process_deactivate' grandchild.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="action-button">Desactivar</button>
+                                </form>
+                                {% endif %}
                             </span>
                             {% endif %}
                         </div>
