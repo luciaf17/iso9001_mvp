@@ -2,34 +2,140 @@
 
 {% block title %}Documentos - ISO 9001 MVP{% endblock %}
 
+{% block extra_css %}
+<style>
+    .documents-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-xl);
+    }
+    
+    .documents-header h1 {
+        font-size: var(--font-size-3xl);
+        color: var(--color-primary);
+    }
+    
+    .filter-card {
+        background: var(--color-white);
+        border: 2px solid var(--color-primary-light);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-lg);
+        margin-bottom: var(--spacing-xl);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .filter-form {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--spacing-lg);
+        align-items: flex-end;
+    }
+    
+    .filter-form select {
+        padding: var(--spacing-sm) var(--spacing-md);
+        border: 2px solid var(--color-gray-300);
+        border-radius: var(--border-radius-md);
+        font-size: var(--font-size-sm);
+        transition: var(--transition);
+        background-color: var(--color-white);
+    }
+    
+    .filter-form select:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px var(--color-primary-light);
+    }
+    
+    .documents-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    
+    .documents-table thead {
+        background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%);
+    }
+    
+    .documents-table th {
+        padding: var(--spacing-md);
+        text-align: left;
+        color: var(--color-dark);
+        font-weight: 700;
+        border: none;
+    }
+    
+    .documents-table td {
+        padding: var(--spacing-md);
+        border-bottom: 1px solid var(--color-gray-200);
+    }
+    
+    .documents-table tbody tr {
+        transition: var(--transition);
+    }
+    
+    .documents-table tbody tr:hover {
+        background-color: var(--color-gray-50);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .doc-code {
+        font-weight: 700;
+        color: var(--color-primary);
+        font-family: var(--font-mono);
+    }
+    
+    .action-links {
+        display: flex;
+        gap: var(--spacing-sm);
+    }
+    
+    @media (max-width: 1024px) {
+        .filter-form {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 640px) {
+        .filter-form {
+            grid-template-columns: 1fr;
+        }
+        
+        .documents-table {
+            font-size: var(--font-size-sm);
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-    <h1>Documentos del SGC</h1>
-    {% if user.is_authenticated and can_create %}<a href="{% url 'docs:docs_new' %}" style="background: #3498db; color: white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 4px;">+ Nuevo documento</a>{% endif %}
+<div class="documents-header">
+    <h1>📄 Documentos del SGC</h1>
+    {% if user.is_authenticated and can_create %}<a href="{% url 'docs:docs_new' %}" class="btn btn-primary">+ Nuevo Documento</a>{% endif %}
 </div>
 
-<div style="background: #f8f9fa; padding: 1rem; border-radius: 4px; margin-bottom: 2rem;">
-    <form method="get" style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem;">
+<div class="filter-card">
+    <form method="get" class="filter-form">
         <div>
-            <label for="doc_type" style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Tipo de Documento</label>
-            <select name="doc_type" id="doc_type" style="width: 100%; padding: 0.5rem; border: 1px solid #ced4da; border-radius: 4px;">
-                <option value="">-- Todos --</option>
+            <label for="doc_type" style="display: block; font-weight: 600; margin-bottom: var(--spacing-sm);">📋 Tipo de Documento</label>
+            <select name="doc_type" id="doc_type">
+                <option value="">Todos</option>
                 {% for value, label in doc_types %}
                 <option value="{{ value }}" {% if selected_doc_type == value %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
             </select>
         </div>
         <div>
-            <label for="process_id" style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Procesos</label>
-            <select name="process_id" id="process_id" style="width: 100%; padding: 0.5rem; border: 1px solid #ced4da; border-radius: 4px;">
-                <option value="">-- Todos --</option>
+            <label for="process_id" style="display: block; font-weight: 600; margin-bottom: var(--spacing-sm);">🔗 Procesos</label>
+            <select name="process_id" id="process_id">
+                <option value="">Todos</option>
                 {% for process in processes %}
                 <option value="{{ process.id }}" {% if selected_process_id == process.id|stringformat:"s" %}selected{% endif %}>{{ process.code }} - {{ process.name }}</option>
                 {% endfor %}
             </select>
         </div>
-        <div style="display: flex; align-items: flex-end;">
-            <button type="submit" style="background: #3498db; color: white; padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer;">Filtrar</button>
+        <div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">🔍 Filtrar</button>
         </div>
     </form>
 </div>

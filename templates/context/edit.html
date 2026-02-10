@@ -1,38 +1,114 @@
 {% extends "base.html" %}
 
-{% block title %}Editar contexto{% endblock %}
+{% block title %}Editar Contexto{% endblock %}
 
 {% block extra_css %}
 <style>
-    .context-card { max-width: 820px; background: #ffffff; border: 1px solid #e2e6ea; border-radius: 10px; padding: 1.5rem; box-shadow: 0 6px 16px rgba(33, 37, 41, 0.06); }
-    .context-card h1 { margin-bottom: 0.75rem; }
-    .context-meta { margin-bottom: 1.25rem; color: #5c6b77; }
-    .context-actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem; }
-    .context-actions button { padding: 0.5rem 1rem; border: 1px solid #2c3e50; background: #2c3e50; color: #fff; border-radius: 4px; cursor: pointer; font-weight: 600; }
-    .context-actions a { padding: 0.5rem 1rem; border: 1px solid #cbd5dd; background: #ffffff; color: #2c3e50; border-radius: 4px; text-decoration: none; font-weight: 600; }
-    .context-actions button:hover, .context-actions a:hover { opacity: 0.9; }
-    .form-errors { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1rem; }
+    .context-form-container {
+        max-width: 800px;
+        background: var(--color-white);
+        border: 2px solid var(--color-primary-light);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-2xl);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .context-form-container h1 {
+        color: var(--color-primary);
+        margin-bottom: var(--spacing-sm);
+        font-size: var(--font-size-2xl);
+    }
+    
+    .context-meta {
+        margin-bottom: var(--spacing-xl);
+        color: var(--color-gray-700);
+    }
+    
+    .form-errors {
+        background: linear-gradient(135deg, var(--color-danger-light) 0%, #ffebee 100%);
+        border: 2px solid var(--color-danger);
+        color: var(--color-danger);
+        padding: var(--spacing-md);
+        border-radius: var(--border-radius-md);
+        margin-bottom: var(--spacing-lg);
+        font-weight: 600;
+    }
+    
+    .form-group {
+        margin-bottom: var(--spacing-lg);
+    }
+    
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: var(--spacing-sm);
+        color: var(--color-dark);
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: var(--spacing-sm) var(--spacing-md);
+        border: 2px solid var(--color-gray-300);
+        border-radius: var(--border-radius-md);
+        font-size: var(--font-size-sm);
+        transition: var(--transition);
+        box-sizing: border-box;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px var(--color-primary-light);
+    }
+    
+    .form-group textarea {
+        min-height: 120px;
+        resize: vertical;
+    }
+    
+    .context-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: var(--spacing-md);
+        margin-top: var(--spacing-2xl);
+        padding-top: var(--spacing-lg);
+        border-top: 2px solid var(--color-gray-200);
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="context-card">
-    <h1>Editar contexto</h1>
-    <div class="context-meta">Organizacion: {{ organization.name }}</div>
+<div class="context-form-container">
+    <h1>✏️ Editar Contexto</h1>
+    <div class="context-meta">{{ organization.name }}</div>
 
     {% if form.errors %}
     <div class="form-errors">
-        <strong>Revisar los errores del formulario.</strong>
+        ❌ Revisar los errores del formulario.
         {{ form.non_field_errors }}
     </div>
     {% endif %}
 
     <form method="post">
         {% csrf_token %}
-        {{ form.as_p }}
+        {% for field in form %}
+        <div class="form-group">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+            <div style="color: var(--color-danger); font-size: var(--font-size-sm); margin-top: var(--spacing-xs);">
+                {{ field.errors }}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
         <div class="context-actions">
-            <a href="{% url 'core:context_detail' %}">Cancelar</a>
-            <button type="submit">Guardar</button>
+            <a href="{% url 'core:context_detail' %}" class="btn btn-secondary">← Cancelar</a>
+            <button type="submit" class="btn btn-primary">💾 Guardar Cambios</button>
         </div>
     </form>
 </div>

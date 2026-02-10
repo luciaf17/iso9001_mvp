@@ -1,70 +1,66 @@
-<div id="version-list">
+<div id="version-list" style="margin-top: var(--spacing-lg);">
     {% if versions %}
-    <table style="width: 100%; border-collapse: collapse;">
+    <table style="width: 100%; border-collapse: separate; border-spacing: 0;">
         <thead>
-            <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
-                <th style="padding: 0.75rem; text-align: left;">Versión</th>
-                <th style="padding: 0.75rem; text-align: left;">Motivo del cambio</th>
-                <th style="padding: 0.75rem; text-align: left;">Estado</th>
-                <th style="padding: 0.75rem; text-align: left;">Vigencia</th>
-                <th style="padding: 0.75rem; text-align: left;">Creado el</th>
-                <th style="padding: 0.75rem; text-align: left;">Archivo</th>
-                <th style="padding: 0.75rem; text-align: left;">Aprobado por</th>
-                <th style="padding: 0.75rem; text-align: left;">Aprobado el</th>
-                <th style="padding: 0.75rem; text-align: left;">Comentario</th>
-                <th style="padding: 0.75rem; text-align: left;">Acciones</th>
+            <tr style="background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%);">
+                <th style="padding: var(--spacing-md); text-align: left; color: var(--color-dark); font-weight: 700; border-radius: var(--border-radius-md) 0 0 0;">📌 Versión</th>
+                <th style="padding: var(--spacing-md); text-align: left; color: var(--color-dark); font-weight: 700;">Cambios</th>
+                <th style="padding: var(--spacing-md); text-align: left; color: var(--color-dark); font-weight: 700;">Estado</th>
+                <th style="padding: var(--spacing-md); text-align: left; color: var(--color-dark); font-weight: 700;">Vigencia</th>
+                <th style="padding: var(--spacing-md); text-align: left; color: var(--color-dark); font-weight: 700;">Creación</th>
+                <th style="padding: var(--spacing-md); text-align: left; color: var(--color-dark); font-weight: 700;">Archivo</th>
+                <th style="padding: var(--spacing-md); text-align: left; color: var(--color-dark); font-weight: 700;">Aprobación</th>
+                <th style="padding: var(--spacing-md); text-align: left; color: var(--color-dark); font-weight: 700; border-radius: 0 var(--border-radius-md) 0 0;">Acciones</th>
             </tr>
         </thead>
         <tbody>
             {% for version in versions %}
-            <tr style="border-bottom: 1px solid #dee2e6;">
-                <td style="padding: 0.75rem;"><strong>{{ version.version_number }}</strong></td>
-                <td style="padding: 0.75rem;">{% if version.notes %}{{ version.notes }}{% else %}-{% endif %}</td>
-                <td style="padding: 0.75rem;">
-                    <span style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.875rem; 
-                        {% if version.status == 'APPROVED' %}background: #d4edda; color: #155724;
-                        {% elif version.status == 'DRAFT' %}background: #fff3cd; color: #856404;
-                        {% elif version.status == 'OBSOLETE' %}background: #f8d7da; color: #721c24;
-                        {% else %}background: #d1ecf1; color: #0c5460;{% endif %}">
-                        {{ version.get_status_display }}
+            <tr style="border-bottom: 1px solid var(--color-gray-200); transition: var(--transition);" onmouseover="this.style.backgroundColor='var(--color-gray-50)'" onmouseout="this.style.backgroundColor=''">
+                <td style="padding: var(--spacing-md);"><strong style="color: var(--color-primary);">v{{ version.version_number }}</strong></td>
+                <td style="padding: var(--spacing-md); font-size: var(--font-size-sm);">{% if version.notes %}{{ version.notes|truncatewords:5 }}{% else %}<span style="color: var(--color-gray-500);">-</span>{% endif %}</td>
+                <td style="padding: var(--spacing-md);">
+                    <span style="padding: var(--spacing-xs) var(--spacing-sm); border-radius: var(--border-radius-sm); font-size: var(--font-size-xs); font-weight: 600; 
+                        {% if version.status == 'APPROVED' %}background: var(--color-success-light); color: var(--color-success);
+                        {% elif version.status == 'DRAFT' %}background: var(--color-warning-light); color: var(--color-warning);
+                        {% elif version.status == 'OBSOLETE' %}background: var(--color-danger-light); color: var(--color-danger);
+                        {% else %}background: var(--color-info-light); color: var(--color-info);{% endif %}">
+                        {% if version.status == 'APPROVED' %}✅{% elif version.status == 'DRAFT' %}📝{% elif version.status == 'OBSOLETE' %}🗑️{% else %}⏳{% endif %} {{ version.get_status_display }}
                     </span>
                 </td>
-                <td style="padding: 0.75rem;">{{ version.effective_date }}</td>
-                <td style="padding: 0.75rem;">{{ version.created_at|date:"d/m/Y H:i" }}</td>
-                <td style="padding: 0.75rem;">
+                <td style="padding: var(--spacing-md); font-size: var(--font-size-sm);">{{ version.effective_date|date:"d/m/Y" }}</td>
+                <td style="padding: var(--spacing-md); font-size: var(--font-size-sm);">{{ version.created_at|date:"d/m/Y H:i" }}</td>
+                <td style="padding: var(--spacing-md);">
                     {% if version.file %}
-                    <a href="{{ version.file.url }}" target="_blank" style="color: #3498db; text-decoration: none;">Descargar</a>
-                    {% else %}-{% endif %}
+                    <a href="{{ version.file.url }}" target="_blank" class="btn btn-sm btn-info">⬇️ Descargar</a>
+                    {% else %}<span style="color: var(--color-gray-500);">-</span>{% endif %}
                 </td>
-                {% if version.approval %}
-                <td style="padding: 0.75rem;">{{ version.approval.approved_by }}</td>
-                <td style="padding: 0.75rem;">{{ version.approval.approved_at|date:"d/m/Y" }}</td>
-                <td style="padding: 0.75rem;">{% if version.approval.comment %}{{ version.approval.comment }}{% else %}-{% endif %}</td>
-                {% else %}
-                <td style="padding: 0.75rem;">-</td>
-                <td style="padding: 0.75rem;">-</td>
-                <td style="padding: 0.75rem;">-</td>
-                {% endif %}
-                <td style="padding: 0.75rem;">
+                <td style="padding: var(--spacing-md); font-size: var(--font-size-sm);">
+                    {% if version.approval %}
+                    <div><strong>{{ version.approval.approved_by }}</strong></div>
+                    <div style="color: var(--color-gray-600);">{{ version.approval.approved_at|date:"d/m/Y" }}</div>
+                    {% if version.approval.comment %}<div style="font-style: italic; color: var(--color-gray-600);">{{ version.approval.comment|truncatewords:3 }}</div>{% endif %}
+                    {% else %}<span style="color: var(--color-gray-500);">-</span>{% endif %}
+                </td>
+                <td style="padding: var(--spacing-md);">
                     {% if user.is_authenticated and can_approve and version.status != 'APPROVED' and version.status != 'OBSOLETE' %}
                     <form method="post"
                           hx-post="{% url 'docs:docs_version_approve' version_id=version.id %}"
                           hx-target="#version-list"
                           hx-swap="outerHTML"
-                          hx-confirm="¿Aprobar esta versión?"
+                          hx-confirm="¿Aprobar esta versión? Esta acción desaprobará cualquier versión anterior."
                           style="display: inline;">
                         {% csrf_token %}
-                        <button type="submit" style="background: #28a745; color: white; padding: 0.25rem 0.75rem; border: none; border-radius: 4px; cursor: pointer; font-size: 0.875rem;">
-                            Aprobar
-                        </button>
+                        <button type="submit" class="btn btn-sm btn-success">✅ Aprobar</button>
                     </form>
-                    {% else %}-{% endif %}
+                    {% else %}<span style="color: var(--color-gray-500); font-size: var(--font-size-sm);">-</span>{% endif %}
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
     {% else %}
-    <p style="color: #6c757d; text-align: center; padding: 2rem;">No hay versiones para este documento.</p>
+    <div style="text-align: center; padding: var(--spacing-2xl); background: var(--color-gray-50); border-radius: var(--border-radius-md); color: var(--color-gray-600);">
+        <p style="margin: 0; font-size: var(--font-size-base);">📭 No hay versiones para este documento.</p>
+    </div>
     {% endif %}
 </div>

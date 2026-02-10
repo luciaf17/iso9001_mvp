@@ -2,43 +2,137 @@
 
 {% block title %}{{ document.code }} - ISO 9001 MVP{% endblock %}
 
+{% block extra_css %}
+<style>
+    .document-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-xl);
+    }
+    
+    .document-header a {
+        color: var(--color-gray-600);
+        text-decoration: none;
+        transition: var(--transition);
+    }
+    
+    .document-header a:hover {
+        color: var(--color-primary);
+        text-decoration: underline;
+    }
+    
+    .document-info-card {
+        background: var(--color-white);
+        border: 2px solid var(--color-primary-light);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-lg);
+        margin-bottom: var(--spacing-xl);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .document-info-card h1 {
+        margin-bottom: var(--spacing-lg);
+        color: var(--color-primary);
+    }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-lg);
+    }
+    
+    .info-item strong {
+        color: var(--color-dark);
+        display: block;
+        margin-bottom: var(--spacing-sm);
+    }
+    
+    .version-badge-card {
+        background: linear-gradient(135deg, var(--color-success-light) 0%, var(--color-white) 100%);
+        border: 2px solid var(--color-success);
+        padding: var(--spacing-lg);
+        border-radius: var(--border-radius-lg);
+        margin-bottom: var(--spacing-xl);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-lg);
+        padding-bottom: var(--spacing-md);
+        border-bottom: 2px solid var(--color-primary);
+    }
+    
+    @media (max-width: 768px) {
+        .document-header {
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+        
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-    <a href="{% url 'docs:docs_list' %}" style="color: #6c757d; text-decoration: none;">← Volver a documentos</a>
+<div class="document-header">
+    <a href="{% url 'docs:docs_list' %}">← 📄 Volver a Documentos</a>
     {% if can_edit %}
-    <a href="{% url 'docs:docs_edit' pk=document.id %}" style="background: #2c3e50; color: white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 4px;">Editar documento</a>
+    <a href="{% url 'docs:docs_edit' pk=document.id %}" class="btn btn-primary">✏️ Editar documento</a>
     {% endif %}
 </div>
 
-<div style="background: #f8f9fa; padding: 1.5rem; border-radius: 4px; margin-bottom: 2rem;">
-    <h1 style="margin-bottom: 1rem;">{{ document.code }} - {{ document.title }}</h1>
-    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
-        <div><strong>Tipo:</strong> {{ document.get_doc_type_display }}</div>
-        <div><strong>Procesos asociados:</strong>
+<div class="document-info-card">
+    <h1>{{ document.code }} - {{ document.title }}</h1>
+    <div class="info-grid">
+        <div>
+            <strong>📋 Tipo de Documento</strong>
+            <span class="badge badge-primary">{{ document.get_doc_type_display }}</span>
+        </div>
+        <div>
+            <strong>🔗 Procesos Asociados</strong>
             {% if document.processes.all %}
-            <ul style="margin: 0.5rem 0 0 1rem;">
+            <div style="margin-top: var(--spacing-sm);">
                 {% for process in document.processes.all %}
-                <li>{{ process.code }} - {{ process.name }}</li>
+                <div class="badge badge-info" style="display: inline-block; margin: var(--spacing-xs) var(--spacing-xs) var(--spacing-xs) 0;">
+                    {{ process.code }} - {{ process.name }}
+                </div>
                 {% endfor %}
-            </ul>
+            </div>
             {% else %}
-            -
+            <span style="color: var(--color-gray-600);">Sin procesos asociados</span>
             {% endif %}
         </div>
-        <div><strong>Propietario:</strong> {{ document.owner.username }}</div>
-        <div><strong>Estado:</strong> {% if document.is_active %}Activo{% else %}Inactivo{% endif %}</div>
+        <div>
+            <strong>👤 Responsable</strong>
+            <span style="color: var(--color-dark);">{{ document.owner.username }}</span>
+        </div>
+        <div>
+            <strong>✅ Estado</strong>
+            <span class="badge {% if document.is_active %}badge-success{% else %}badge-secondary{% endif %}">
+                {% if document.is_active %}Activo{% else %}Inactivo{% endif %}
+            </span>
+        </div>
     </div>
 </div>
 
 {% if current_version %}
-<div style="background: #d4edda; border: 1px solid #c3e6cb; padding: 1rem; border-radius: 4px; margin-bottom: 2rem;">
-    <strong>Versión vigente:</strong> v{{ current_version.version_number }} ({{ current_version.effective_date }})
+<div class="version-badge-card">
+    <strong style="color: var(--color-success); font-size: var(--font-size-lg);">✅ Versión Vigente</strong>
+    <div style="margin-top: var(--spacing-md); color: var(--color-dark);">
+        v{{ current_version.version_number }} — Vigente desde {{ current_version.effective_date|date:"d/m/Y" }}
+    </div>
 </div>
 {% endif %}
 
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-    <h2>Versiones</h2>
-    <a href="{% url 'docs:docs_version_new' document.pk %}" style="background: #3498db; color: white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 4px;">+ Nueva Versión</a>
+<div class="section-header">
+    <h2>📚 Historial de Versiones</h2>
+    <a href="{% url 'docs:docs_version_new' document.pk %}" class="btn btn-primary btn-sm">+ Nueva Versión</a>
 </div>
 
 {% include 'docs/partials/version_list.html' with versions=versions document=document can_approve=can_approve %}

@@ -3,236 +3,523 @@
 
 {% block title %}Biblioteca de Documentos{% endblock %}
 
+{% block extra_css %}
+<style>
+    .library-header {
+        margin-bottom: var(--spacing-xl);
+    }
+    
+    .library-header h1 {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-md);
+        font-size: var(--font-size-3xl);
+        font-weight: 700;
+    }
+    
+    .filter-card {
+        background: var(--color-white);
+        border: 2px solid var(--color-primary-light);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-lg);
+        margin-bottom: var(--spacing-xl);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .filter-card h3 {
+        margin-bottom: var(--spacing-lg);
+        color: var(--color-primary);
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+    }
+    
+    .filter-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--spacing-lg);
+        margin-bottom: var(--spacing-lg);
+    }
+    
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .filter-group label {
+        font-weight: 600;
+        margin-bottom: var(--spacing-sm);
+        color: var(--color-dark);
+        font-size: var(--font-size-sm);
+    }
+    
+    .filter-group select {
+        padding: var(--spacing-sm) var(--spacing-md);
+        border: 2px solid var(--color-gray-300);
+        border-radius: var(--border-radius-md);
+        font-size: var(--font-size-sm);
+        transition: var(--transition);
+        background-color: var(--color-white);
+    }
+    
+    .filter-group select:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px var(--color-primary-light);
+    }
+    
+    .filter-buttons {
+        display: flex;
+        gap: var(--spacing-md);
+    }
+    
+    /* Procesos */
+    .process-level-1 {
+        background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-white) 100%);
+        border: 2px solid var(--color-primary);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-lg);
+        margin-bottom: var(--spacing-lg);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .process-header {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-lg);
+        padding-bottom: var(--spacing-md);
+        border-bottom: 2px solid var(--color-primary);
+    }
+    
+    .process-code {
+        background: var(--color-primary);
+        color: var(--color-white);
+        padding: var(--spacing-sm) var(--spacing-md);
+        border-radius: var(--border-radius-md);
+        font-weight: 700;
+        font-size: var(--font-size-sm);
+        font-family: var(--font-mono);
+    }
+    
+    .process-name {
+        flex: 1;
+    }
+    
+    .process-name h3 {
+        margin: 0;
+        font-size: var(--font-size-lg);
+    }
+    
+    .process-type-badge {
+        padding: var(--spacing-xs) var(--spacing-sm);
+        border-radius: var(--border-radius-sm);
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .process-type-badge.strategic {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .process-type-badge.missional {
+        background: var(--color-success-light);
+        color: var(--color-success);
+    }
+    
+    .process-type-badge.support {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+    
+    .process-level-2 {
+        background: var(--color-white);
+        border: 2px solid var(--color-info);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-md);
+        margin: var(--spacing-lg) 0 var(--spacing-md) var(--spacing-xl);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .process-level-2 h5 {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        margin-bottom: var(--spacing-md);
+        color: var(--color-dark);
+    }
+    
+    .process-level-3 {
+        background: var(--color-gray-100);
+        border-left: 4px solid var(--color-primary);
+        border-radius: var(--border-radius-sm);
+        padding: var(--spacing-md);
+        margin: var(--spacing-sm) 0;
+    }
+    
+    .process-level-3 h6 {
+        margin-bottom: var(--spacing-sm);
+        color: var(--color-dark-light);
+    }
+    
+    /* Documentos */
+    .document-item {
+        background: var(--color-white);
+        border: 2px solid var(--color-success);
+        border-left: 4px solid var(--color-success);
+        border-radius: var(--border-radius-md);
+        padding: var(--spacing-md);
+        margin: var(--spacing-md) 0;
+        box-shadow: var(--shadow-sm);
+        transition: var(--transition);
+    }
+    
+    .document-item:hover {
+        box-shadow: var(--shadow-lg);
+        transform: translateX(4px);
+    }
+    
+    .document-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: var(--spacing-md);
+    }
+    
+    .document-info {
+        flex: 1;
+    }
+    
+    .document-title {
+        font-weight: 600;
+        color: var(--color-dark);
+        margin-bottom: var(--spacing-sm);
+    }
+    
+    .document-title a {
+        color: var(--color-primary);
+        text-decoration: none;
+    }
+    
+    .document-title a:hover {
+        text-decoration: underline;
+    }
+    
+    .document-code {
+        font-family: var(--font-mono);
+        font-weight: 600;
+        color: var(--color-success);
+    }
+    
+    .document-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--spacing-sm);
+        font-size: var(--font-size-sm);
+        color: var(--color-gray-600);
+    }
+    
+    .document-meta > span {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+    }
+    
+    .version-badge {
+        background: var(--color-success-light);
+        color: var(--color-success);
+        padding: var(--spacing-xs) var(--spacing-sm);
+        border-radius: var(--border-radius-sm);
+        font-weight: 600;
+        font-size: var(--font-size-xs);
+    }
+    
+    .document-actions {
+        display: flex;
+        gap: var(--spacing-sm);
+    }
+    
+    .no-docs-message {
+        color: var(--color-gray-600);
+        font-style: italic;
+        padding: var(--spacing-md);
+        background: var(--color-gray-100);
+        border-radius: var(--border-radius-md);
+        text-align: center;
+    }
+    
+    .empty-state {
+        background: var(--color-white);
+        border: 2px dashed var(--color-gray-300);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-2xl);
+        text-align: center;
+        color: var(--color-gray-600);
+    }
+    
+    .empty-state h3 {
+        color: var(--color-gray-600);
+        margin-bottom: var(--spacing-md);
+    }
+    
+    @media (max-width: 1024px) {
+        .filter-row {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 640px) {
+        .filter-row {
+            grid-template-columns: 1fr;
+        }
+        
+        .library-header h1 {
+            font-size: var(--font-size-2xl);
+        }
+        
+        .process-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .process-level-2 {
+            margin-left: var(--spacing-md);
+        }
+        
+        .document-content {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <h1 class="mb-4">📚 Biblioteca de Documentos</h1>
-    
-    <!-- Filtros -->
-    <div class="card mb-4 bg-light">
-        <div class="card-header">
-            <h5 class="mb-0">Filtros</h5>
+<div class="library-header">
+    <h1>📚 Biblioteca de Documentos</h1>
+    <p style="color: var(--color-gray-600); margin-top: var(--spacing-sm);">Documentos vigentes organizados por procesos</p>
+</div>
+
+<!-- Filtros -->
+<div class="filter-card">
+    <h3>🔍 Filtros</h3>
+    <form method="get">
+        <div class="filter-row">
+            <!-- Sede -->
+            <div class="filter-group">
+                <label for="site_id">Sede</label>
+                <select id="site_id" name="site_id">
+                    <option value="">Todas las sedes</option>
+                    {% for site_id, site_name in sites %}
+                        <option value="{{ site_id }}" {% if site_id|stringformat:'s' == selected_site_id %}selected{% endif %}>
+                            {{ site_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Tipo de Proceso -->
+            <div class="filter-group">
+                <label for="process_type">Tipo de Proceso</label>
+                <select id="process_type" name="process_type">
+                    <option value="">Todos los tipos</option>
+                    {% for value, label in process_types %}
+                        <option value="{{ value }}" {% if value == selected_process_type %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Tipo de Documento -->
+            <div class="filter-group">
+                <label for="doc_type">Tipo de Documento</label>
+                <select id="doc_type" name="doc_type">
+                    <option value="">Todos los tipos</option>
+                    {% for value, label in doc_types %}
+                        <option value="{{ value }}" {% if value == selected_doc_type %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
         </div>
-        <div class="card-body">
-            <form method="get" class="row g-3">
-                <!-- Sede -->
-                <div class="col-md-4">
-                    <label for="site_id" class="form-label">Sede</label>
-                    <select id="site_id" name="site_id" class="form-select">
-                        <option value="">-- Todas --</option>
-                        {% for site_id, site_name in sites %}
-                            <option value="{{ site_id }}" {% if site_id|stringformat:'s' == selected_site_id %}selected{% endif %}>
-                                {{ site_name }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <!-- Tipo de Proceso -->
-                <div class="col-md-4">
-                    <label for="process_type" class="form-label">Tipo de Proceso</label>
-                    <select id="process_type" name="process_type" class="form-select">
-                        <option value="">-- Todos --</option>
-                        {% for value, label in process_types %}
-                            <option value="{{ value }}" {% if value == selected_process_type %}selected{% endif %}>
-                                {{ label }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <!-- Tipo de Documento -->
-                <div class="col-md-4">
-                    <label for="doc_type" class="form-label">Tipo de Documento</label>
-                    <select id="doc_type" name="doc_type" class="form-select">
-                        <option value="">-- Todos --</option>
-                        {% for value, label in doc_types %}
-                            <option value="{{ value }}" {% if value == selected_doc_type %}selected{% endif %}>
-                                {{ label }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="col-12">
-                    <button type="submit" class="btn btn-primary">🔍 Filtrar</button>
-                    <a href="{% url 'docs:docs_library' %}" class="btn btn-secondary">↺ Limpiar</a>
-                </div>
-            </form>
+        
+        <div class="filter-buttons">
+            <button type="submit" class="btn btn-primary">
+                🔍 Aplicar Filtros
+            </button>
+            <a href="{% url 'docs:docs_library' %}" class="btn btn-secondary">
+                ↺ Limpiar
+            </a>
         </div>
-    </div>
-    
-    <!-- Árbol de Procesos con Documentos -->
+    </form>
+</div>
+
+<!-- Árbol de Procesos con Documentos -->
+{% if processes %}
     <div class="processes-tree">
         {% for process_l1 in processes %}
             <!-- Proceso Nivel 1 -->
-            <div class="process-level-1 mb-4 border rounded p-3" style="background-color: #f8f9fa; border-left: 5px solid #0d6efd !important;">
-                <div class="d-flex align-items-center mb-3">
-                    <span class="badge bg-primary me-2">{{ process_l1.get_process_type_display }}</span>
-                    <h4 class="mb-0">
-                        <strong>[{{ process_l1.code }}]</strong> {{ process_l1.name }}
-                    </h4>
+            <div class="process-level-1">
+                <div class="process-header">
+                    <div class="process-code">{{ process_l1.code }}</div>
+                    <div class="process-name">
+                        <h3>{{ process_l1.name }}</h3>
+                    </div>
+                    <span class="process-type-badge {{ process_l1.process_type|lower }}">
+                        {{ process_l1.get_process_type_display }}
+                    </span>
                 </div>
                 
-                <!-- Documentos del Proceso Nivel 1 -->
+                <!-- Documentos del Nivel 1 -->
                 {% if process_l1.active_documents %}
-                    <div class="ms-3 mb-3">
-                        <div class="documents-section">
-                            {% for doc in process_l1.active_documents %}
-                                <div class="document-item p-2 border mb-2" style="background-color: #ffffff; border-left: 3px solid #198754 !important;">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div class="flex-grow-1">
-                                            <a href="{% url 'docs:docs_detail' doc.pk %}" class="text-decoration-none">
-                                                <strong>[{{ doc.code }}]</strong> {{ doc.title }}
+                    <div style="margin: var(--spacing-md) 0;">
+                        {% for doc in process_l1.active_documents %}
+                            <div class="document-item">
+                                <div class="document-content">
+                                    <div class="document-info">
+                                        <div class="document-title">
+                                            <span class="document-code">[{{ doc.code }}]</span>
+                                            <a href="{% url 'docs:docs_detail' doc.pk %}">
+                                                {{ doc.title }}
                                             </a>
-                                            <br>
-                                            <small class="text-muted">
-                                                {{ doc.get_doc_type_display }} 
-                                                {% if doc.current_version %}
-                                                    | v{{ doc.current_version.version_number }} 
-                                                    (Vigente desde {{ doc.current_version.effective_date|date:"d/m/Y" }})
-                                                {% else %}
-                                                    | <span class="badge bg-warning">Sin versión vigente</span>
-                                                {% endif %}
-                                            </small>
                                         </div>
-                                        <a href="{% url 'docs:docs_detail' doc.pk %}" class="btn btn-sm btn-info ms-2">
-                                            Ver historial
+                                        <div class="document-meta">
+                                            <span>📋 {{ doc.get_doc_type_display }}</span>
+                                            {% if doc.current_version %}
+                                                <span class="version-badge">v{{ doc.current_version.version_number }}</span>
+                                                <span>📅 Vigente desde {{ doc.current_version.effective_date|date:"d/m/Y" }}</span>
+                                            {% else %}
+                                                <span style="color: var(--color-warning-dark); font-weight: 600;">⚠️ Sin versión vigente</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="document-actions">
+                                        <a href="{% url 'docs:docs_detail' doc.pk %}" class="btn btn-sm btn-info">
+                                            📖 Historial
                                         </a>
                                     </div>
                                 </div>
-                            {% endfor %}
-                        </div>
+                            </div>
+                        {% endfor %}
                     </div>
                 {% else %}
-                    <div class="ms-3 mb-2">
-                        <small class="text-muted">(sin documentos vigentes)</small>
+                    <div class="no-docs-message">
+                        ℹ️ sin documentos vigentes
                     </div>
                 {% endif %}
                 
                 <!-- Subprocesos (Nivel 2) -->
                 {% if process_l1.children.all %}
-                    <div class="ms-4 mb-3">
-                        {% for process_l2 in process_l1.children.all %}
-                            <div class="process-level-2 mb-3 border rounded p-2" style="background-color: #e7f3ff; border-left: 4px solid #0a58ca !important;">
-                                <h5 class="mb-2">
-                                    <span class="badge bg-info me-1">{{ process_l2.get_process_type_display }}</span>
-                                    <strong>[{{ process_l2.code }}]</strong> {{ process_l2.name }}
-                                </h5>
-                                
-                                <!-- Documentos del Nivel 2 -->
-                                {% if process_l2.active_documents %}
-                                    <div class="ms-2 mb-2">
-                                        {% for doc in process_l2.active_documents %}
-                                            <div class="document-item p-2 border mb-2" style="background-color: #ffffff; border-left: 3px solid #198754 !important;">
-                                                <div class="d-flex justify-content-between align-items-start">
-                                                    <div class="flex-grow-1">
-                                                        <a href="{% url 'docs:docs_detail' doc.pk %}" class="text-decoration-none">
-                                                            <strong>[{{ doc.code }}]</strong> {{ doc.title }}
-                                                        </a>
-                                                        <br>
-                                                        <small class="text-muted">
-                                                            {{ doc.get_doc_type_display }} 
-                                                            {% if doc.current_version %}
-                                                                | v{{ doc.current_version.version_number }} 
-                                                                (Vigente desde {{ doc.current_version.effective_date|date:"d/m/Y" }})
-                                                            {% else %}
-                                                                | <span class="badge bg-warning">Sin versión vigente</span>
-                                                            {% endif %}
-                                                        </small>
-                                                    </div>
-                                                    <a href="{% url 'docs:docs_detail' doc.pk %}" class="btn btn-sm btn-info ms-2">
-                                                        Ver historial
+                    {% for process_l2 in process_l1.children.all %}
+                        <div class="process-level-2">
+                            <h5>
+                                <span style="color: var(--color-info);">└─</span>
+                                <strong>[{{ process_l2.code }}]</strong> {{ process_l2.name }}
+                                <span class="process-type-badge {{ process_l2.process_type|lower }}">
+                                    {{ process_l2.get_process_type_display }}
+                                </span>
+                            </h5>
+                            
+                            <!-- Documentos del Nivel 2 -->
+                            {% if process_l2.active_documents %}
+                                {% for doc in process_l2.active_documents %}
+                                    <div class="document-item">
+                                        <div class="document-content">
+                                            <div class="document-info">
+                                                <div class="document-title">
+                                                    <span class="document-code">[{{ doc.code }}]</span>
+                                                    <a href="{% url 'docs:docs_detail' doc.pk %}">
+                                                        {{ doc.title }}
                                                     </a>
                                                 </div>
+                                                <div class="document-meta">
+                                                    <span>📋 {{ doc.get_doc_type_display }}</span>
+                                                    {% if doc.current_version %}
+                                                        <span class="version-badge">v{{ doc.current_version.version_number }}</span>
+                                                        <span>📅 Vigente desde {{ doc.current_version.effective_date|date:"d/m/Y" }}</span>
+                                                    {% else %}
+                                                        <span style="color: var(--color-warning-dark); font-weight: 600;">⚠️ Sin versión vigente</span>
+                                                    {% endif %}
+                                                </div>
                                             </div>
-                                        {% endfor %}
+                                            <div class="document-actions">
+                                                <a href="{% url 'docs:docs_detail' doc.pk %}" class="btn btn-sm btn-info">
+                                                    📖 Historial
+                                                </a>
+                                            </div>
+                                        </div>
                                     </div>
-                                {% else %}
-                                    <div class="ms-2 mb-1">
-                                        <small class="text-muted">(sin documentos vigentes)</small>
-                                    </div>
-                                {% endif %}
-                                
-                                <!-- Sectores (Nivel 3) -->
-                                {% if process_l2.children.all %}
-                                    <div class="ms-3 mt-2">
-                                        {% for process_l3 in process_l2.children.all %}
-                                            <div class="process-level-3 mb-2 border rounded p-2" style="background-color: #f0f7ff; border-left: 3px solid #0d6efd !important;">
-                                                <h6 class="mb-1">
-                                                    <strong>[{{ process_l3.code }}]</strong> {{ process_l3.name }}
-                                                </h6>
-                                                
-                                                <!-- Documentos del Nivel 3 -->
-                                                {% if process_l3.active_documents %}
-                                                    <div class="ms-2">
-                                                        {% for doc in process_l3.active_documents %}
-                                                            <div class="document-item p-2 border mb-1" style="background-color: #ffffff; border-left: 3px solid #198754 !important;">
-                                                                <div class="d-flex justify-content-between align-items-start">
-                                                                    <div class="flex-grow-1">
-                                                                        <a href="{% url 'docs:docs_detail' doc.pk %}" class="text-decoration-none">
-                                                                            <strong>[{{ doc.code }}]</strong> {{ doc.title }}
-                                                                        </a>
-                                                                        <br>
-                                                                        <small class="text-muted">
-                                                                            {{ doc.get_doc_type_display }}
-                                                                            {% if doc.current_version %}
-                                                                                | v{{ doc.current_version.version_number }} 
-                                                                                (Vigente desde {{ doc.current_version.effective_date|date:"d/m/Y" }})
-                                                                            {% else %}
-                                                                                | <span class="badge bg-warning">Sin versión vigente</span>
-                                                                            {% endif %}
-                                                                        </small>
-                                                                    </div>
-                                                                    <a href="{% url 'docs:docs_detail' doc.pk %}" class="btn btn-sm btn-info ms-2">
-                                                                        Ver historial
-                                                                    </a>
-                                                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="no-docs-message">
+                                    ℹ️ sin documentos vigentes
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Sectores (Nivel 3) -->
+                            {% if process_l2.children.all %}
+                                {% for process_l3 in process_l2.children.all %}
+                                    <div class="process-level-3">
+                                        <h6>
+                                            <span style="color: var(--color-primary);">└─</span>
+                                            <strong>[{{ process_l3.code }}]</strong> {{ process_l3.name }}
+                                        </h6>
+                                        
+                                        <!-- Documentos del Nivel 3 -->
+                                        {% if process_l3.active_documents %}
+                                            {% for doc in process_l3.active_documents %}
+                                                <div class="document-item">
+                                                    <div class="document-content">
+                                                        <div class="document-info">
+                                                            <div class="document-title">
+                                                                <span class="document-code">[{{ doc.code }}]</span>
+                                                                <a href="{% url 'docs:docs_detail' doc.pk %}">
+                                                                    {{ doc.title }}
+                                                                </a>
                                                             </div>
-                                                        {% endfor %}
+                                                            <div class="document-meta">
+                                                                <span>📋 {{ doc.get_doc_type_display }}</span>
+                                                                {% if doc.current_version %}
+                                                                    <span class="version-badge">v{{ doc.current_version.version_number }}</span>
+                                                                    <span>📅 Vigente desde {{ doc.current_version.effective_date|date:"d/m/Y" }}</span>
+                                                                {% else %}
+                                                                    <span style="color: var(--color-warning-dark); font-weight: 600;">⚠️ Sin versión vigente</span>
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                        <div class="document-actions">
+                                                            <a href="{% url 'docs:docs_detail' doc.pk %}" class="btn btn-sm btn-info">
+                                                                📖 Historial
+                                                            </a>
+                                                        </div>
                                                     </div>
-                                                {% else %}
-                                                    <small class="text-muted ms-2">(sin documentos vigentes)</small>
-                                                {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            <div class="no-docs-message" style="font-size: var(--font-size-xs); padding: var(--spacing-sm);">
+                                                ℹ️ sin documentos vigentes
                                             </div>
-                                        {% empty %}
-                                            <small class="text-muted">(sin sectores)</small>
-                                        {% endfor %}
+                                        {% endif %}
                                     </div>
-                                {% endif %}
-                            </div>
-                        {% empty %}
-                            <small class="text-muted ms-2">(sin subprocesos)</small>
-                        {% endfor %}
-                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    {% endfor %}
                 {% endif %}
-            </div>
-        {% empty %}
-            <div class="alert alert-info">
-                No hay procesos que coincidan con los filtros seleccionados.
             </div>
         {% endfor %}
     </div>
-</div>
-
-<style>
-    .processes-tree {
-        font-family: system-ui, -apple-system, sans-serif;
-    }
-    
-    .document-item {
-        transition: box-shadow 0.2s ease;
-    }
-    
-    .document-item:hover {
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    }
-    
-    .process-level-1 {
-        margin-bottom: 1.5rem;
-    }
-    
-    .process-level-2, .process-level-3 {
-        margin-bottom: 0.75rem;
-    }
-</style>
+{% else %}
+    <div class="empty-state">
+        <h3>📭 Sin resultados</h3>
+        <p>No hay procesos que coincidan con los filtros seleccionados.</p>
+        <a href="{% url 'docs:docs_library' %}" class="btn btn-primary" style="margin-top: var(--spacing-md);">
+            ↺ Limpiar filtros
+        </a>
+    </div>
+{% endif %}
 {% endblock %}

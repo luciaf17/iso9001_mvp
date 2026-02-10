@@ -1,106 +1,203 @@
 {% extends "base.html" %}
 
-{% block title %}Contexto de la organizacion{% endblock %}
+{% block title %}Contexto de la Organización{% endblock %}
 
 {% block extra_css %}
 <style>
-    .context-card { max-width: 820px; background: #ffffff; border: 1px solid #e2e6ea; border-radius: 10px; padding: 1.5rem; box-shadow: 0 6px 16px rgba(33, 37, 41, 0.06); }
-    .context-card h1 { margin-bottom: 0.75rem; }
-    .context-meta { margin-bottom: 1.25rem; color: #5c6b77; }
-    .context-grid { display: grid; grid-template-columns: 160px 1fr; gap: 0.5rem 1.25rem; }
-    .context-label { font-weight: 600; color: #2c3e50; }
-    .context-value { color: #2f3a45; }
-    .context-actions { display: flex; justify-content: flex-end; margin-top: 1.5rem; }
-    .context-actions a { padding: 0.5rem 1rem; border: 1px solid #2c3e50; background: #2c3e50; color: #fff; border-radius: 4px; text-decoration: none; font-weight: 600; }
-    .context-actions a:hover { opacity: 0.9; }
-    .context-doc { display: flex; gap: 0.4rem; align-items: baseline; flex-wrap: wrap; }
-    .context-doc a { color: #2c3e50; text-decoration: none; font-weight: 600; }
-    .context-doc a:hover { text-decoration: underline; }
-    .readonly-note { margin-top: 1rem; color: #5c6b77; font-size: 0.95rem; }
+    .context-header {
+        background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%);
+        padding: var(--spacing-2xl);
+        border-radius: var(--border-radius-lg);
+        margin-bottom: var(--spacing-xl);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .context-header h1 {
+        color: var(--color-primary);
+        margin-bottom: var(--spacing-sm);
+        font-size: var(--font-size-3xl);
+    }
+    
+    .context-header .org-name {
+        color: var(--color-gray-700);
+        font-size: var(--font-size-base);
+    }
+    
+    .context-card {
+        background: var(--color-white);
+        border: 2px solid var(--color-primary-light);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-2xl);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .context-grid {
+        display: grid;
+        grid-template-columns: 200px 1fr;
+        gap: var(--spacing-lg);
+        row-gap: var(--spacing-md);
+    }
+    
+    .context-label {
+        font-weight: 700;
+        color: var(--color-primary);
+        font-size: var(--font-size-sm);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .context-value {
+        color: var(--color-dark);
+        padding: var(--spacing-sm);
+        background: var(--color-gray-50);
+        border-radius: var(--border-radius-md);
+        border-left: 4px solid var(--color-primary);
+    }
+    
+    .context-doc {
+        display: flex;
+        gap: var(--spacing-md);
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    
+    .context-doc-link {
+        display: inline-block;
+        padding: var(--spacing-xs) var(--spacing-sm);
+        background: var(--color-primary);
+        color: var(--color-white);
+        text-decoration: none;
+        border-radius: var(--border-radius-sm);
+        font-weight: 600;
+        font-size: var(--font-size-sm);
+        transition: var(--transition);
+    }
+    
+    .context-doc-link:hover {
+        background: var(--color-primary-dark);
+        transform: translateX(2px);
+    }
+    
+    .no-assigned {
+        color: var(--color-gray-500);
+        font-style: italic;
+    }
+    
+    .context-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: var(--spacing-2xl);
+        padding-top: var(--spacing-lg);
+        border-top: 2px solid var(--color-gray-200);
+        gap: var(--spacing-md);
+    }
+    
+    .readonly-note {
+        margin-top: var(--spacing-lg);
+        padding: var(--spacing-md);
+        background: var(--color-info-light);
+        color: var(--color-info);
+        border-radius: var(--border-radius-md);
+        font-size: var(--font-size-sm);
+        border-left: 4px solid var(--color-info);
+    }
+    
+    @media (max-width: 768px) {
+        .context-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .context-label {
+            order: -1;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
+<div class="context-header">
+    <h1>🏢 Contexto de la Organización</h1>
+    <div class="org-name">{{ organization.name }}</div>
+</div>
+
 <div class="context-card">
-    <h1>Contexto de la organizacion</h1>
-    <div class="context-meta">Organizacion: {{ organization.name }}</div>
     <div class="context-grid">
-        <div class="context-label">Sede</div>
+        <div class="context-label">🏢 Sede</div>
         <div class="context-value">{{ context_obj.site|default:"No asignado" }}</div>
 
-        <div class="context-label">Responsable</div>
+        <div class="context-label">👤 Responsable</div>
         <div class="context-value">{{ context_obj.owner|default:"No asignado" }}</div>
 
-        <div class="context-label">Fecha de revision</div>
+        <div class="context-label">📅 Fecha de Revisión</div>
         <div class="context-value">{{ context_obj.review_date|date:"d/m/Y"|default:"No asignado" }}</div>
 
-        <div class="context-label">Resumen</div>
+        <div class="context-label">📄 Resumen</div>
         <div class="context-value">
             {% if context_obj.summary %}
             {{ context_obj.summary|linebreaksbr }}
             {% else %}
-            No asignado
+            <span class="no-assigned">No asignado</span>
             {% endif %}
         </div>
 
-        <div class="context-label">Politica de calidad</div>
+        <div class="context-label">📖 Política de Calidad</div>
         <div class="context-value">
             {% if context_obj.quality_policy_doc %}
             <div class="context-doc">
-                <a href="{% url 'docs:docs_detail' context_obj.quality_policy_doc.id %}">{{ context_obj.quality_policy_doc.code }}</a>
+                <a href="{% url 'docs:docs_detail' context_obj.quality_policy_doc.id %}" class="context-doc-link">{{ context_obj.quality_policy_doc.code }}</a>
                 <span>{{ context_obj.quality_policy_doc.title }}</span>
             </div>
             {% else %}
-            No asignado
+            <span class="no-assigned">No asignado</span>
             {% endif %}
         </div>
 
-        <div class="context-label">Mapa de procesos</div>
+        <div class="context-label">🗺️ Mapa de Procesos</div>
         <div class="context-value">
             {% if context_obj.process_map_doc %}
             <div class="context-doc">
-                <a href="{% url 'docs:docs_detail' context_obj.process_map_doc.id %}">{{ context_obj.process_map_doc.code }}</a>
+                <a href="{% url 'docs:docs_detail' context_obj.process_map_doc.id %}" class="context-doc-link">{{ context_obj.process_map_doc.code }}</a>
                 <span>{{ context_obj.process_map_doc.title }}</span>
             </div>
             {% else %}
-            No asignado
+            <span class="no-assigned">No asignado</span>
             {% endif %}
         </div>
 
-        <div class="context-label">Organigrama</div>
+        <div class="context-label">🎨 Organigrama</div>
         <div class="context-value">
             {% if context_obj.org_chart_doc %}
             <div class="context-doc">
-                <a href="{% url 'docs:docs_detail' context_obj.org_chart_doc.id %}">{{ context_obj.org_chart_doc.code }}</a>
+                <a href="{% url 'docs:docs_detail' context_obj.org_chart_doc.id %}" class="context-doc-link">{{ context_obj.org_chart_doc.code }}</a>
                 <span>{{ context_obj.org_chart_doc.title }}</span>
             </div>
             {% else %}
-            No asignado
+            <span class="no-assigned">No asignado</span>
             {% endif %}
         </div>
 
-        <div class="context-label">Analisis de contexto</div>
+        <div class="context-label">🔍 Análisis de Contexto</div>
         <div class="context-value">
             {% if context_obj.context_analysis_doc %}
             <div class="context-doc">
-                <a href="{% url 'docs:docs_detail' context_obj.context_analysis_doc.id %}">{{ context_obj.context_analysis_doc.code }}</a>
+                <a href="{% url 'docs:docs_detail' context_obj.context_analysis_doc.id %}" class="context-doc-link">{{ context_obj.context_analysis_doc.code }}</a>
                 <span>{{ context_obj.context_analysis_doc.title }}</span>
             </div>
             {% else %}
-            No asignado
+            <span class="no-assigned">No asignado</span>
             {% endif %}
         </div>
 
-        <div class="context-label">Ultima actualizacion</div>
+        <div class="context-label">🕐 Última Actualización</div>
         <div class="context-value">{{ context_obj.updated_at|date:"d/m/Y H:i" }}</div>
     </div>
 
     {% if can_edit %}
     <div class="context-actions">
-        <a href="{% url 'core:context_edit' %}">Editar</a>
+        <a href="{% url 'core:context_edit' %}" class="btn btn-primary">✏️ Editar Contexto</a>
     </div>
     {% else %}
-    <div class="readonly-note">Solo Admin/Calidad pueden editar este contexto.</div>
+    <div class="readonly-note">🔒 Sólo Admin/Calidad pueden editar este contexto.</div>
     {% endif %}
 </div>
 {% endblock %}

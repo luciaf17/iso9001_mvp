@@ -1,48 +1,146 @@
 {% extends "base.html" %}
 
-{% block title %}Inicio{% endblock %}
+{% block title %}Inicio - ISO 9001 MVP{% endblock %}
 
 {% block extra_css %}
 <style>
-    .home-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
-    .home-card { background: #ffffff; border: 1px solid #e2e6ea; border-radius: 10px; padding: 1.25rem; box-shadow: 0 6px 16px rgba(33, 37, 41, 0.06); display: flex; flex-direction: column; }
-    .home-card h2 { margin-bottom: 0.5rem; font-size: 1.1rem; }
-    .home-card p { margin-bottom: 1rem; color: #5c6b77; flex-grow: 1; }
-    .home-card a { align-self: flex-start; display: inline-block; padding: 0.45rem 0.9rem; border-radius: 4px; background: #2c3e50; color: #fff; text-decoration: none; font-weight: 600; }
-    .home-card a:hover { opacity: 0.9; }
-    @media (max-width: 1024px) { .home-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 640px) { .home-grid { grid-template-columns: 1fr; } }
+    .page-header {
+        margin-bottom: var(--spacing-xl);
+    }
+    
+    .page-header h1 {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-md);
+        font-size: var(--font-size-3xl);
+        font-weight: 700;
+        color: var(--color-dark);
+    }
+    
+    .home-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--spacing-lg);
+        margin-top: var(--spacing-xl);
+    }
+    
+    .home-card {
+        background: var(--color-white);
+        border: 2px solid transparent;
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-lg);
+        box-shadow: var(--shadow-md);
+        display: flex;
+        flex-direction: column;
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .home-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--color-primary), var(--color-info));
+    }
+    
+    .home-card:hover {
+        box-shadow: var(--shadow-lg);
+        transform: translateY(-6px);
+        border-color: var(--color-primary-light);
+    }
+    
+    .home-card h2 {
+        margin-top: var(--spacing-sm);
+        margin-bottom: var(--spacing-sm);
+        font-size: var(--font-size-lg);
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+    }
+    
+    .home-card p {
+        margin-bottom: var(--spacing-lg);
+        color: var(--color-gray-600);
+        flex-grow: 1;
+        font-size: var(--font-size-sm);
+        line-height: 1.5;
+    }
+    
+    .home-card a {
+        align-self: flex-start;
+        padding: var(--spacing-sm) var(--spacing-md);
+        background: var(--color-primary);
+        color: var(--color-white);
+        border-radius: var(--border-radius-md);
+        font-weight: 600;
+        font-size: var(--font-size-sm);
+        transition: var(--transition);
+        text-decoration: none;
+    }
+    
+    .home-card a:hover {
+        background: var(--color-primary-dark);
+        color: var(--color-white);
+        transform: translateX(4px);
+    }
+    
+    @media (max-width: 1024px) {
+        .home-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 640px) {
+        .home-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .page-header h1 {
+            font-size: var(--font-size-2xl);
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<h1>Inicio</h1>
+<div class="page-header">
+    <h1>🏠 Sistema de Gestión de Calidad ISO 9001</h1>
+</div>
 
 <div class="home-grid">
     <div class="home-card">
-        <h2>Documentos</h2>
-        <p>Acceso rapido al control documental.</p>
-        <a href="{% url 'docs:docs_list' %}">Ir a Documentos</a>
+        <h2>📄 Documentos</h2>
+        <p>Acceso rápido al control documental. Gestiona versiones y aprobaciones.</p>
+        <a href="{% url 'docs:docs_list' %}">Ir a Documentos →</a>
     </div>
+    
     <div class="home-card">
-        <h2>Biblioteca</h2>
-        <p>Documentos organizados por procesos.</p>
-        <a href="{% url 'docs:docs_library' %}">Ir a Biblioteca</a>
+        <h2>📚 Biblioteca</h2>
+        <p>Documentos organizados por procesos. Visualiza la estructura de tu SGC.</p>
+        <a href="{% url 'docs:docs_library' %}">Ir a Biblioteca →</a>
     </div>
+    
     <div class="home-card">
-        <h2>Mapa de Procesos</h2>
-        <p>Visualizar y mantener la jerarquia de procesos.</p>
-        <a href="{% url 'org:process_map' %}">Ir al Mapa</a>
+        <h2>🗺️ Mapa de Procesos</h2>
+        <p>Visualiza y mantén la jerarquía de procesos de tu organización.</p>
+        <a href="{% url 'org:process_map' %}">Ir al Mapa →</a>
     </div>
+    
     <div class="home-card">
-        <h2>Contexto</h2>
-        <p>Ver y actualizar el contexto de la organizacion.</p>
-        <a href="{% url 'core:context_detail' %}">Ir al Contexto</a>
+        <h2>📋 Contexto</h2>
+        <p>Visualiza y actualiza el contexto y objetivos de tu organización.</p>
+        <a href="{% url 'core:context_detail' %}">Ir al Contexto →</a>
     </div>
+    
     <div class="home-card">
-        <h2>Administracion</h2>
-        <p>Panel administrativo del sistema.</p>
-        <a href="/admin/">Ir al Admin</a>
+        <h2>⚙️ Administración</h2>
+        <p>Panel administrativo para gestionar usuarios, permisos y configuración.</p>
+        <a href="/admin/">Ir al Admin →</a>
     </div>
 </div>
 {% endblock %}
+

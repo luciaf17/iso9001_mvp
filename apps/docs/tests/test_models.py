@@ -72,7 +72,7 @@ class DocumentDetailProcessTests(TestCase):
 	def test_detail_shows_associated_processes(self):
 		self.client.force_login(self.user)
 		response = self.client.get(reverse("docs:docs_detail", args=[self.document.pk]))
-		self.assertContains(response, "Procesos asociados")
+		self.assertContains(response, "Procesos Asociados")
 		self.assertContains(response, self.process.code)
 		self.assertContains(response, self.process.name)
 

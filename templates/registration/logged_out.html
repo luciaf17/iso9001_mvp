@@ -1,24 +1,64 @@
 {% extends "base.html" %}
 
-{% block title %}Sesion cerrada{% endblock %}
+{% block title %}Sesión Cerrada{% endblock %}
 
 {% block extra_css %}
 <style>
-    .logout-card { max-width: 420px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e6ea; border-radius: 10px; padding: 1.5rem; box-shadow: 0 6px 16px rgba(33, 37, 41, 0.06); text-align: center; }
-    .logout-card h1 { margin-bottom: 0.75rem; }
-    .logout-card p { margin-bottom: 1.25rem; color: #5c6b77; }
-    .logout-card a { display: inline-block; padding: 0.5rem 1rem; border: 1px solid #2c3e50; background: #2c3e50; color: #fff; border-radius: 4px; text-decoration: none; font-weight: 600; }
-    .logout-card a:hover { opacity: 0.9; }
-    .logout-actions { display: flex; justify-content: center; gap: 0.75rem; }
+    .logout-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 600px;
+    }
+    
+    .logout-card {
+        max-width: 450px;
+        width: 100%;
+        background: var(--color-white);
+        border: none;
+        border-radius: var(--border-radius-2xl);
+        padding: var(--spacing-3xl);
+        box-shadow: 0 20px 60px rgba(13, 110, 253, 0.3);
+        text-align: center;
+    }
+    
+    .logout-card h1 {
+        color: var(--color-success);
+        margin-bottom: var(--spacing-md);
+        font-size: var(--font-size-2xl);
+    }
+    
+    .logout-card p {
+        margin-bottom: var(--spacing-xl);
+        color: var(--color-gray-700);
+    }
+    
+    .logout-actions a {
+        display: inline-block;
+        padding: var(--spacing-md) var(--spacing-lg);
+        background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-info) 100%);
+        color: var(--color-white);
+        border-radius: var(--border-radius-md);
+        text-decoration: none;
+        font-weight: 700;
+        transition: var(--transition);
+    }
+    
+    .logout-actions a:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(13, 110, 253, 0.3);
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="logout-card">
-    <h1>Sesion cerrada</h1>
-    <p>Saliste correctamente del sistema.</p>
-    <div class="logout-actions">
-        <a href="{% url 'login' %}">Iniciar sesion</a>
+<div class="logout-container">
+    <div class="logout-card">
+        <h1>✅ Sesión Cerrada</h1>
+        <p>Saliste correctamente del sistema.</p>
+        <div class="logout-actions">
+            <a href="{% url 'login' %}">🔐 Iniciar Sesión</a>
+        </div>
     </div>
 </div>
 {% endblock %}
