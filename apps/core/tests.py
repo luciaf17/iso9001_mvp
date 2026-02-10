@@ -1,8 +1,9 @@
 from django.test import TestCase
+from django.core.management import call_command
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 
-from .models import AuditEvent, Organization, Process
+from .models import AuditEvent, Organization, Process, Site
 from .services import log_audit_event
 
 
@@ -173,3 +174,35 @@ class ProcessHierarchyValidationTests(TestCase):
             is_active=True,
         )
         process.full_clean()
+
+
+class CeiboProcessMapSeedTests(TestCase):
+    def test_seed_creates_hierarchy_and_types(self):
+        call_command("seed_ceibo_process_map")
+
+        organization = Organization.objects.get(name="Metalurgica Ceibo S.R.L.")
+        site = Site.objects.get(name="Metalurgica Ceibo", organization=organization)
+
+        level1 = Process.objects.get(organization=organization, code="09")
+        level2 = Process.objects.get(organization=organization, code="09.01")
+        level3 = Process.objects.get(organization=organization, code="09.01.01")
+
+        self.assertEqual(level1.level, Process.Level.PROCESS)
+        self.assertEqual(level2.level, Process.Level.SUBPROCESS)
+        self.assertEqual(level3.level, Process.Level.SECTOR)
+
+        self.assertEqual(level1.process_type, Process.ProcessType.MISSIONAL)
+        self.assertEqual(level2.process_type, Process.ProcessType.MISSIONAL)
+        self.assertEqual(level3.process_type, Process.ProcessType.MISSIONAL)
+
+        self.assertEqual(level2.parent_id, level1.id)
+        self.assertEqual(level3.parent_id, level2.id)
+
+        self.assertEqual(level1.site_id, site.id)
+        self.assertEqual(level2.site_id, site.id)
+        self.assertEqual(level3.site_id, site.id)
+
+        strategic = Process.objects.get(organization=organization, code="00")
+        support = Process.objects.get(organization=organization, code="01")
+        self.assertEqual(strategic.process_type, Process.ProcessType.STRATEGIC)
+        self.assertEqual(support.process_type, Process.ProcessType.SUPPORT)

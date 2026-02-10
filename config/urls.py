@@ -6,6 +6,7 @@ from django.contrib import admin
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("docs/", include("apps.docs.urls", namespace="docs")),
+    path("org/", include(("apps.org.urls", "org"), namespace="org")),
 ]
 
 if settings.DEBUG:

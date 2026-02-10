@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% load org_tags %}
+
+{% block title %}Mapa de Procesos{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-title { margin-bottom: 1rem; }
+    .filters { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
+    .filters label { display: flex; flex-direction: column; font-weight: 600; gap: 0.35rem; }
+    .filters select { padding: 0.4rem 0.6rem; border: 1px solid #ccd1d6; border-radius: 4px; }
+    .filters button { align-self: flex-end; padding: 0.5rem 1rem; border: 1px solid #2c3e50; background: #2c3e50; color: #fff; border-radius: 4px; cursor: pointer; }
+    .filters button:hover { opacity: 0.9; }
+
+    .process-tree { list-style: none; margin: 0; padding-left: 0; }
+    .process { margin: 0.35rem 0; }
+    .process-line { padding: 0.35rem 0.6rem; border-left: 3px solid #d7dee5; background: #f9fbfc; border-radius: 4px; }
+    .process .process-tree { margin-left: 1.5rem; padding-left: 0.75rem; border-left: 1px dashed #d7dee5; }
+    .process.level-1 > .process-line { border-left-color: #2c3e50; }
+    .process.level-2 > .process-line { border-left-color: #4d6273; }
+    .process.level-3 > .process-line { border-left-color: #7a8b99; }
+    .process .code { font-weight: 700; }
+    .process .type { color: #5c6b77; margin-left: 0.35rem; font-size: 0.95rem; }
+    .process .tag { display: inline-block; margin-left: 0.5rem; padding: 0.15rem 0.4rem; border: 1px solid #c8d1da; border-radius: 999px; font-size: 0.8rem; color: #2c3e50; background: #eef3f7; }
+    .empty { padding: 1rem; background: #f5f6f7; border-radius: 6px; color: #55616d; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Mapa de Procesos</h1>
+
+<form method="get" class="filters">
+    <label>
+        Site
+        <select name="site_id">
+            <option value="">Todas</option>
+            {% for site in sites %}
+            <option value="{{ site.id }}"{% if selected_site_id == site.id|stringformat:"s" %} selected{% endif %}>
+                {{ site.name }}
+            </option>
+            {% endfor %}
+        </select>
+    </label>
+
+    <label>
+        Tipo de proceso
+        <select name="process_type">
+            <option value="">Todos</option>
+            {% for value, label in types %}
+            <option value="{{ value }}"{% if selected_type == value %} selected{% endif %}>
+                {{ label }}
+            </option>
+            {% endfor %}
+        </select>
+    </label>
+
+    <button type="submit">Filtrar</button>
+</form>
+
+{% if processes %}
+<ul class="process-tree">
+    {% for process in processes %}
+    <li class="process level-1">
+        <div class="process-line">
+            <span class="code">{{ process.code }}</span> - <span class="name">{{ process.name }}</span>
+            <span class="type">({{ process.get_process_type_display }})</span>
+        </div>
+
+        {% if process.children.all %}
+        <ul class="process-tree">
+            {% for child in process.children.all %}
+            <li class="process level-2">
+                <div class="process-line">
+                    <span class="code">{{ child.code }}</span> - <span class="name">{{ child.name }}</span>
+                </div>
+
+                {% if child.children.all %}
+                <ul class="process-tree">
+                    {% for grandchild in child.children.all %}
+                    {% with code_tag=grandchild.code|extract_tag name_tag=grandchild.name|extract_tag %}
+                    <li class="process level-3">
+                        <div class="process-line">
+                            <span class="code">{{ grandchild.code }}</span> - <span class="name">{{ grandchild.name }}</span>
+                            {% if code_tag or name_tag %}
+                            <span class="tag">
+                                {% if code_tag %}[{{ code_tag }}]{% endif %}
+                                {% if name_tag and code_tag %} [{{ name_tag }}]{% elif name_tag %}[{{ name_tag }}]{% endif %}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </li>
+                    {% endwith %}
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p class="empty">No hay procesos cargados.</p>
+{% endif %}
+{% endblock %}

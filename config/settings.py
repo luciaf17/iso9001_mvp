@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     # local apps
     "apps.core",
     "apps.docs",
+    "apps.org",
 ]
 
 MIDDLEWARE = [
