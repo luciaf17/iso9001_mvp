@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Iniciar sesion{% endblock %}
+
+{% block extra_css %}
+<style>
+    .login-card { max-width: 420px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e6ea; border-radius: 10px; padding: 1.5rem; box-shadow: 0 6px 16px rgba(33, 37, 41, 0.06); }
+    .login-card h1 { margin-bottom: 1rem; }
+    .login-card form p { margin-bottom: 0.75rem; }
+    .login-card input { width: 100%; padding: 0.5rem 0.6rem; border: 1px solid #ccd1d6; border-radius: 4px; }
+    .login-actions { display: flex; justify-content: flex-end; align-items: center; margin-top: 1rem; }
+    .login-actions button { padding: 0.5rem 1rem; border: 1px solid #2c3e50; background: #2c3e50; color: #fff; border-radius: 4px; cursor: pointer; font-weight: 600; }
+    .login-actions button:hover { opacity: 0.9; }
+    .form-errors { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-card">
+    <h1>Iniciar sesion</h1>
+
+    {% if form.errors %}
+    <div class="form-errors">
+        <strong>Usuario o contrasena incorrectos.</strong>
+    </div>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div class="login-actions">
+            <button type="submit">Ingresar</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

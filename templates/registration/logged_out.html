@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Sesion cerrada{% endblock %}
+
+{% block extra_css %}
+<style>
+    .logout-card { max-width: 420px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e6ea; border-radius: 10px; padding: 1.5rem; box-shadow: 0 6px 16px rgba(33, 37, 41, 0.06); text-align: center; }
+    .logout-card h1 { margin-bottom: 0.75rem; }
+    .logout-card p { margin-bottom: 1.25rem; color: #5c6b77; }
+    .logout-card a { display: inline-block; padding: 0.5rem 1rem; border: 1px solid #2c3e50; background: #2c3e50; color: #fff; border-radius: 4px; text-decoration: none; font-weight: 600; }
+    .logout-card a:hover { opacity: 0.9; }
+    .logout-actions { display: flex; justify-content: center; gap: 0.75rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="logout-card">
+    <h1>Sesion cerrada</h1>
+    <p>Saliste correctamente del sistema.</p>
+    <div class="logout-actions">
+        <a href="{% url 'login' %}">Iniciar sesion</a>
+    </div>
+</div>
+{% endblock %}
