@@ -112,4 +112,5 @@ Esto permite demostrar trazabilidad ante auditoría ISO.
 - DOCS-04 Admin: COMPLETADO
 - DOCS-04 Forms: COMPLETADO
 - DOCS-05 UI básica + HTMX: COMPLETADO
+- DOCS-07: Motivo del cambio en versiones: COMPLETADO
 

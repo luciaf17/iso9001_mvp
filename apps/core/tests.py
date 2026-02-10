@@ -1,6 +1,8 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
-from .models import AuditEvent
+from django.core.exceptions import ValidationError
+
+from .models import AuditEvent, Organization, Process
 from .services import log_audit_event
 
 
@@ -49,3 +51,125 @@ class AuditEventTestCase(TestCase):
             )
         
         self.assertIn('pk no puede ser None', str(context.exception))
+
+
+class ProcessHierarchyValidationTests(TestCase):
+    def setUp(self):
+        self.organization, _created = Organization.objects.get_or_create(name="Empresa")
+
+    def _create_level1(self, code="P1", name="Proceso 1"):
+        return Process.objects.create(
+            organization=self.organization,
+            code=code,
+            name=name,
+            process_type=Process.ProcessType.MISSIONAL,
+            level=Process.Level.PROCESS,
+            is_active=True,
+        )
+
+    def test_level1_cannot_have_parent(self):
+        parent = self._create_level1(code="P1", name="Proceso 1")
+        process = Process(
+            organization=self.organization,
+            code="P2",
+            name="Proceso 2",
+            process_type=Process.ProcessType.MISSIONAL,
+            level=Process.Level.PROCESS,
+            parent=parent,
+            is_active=True,
+        )
+        with self.assertRaises(ValidationError):
+            process.full_clean()
+
+    def test_level2_requires_parent(self):
+        process = Process(
+            organization=self.organization,
+            code="S1",
+            name="Subproceso 1",
+            process_type=Process.ProcessType.MISSIONAL,
+            level=Process.Level.SUBPROCESS,
+            is_active=True,
+        )
+        with self.assertRaises(ValidationError):
+            process.full_clean()
+
+    def test_level2_parent_must_be_level1(self):
+        parent_level1 = self._create_level1(code="P1", name="Proceso 1")
+        parent_level2 = Process.objects.create(
+            organization=self.organization,
+            code="S1",
+            name="Subproceso 1",
+            process_type=Process.ProcessType.MISSIONAL,
+            level=Process.Level.SUBPROCESS,
+            parent=parent_level1,
+            is_active=True,
+        )
+        process = Process(
+            organization=self.organization,
+            code="S2",
+            name="Subproceso 2",
+            process_type=Process.ProcessType.MISSIONAL,
+            level=Process.Level.SUBPROCESS,
+            parent=parent_level2,
+            is_active=True,
+        )
+        with self.assertRaises(ValidationError):
+            process.full_clean()
+
+    def test_level3_parent_must_be_level2(self):
+        parent_level1 = self._create_level1(code="P1", name="Proceso 1")
+        process = Process(
+            organization=self.organization,
+            code="T1",
+            name="Sector 1",
+            process_type=Process.ProcessType.MISSIONAL,
+            level=Process.Level.SECTOR,
+            parent=parent_level1,
+            is_active=True,
+        )
+        with self.assertRaises(ValidationError):
+            process.full_clean()
+
+    def test_parent_must_match_organization(self):
+        other_org = Organization.objects.create(name="Otra Empresa")
+        parent = Process.objects.create(
+            organization=other_org,
+            code="P1",
+            name="Proceso 1",
+            process_type=Process.ProcessType.MISSIONAL,
+            level=Process.Level.PROCESS,
+            is_active=True,
+        )
+        process = Process(
+            organization=self.organization,
+            code="S1",
+            name="Subproceso 1",
+            process_type=Process.ProcessType.MISSIONAL,
+            level=Process.Level.SUBPROCESS,
+            parent=parent,
+            is_active=True,
+        )
+        with self.assertRaises(ValidationError):
+            process.full_clean()
+
+    def test_valid_level3_with_level2_parent(self):
+        parent_level1 = self._create_level1(code="P1", name="Proceso 1")
+        parent_level2 = Process.objects.create(
+            organization=self.organization,
+            code="S1",
+            name="Subproceso 1",
+            process_type=Process.ProcessType.MISSIONAL,
+            level=Process.Level.SUBPROCESS,
+            parent=parent_level1,
+            is_active=True,
+        )
+        process = Process(
+            organization=self.organization,
+            code="T1",
+            name="Sector 1",
+            process_type=Process.ProcessType.MISSIONAL,
+            level=Process.Level.SECTOR,
+            parent=parent_level2,
+            is_active=True,
+        )
+        process.full_clean()

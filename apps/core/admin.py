@@ -1,7 +1,6 @@
 from django.contrib import admin
-from .models import AuditEvent
-from django.contrib import admin
-from .models import Process
+
+from .models import AuditEvent, Organization, Site, Process
 
 
 @admin.register(AuditEvent)
@@ -24,5 +23,35 @@ class AuditEventAdmin(admin.ModelAdmin):
 
 @admin.register(Process)
 class ProcessAdmin(admin.ModelAdmin):
-    list_display = ("code", "name")
+    list_display = (
+        "code",
+        "name",
+        "process_type",
+        "level",
+        "organization",
+        "site",
+        "parent",
+        "is_active",
+    )
+    list_filter = ("organization", "site", "process_type", "level", "is_active")
     search_fields = ("code", "name")
+    ordering = ("level", "code")
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "parent":
+            kwargs["queryset"] = Process.objects.order_by("level", "code")
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
+@admin.register(Organization)
+class OrganizationAdmin(admin.ModelAdmin):
+    list_display = ("name", "is_active")
+    list_filter = ("is_active",)
+    search_fields = ("name",)
+
+
+@admin.register(Site)
+class SiteAdmin(admin.ModelAdmin):
+    list_display = ("name", "organization", "is_active")
+    list_filter = ("organization", "is_active")
+    search_fields = ("name",)
