@@ -6,6 +6,7 @@ app_name = "docs"
 
 urlpatterns = [
     path("", views.document_list, name="docs_list"),
+    path("library/", views.docs_library, name="docs_library"),
     path("new/", views.document_create, name="docs_new"),
     path("<int:pk>/", views.document_detail, name="docs_detail"),
     path("<int:pk>/versions/new/", views.version_create, name="docs_version_new"),

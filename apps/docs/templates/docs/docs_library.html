@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Biblioteca de Documentos{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">📚 Biblioteca de Documentos</h1>
+    
+    <!-- Filtros -->
+    <div class="card mb-4 bg-light">
+        <div class="card-header">
+            <h5 class="mb-0">Filtros</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <!-- Sede -->
+                <div class="col-md-4">
+                    <label for="site_id" class="form-label">Sede</label>
+                    <select id="site_id" name="site_id" class="form-select">
+                        <option value="">-- Todas --</option>
+                        {% for site_id, site_name in sites %}
+                            <option value="{{ site_id }}" {% if site_id|stringformat:'s' == selected_site_id %}selected{% endif %}>
+                                {{ site_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Tipo de Proceso -->
+                <div class="col-md-4">
+                    <label for="process_type" class="form-label">Tipo de Proceso</label>
+                    <select id="process_type" name="process_type" class="form-select">
+                        <option value="">-- Todos --</option>
+                        {% for value, label in process_types %}
+                            <option value="{{ value }}" {% if value == selected_process_type %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Tipo de Documento -->
+                <div class="col-md-4">
+                    <label for="doc_type" class="form-label">Tipo de Documento</label>
+                    <select id="doc_type" name="doc_type" class="form-select">
+                        <option value="">-- Todos --</option>
+                        {% for value, label in doc_types %}
+                            <option value="{{ value }}" {% if value == selected_doc_type %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">🔍 Filtrar</button>
+                    <a href="{% url 'docs:docs_library' %}" class="btn btn-secondary">↺ Limpiar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Árbol de Procesos con Documentos -->
+    <div class="processes-tree">
+        {% for process_l1 in processes %}
+            <!-- Proceso Nivel 1 -->
+            <div class="process-level-1 mb-4 border rounded p-3" style="background-color: #f8f9fa; border-left: 5px solid #0d6efd !important;">
+                <div class="d-flex align-items-center mb-3">
+                    <span class="badge bg-primary me-2">{{ process_l1.get_process_type_display }}</span>
+                    <h4 class="mb-0">
+                        <strong>[{{ process_l1.code }}]</strong> {{ process_l1.name }}
+                    </h4>
+                </div>
+                
+                <!-- Documentos del Proceso Nivel 1 -->
+                {% if process_l1.active_documents %}
+                    <div class="ms-3 mb-3">
+                        <div class="documents-section">
+                            {% for doc in process_l1.active_documents %}
+                                <div class="document-item p-2 border mb-2" style="background-color: #ffffff; border-left: 3px solid #198754 !important;">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <a href="{% url 'docs:docs_detail' doc.pk %}" class="text-decoration-none">
+                                                <strong>[{{ doc.code }}]</strong> {{ doc.title }}
+                                            </a>
+                                            <br>
+                                            <small class="text-muted">
+                                                {{ doc.get_doc_type_display }} 
+                                                {% if doc.current_version %}
+                                                    | v{{ doc.current_version.version_number }} 
+                                                    (Vigente desde {{ doc.current_version.effective_date|date:"d/m/Y" }})
+                                                {% else %}
+                                                    | <span class="badge bg-warning">Sin versión vigente</span>
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                        <a href="{% url 'docs:docs_detail' doc.pk %}" class="btn btn-sm btn-info ms-2">
+                                            Ver historial
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Subprocesos (Nivel 2) -->
+                {% if process_l1.children.all %}
+                    <div class="ms-4 mb-3">
+                        {% for process_l2 in process_l1.children.all %}
+                            <div class="process-level-2 mb-3 border rounded p-2" style="background-color: #e7f3ff; border-left: 4px solid #0a58ca !important;">
+                                <h5 class="mb-2">
+                                    <span class="badge bg-info me-1">{{ process_l2.get_process_type_display }}</span>
+                                    <strong>[{{ process_l2.code }}]</strong> {{ process_l2.name }}
+                                </h5>
+                                
+                                <!-- Documentos del Nivel 2 -->
+                                {% if process_l2.active_documents %}
+                                    <div class="ms-2 mb-2">
+                                        {% for doc in process_l2.active_documents %}
+                                            <div class="document-item p-2 border mb-2" style="background-color: #ffffff; border-left: 3px solid #198754 !important;">
+                                                <div class="d-flex justify-content-between align-items-start">
+                                                    <div class="flex-grow-1">
+                                                        <a href="{% url 'docs:docs_detail' doc.pk %}" class="text-decoration-none">
+                                                            <strong>[{{ doc.code }}]</strong> {{ doc.title }}
+                                                        </a>
+                                                        <br>
+                                                        <small class="text-muted">
+                                                            {{ doc.get_doc_type_display }} 
+                                                            {% if doc.current_version %}
+                                                                | v{{ doc.current_version.version_number }} 
+                                                                (Vigente desde {{ doc.current_version.effective_date|date:"d/m/Y" }})
+                                                            {% else %}
+                                                                | <span class="badge bg-warning">Sin versión vigente</span>
+                                                            {% endif %}
+                                                        </small>
+                                                    </div>
+                                                    <a href="{% url 'docs:docs_detail' doc.pk %}" class="btn btn-sm btn-info ms-2">
+                                                        Ver historial
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                
+                                <!-- Sectores (Nivel 3) -->
+                                {% if process_l2.children.all %}
+                                    <div class="ms-3 mt-2">
+                                        {% for process_l3 in process_l2.children.all %}
+                                            <div class="process-level-3 mb-2 border rounded p-2" style="background-color: #f0f7ff; border-left: 3px solid #0d6efd !important;">
+                                                <h6 class="mb-1">
+                                                    <strong>[{{ process_l3.code }}]</strong> {{ process_l3.name }}
+                                                </h6>
+                                                
+                                                <!-- Documentos del Nivel 3 -->
+                                                {% if process_l3.active_documents %}
+                                                    <div class="ms-2">
+                                                        {% for doc in process_l3.active_documents %}
+                                                            <div class="document-item p-2 border mb-1" style="background-color: #ffffff; border-left: 3px solid #198754 !important;">
+                                                                <div class="d-flex justify-content-between align-items-start">
+                                                                    <div class="flex-grow-1">
+                                                                        <a href="{% url 'docs:docs_detail' doc.pk %}" class="text-decoration-none">
+                                                                            <strong>[{{ doc.code }}]</strong> {{ doc.title }}
+                                                                        </a>
+                                                                        <br>
+                                                                        <small class="text-muted">
+                                                                            {{ doc.get_doc_type_display }}
+                                                                            {% if doc.current_version %}
+                                                                                | v{{ doc.current_version.version_number }} 
+                                                                                (Vigente desde {{ doc.current_version.effective_date|date:"d/m/Y" }})
+                                                                            {% else %}
+                                                                                | <span class="badge bg-warning">Sin versión vigente</span>
+                                                                            {% endif %}
+                                                                        </small>
+                                                                    </div>
+                                                                    <a href="{% url 'docs:docs_detail' doc.pk %}" class="btn btn-sm btn-info ms-2">
+                                                                        Ver historial
+                                                                    </a>
+                                                                </div>
+                                                            </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                {% else %}
+                                                    <small class="text-muted ms-2">(sin documentos vigentes)</small>
+                                                {% endif %}
+                                            </div>
+                                        {% empty %}
+                                            <small class="text-muted">(sin sectores)</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% empty %}
+                            <small class="text-muted ms-2">(sin subprocesos)</small>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        {% empty %}
+            <div class="alert alert-info">
+                No hay procesos que coincidan con los filtros seleccionados.
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .processes-tree {
+        font-family: system-ui, -apple-system, sans-serif;
+    }
+    
+    .document-item {
+        transition: box-shadow 0.2s ease;
+    }
+    
+    .document-item:hover {
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .process-level-1 {
+        margin-bottom: 1.5rem;
+    }
+    
+    .process-level-2, .process-level-3 {
+        margin-bottom: 0.75rem;
+    }
+</style>
+{% endblock %}

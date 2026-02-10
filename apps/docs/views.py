@@ -222,3 +222,90 @@ def version_approve(request, version_id):
     
     # Si no es HTMX, redirect
     return redirect('docs:docs_detail', pk=version.document.pk)
+
+
+@login_required
+def docs_library(request):
+    """Vista de biblioteca de documentos agrupados por procesos.
+    
+    Muestra procesos nivel 1 con su árbol de hijos (nivel 2 y 3),
+    y bajo cada proceso, los documentos con versión vigente (APPROVED).
+    Permite filtrar por:
+    - site_id: solo documentos en esa sede
+    - process_type: solo procesos de ese tipo  
+    - doc_type: solo documentos de ese tipo
+    """
+    from django.db.models import Q, Exists, OuterRef, Prefetch
+    
+    # Filtros del usuario
+    site_id = request.GET.get('site_id')
+    process_type = request.GET.get('process_type')
+    doc_type = request.GET.get('doc_type')
+    
+    # Query base: procesos nivel 1 (top-level)
+    processes_l1 = Process.objects.filter(
+        level=Process.Level.PROCESS,
+        is_active=True
+    )
+    
+    # Aplicar filtro de site
+    if site_id:
+        processes_l1 = processes_l1.filter(site_id=site_id)
+    
+    # Aplicar filtro de process_type
+    if process_type:
+        processes_l1 = processes_l1.filter(process_type=process_type)
+    
+    # Prefetch children (nivel 2 y 3) con documentos vigentes
+    # Para optimizar: traemos todos los hijos y sus documentos
+    processes_l1 = processes_l1.prefetch_related(
+        'children',
+        'children__children',
+        'documents',
+        'children__documents',
+        'children__children__documents'
+    ).order_by('code')
+    
+    # Anotar documentos vigentes por proceso
+    # Un documento es "vigente" si tiene al menos una versión APPROVED
+    def add_current_versions(process_list):
+        """Agrega versión vigente a documentos en árbol.
+        
+        Solo incluye documentos que tienen al menos una versión APPROVED.
+        """
+        for process in process_list:
+            # Filtrar documentos si se especifica doc_type
+            docs = process.documents.filter(is_active=True)
+            if doc_type:
+                docs = docs.filter(doc_type=doc_type)
+            
+            # Solo incluir documentos con versión vigente (APPROVED)
+            process.active_documents = []
+            for doc in docs:
+                current_version = get_current_version(doc)
+                if current_version:  # Solo si tiene versión APPROVED
+                    doc.current_version = current_version
+                    process.active_documents.append(doc)
+            
+            # Recursivamente para hijos
+            if hasattr(process, 'children') and process.children.exists():
+                add_current_versions(process.children.all())
+    
+    add_current_versions(processes_l1)
+    
+    # Obtener opciones para filtros (sin duplicados)
+    from apps.core.models import Site
+    sites = Site.objects.filter(
+        processes__is_active=True
+    ).distinct().values_list('id', 'name').order_by('name')
+    
+    context = {
+        'processes': processes_l1,
+        'sites': sites,
+        'process_types': Process.ProcessType.choices,
+        'doc_types': Document.DocType.choices,
+        'selected_site_id': site_id,
+        'selected_process_type': process_type,
+        'selected_doc_type': doc_type,
+    }
+    return render(request, 'docs/docs_library.html', context)
