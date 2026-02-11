@@ -84,3 +84,31 @@ class ApproveDocumentVersionTests(TestCase):
     def test_user_without_permission_cannot_approve(self):
         with self.assertRaises(PermissionDenied):
             approve_document_version(version_id=self.v2.id, user=self.reader)
+    def test_cannot_approve_already_approved_version(self):
+        """Test that approving an already APPROVED version raises ValidationError."""
+        from django.core.exceptions import ValidationError
+        
+        # v1 is already APPROVED
+        with self.assertRaises(ValidationError) as ctx:
+            approve_document_version(version_id=self.v1.id, user=self.quality)
+        
+        self.assertIn("ya está aprobada", str(ctx.exception))
+
+    def test_cannot_approve_obsolete_version(self):
+        """Test that approving an OBSOLETE version raises ValidationError."""
+        from django.core.exceptions import ValidationError
+        
+        # Create an obsolete version
+        v_obsolete = DocumentVersion.objects.create(
+            document=self.doc,
+            version_number="0.5",
+            file="documents/pr-01-v0.5.pdf",
+            effective_date=timezone.now().date(),
+            status=DocumentVersion.Status.OBSOLETE,
+            created_by=self.admin,
+        )
+        
+        with self.assertRaises(ValidationError) as ctx:
+            approve_document_version(version_id=v_obsolete.id, user=self.quality)
+        
+        self.assertIn("obsoleta", str(ctx.exception).lower())

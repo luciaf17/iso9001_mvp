@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
 from apps.core.models import Organization, Process, Site
+from apps.core.services import log_audit_event
 from apps.org.forms import ProcessForm
 from apps.org.utils import can_edit_processes
 
@@ -73,6 +74,21 @@ def process_create_level1(request):
 		process.level = Process.Level.PROCESS
 		process.parent = None
 		process.save()
+		log_audit_event(
+			actor=request.user,
+			action="org.process.created",
+			instance=process,
+			metadata={
+				"process_id": process.id,
+				"code": process.code,
+				"name": process.name,
+				"level": process.level,
+				"process_type": process.process_type,
+				"site_id": process.site_id,
+				"is_active": process.is_active,
+			},
+			object_type_override="core.Process",
+		)
 		messages.success(request, "Proceso creado correctamente.")
 		return redirect("org:process_map")
 
@@ -127,6 +143,22 @@ def process_create_child(request, parent_id):
 		process.level = child_level
 		process.parent = parent
 		process.save()
+		log_audit_event(
+			actor=request.user,
+			action="org.process.created",
+			instance=process,
+			metadata={
+				"process_id": process.id,
+				"code": process.code,
+				"name": process.name,
+				"level": process.level,
+				"process_type": process.process_type,
+				"parent_id": process.parent_id,
+				"site_id": process.site_id,
+				"is_active": process.is_active,
+			},
+			object_type_override="core.Process",
+		)
 		messages.success(request, "Proceso creado correctamente.")
 		return redirect("org:process_map")
 
@@ -155,6 +187,22 @@ def process_edit(request, process_id):
 		updated = form.save(commit=False)
 		updated.code = process.code
 		updated.save()
+		log_audit_event(
+			actor=request.user,
+			action="org.process.updated",
+			instance=updated,
+			metadata={
+				"process_id": updated.id,
+				"code": updated.code,
+				"name": updated.name,
+				"level": updated.level,
+				"process_type": updated.process_type,
+				"parent_id": updated.parent_id,
+				"site_id": updated.site_id,
+				"is_active": updated.is_active,
+			},
+			object_type_override="core.Process",
+		)
 		messages.success(request, "Proceso actualizado correctamente.")
 		return redirect("org:process_map")
 
@@ -186,5 +234,21 @@ def process_deactivate(request, process_id):
 
 	process.is_active = False
 	process.save()
+	log_audit_event(
+		actor=request.user,
+		action="org.process.deactivated",
+		instance=process,
+		metadata={
+			"process_id": process.id,
+			"code": process.code,
+			"name": process.name,
+			"level": process.level,
+			"process_type": process.process_type,
+			"parent_id": process.parent_id,
+			"site_id": process.site_id,
+			"is_active": process.is_active,
+		},
+		object_type_override="core.Process",
+	)
 	messages.success(request, "Proceso desactivado correctamente.")
 	return redirect("org:process_map")

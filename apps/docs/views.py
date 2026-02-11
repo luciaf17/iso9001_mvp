@@ -26,6 +26,15 @@ def can_create_document(user):
     return user_in_groups(user, ["Admin", "Calidad", "Responsable"])
 
 
+def can_upload_version(user):
+    """Verifica si el usuario puede subir versiones de documentos."""
+    if not user.is_authenticated:
+        return False
+    if user.is_superuser:
+        return True
+    return user_in_groups(user, ["Admin", "Calidad", "Responsable"])
+
+
 def get_current_version(document):
     """Obtiene la última versión aprobada de un documento."""
     return document.versions.filter(status=DocumentVersion.Status.APPROVED).order_by('-created_at').first()
@@ -149,6 +158,11 @@ def document_edit(request, pk):
 def version_create(request, pk):
     """Crear nueva versión de un documento."""
     document = get_object_or_404(Document, pk=pk)
+    
+    # Verificar permisos
+    if not can_upload_version(request.user):
+        messages.error(request, 'No tenés permisos para subir versiones.')
+        return redirect('docs:docs_detail', pk=document.pk)
     
     if request.method == 'POST':
         form = DocumentVersionForm(

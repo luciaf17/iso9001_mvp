@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from django.db import transaction
 from django.utils import timezone
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 
 from apps.core.services import log_audit_event
 from apps.docs.models import DocumentVersion, DocumentApproval
@@ -37,6 +37,17 @@ def approve_document_version(*, version_id: int, user, comment: str = "") -> Doc
         .select_related("document")
         .get(pk=version_id)
     )
+
+    # Validar que la versión esté en un estado aprobable
+    if version.status == DocumentVersion.Status.APPROVED:
+        raise ValidationError("Esta versión ya está aprobada.")
+    
+    if version.status == DocumentVersion.Status.OBSOLETE:
+        raise ValidationError("No se puede aprobar una versión obsoleta.")
+    
+    # Solo permitir aprobar DRAFT o IN_REVIEW
+    if version.status not in (DocumentVersion.Status.DRAFT, DocumentVersion.Status.IN_REVIEW):
+        raise ValidationError(f"No se puede aprobar una versión en estado {version.get_status_display()}.")
 
     # Obsoletar otras aprobadas del mismo documento
     (DocumentVersion.objects

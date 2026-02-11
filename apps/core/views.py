@@ -2,12 +2,13 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LogoutView
+from django.db.models import Count
 from django.shortcuts import redirect, render, get_object_or_404
 
-from apps.core.forms import OrganizationContextForm, StakeholderForm
-from apps.core.models import Organization, OrganizationContext, Site, Stakeholder, Process
+from apps.core.forms import OrganizationContextForm, StakeholderForm, RiskOpportunityForm
+from apps.core.models import Organization, OrganizationContext, Site, Stakeholder, Process, RiskOpportunity
 from apps.core.services import log_audit_event
-from apps.core.utils import can_edit_context, can_edit_stakeholders
+from apps.core.utils import can_edit_context, can_edit_stakeholders, can_edit_risks
 from apps.docs.models import Document
 
 
@@ -98,6 +99,18 @@ def _configure_stakeholder_form(form, organization):
 		is_active=True,
 	).order_by("code")
 	form.fields["related_document"].queryset = Document.objects.filter(is_active=True)
+
+
+def _configure_risk_form(form, organization):
+	User = get_user_model()
+	form.fields["site"].queryset = Site.objects.filter(organization=organization, is_active=True)
+	form.fields["related_process"].queryset = Process.objects.filter(
+		organization=organization,
+		is_active=True,
+	).order_by("code")
+	form.fields["stakeholder"].queryset = Stakeholder.objects.filter(organization=organization)
+	form.fields["owner"].queryset = User.objects.filter(is_active=True)
+	form.fields["evidence_document"].queryset = Document.objects.filter(is_active=True)
 
 
 @login_required
@@ -265,5 +278,314 @@ def stakeholder_edit(request, pk):
 			"organization": organization,
 			"stakeholder": stakeholder,
 			"is_edit": True,
+		},
+	)
+
+
+@login_required
+def risk_list(request):
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	risks = RiskOpportunity.objects.filter(organization=organization).select_related(
+		"related_process",
+		"stakeholder",
+		"owner",
+		"organization",
+		"site",
+	)
+
+	process_type = request.GET.get("process_type", "")
+	process_id = request.GET.get("process_id", "")
+	stakeholder_id = request.GET.get("stakeholder_id", "")
+	status = request.GET.get("status", "")
+	level = request.GET.get("level", "")
+	kind = request.GET.get("kind", "")
+
+	if process_type:
+		risks = risks.filter(related_process__process_type=process_type)
+	if process_id:
+		risks = risks.filter(related_process_id=process_id)
+	if stakeholder_id:
+		risks = risks.filter(stakeholder_id=stakeholder_id)
+	if status:
+		risks = risks.filter(status=status)
+	if level:
+		risks = risks.filter(level=level)
+	if kind:
+		risks = risks.filter(kind=kind)
+
+	can_edit = can_edit_risks(request.user)
+	processes = Process.objects.filter(organization=organization, is_active=True).order_by("code")
+	stakeholders = Stakeholder.objects.filter(organization=organization).order_by("name")
+
+	return render(
+		request,
+		"core/risks_list.html",
+		{
+			"risks": risks,
+			"organization": organization,
+			"can_edit": can_edit,
+			"process_types": Process.ProcessType.choices,
+			"processes": processes,
+			"stakeholders": stakeholders,
+			"status_choices": RiskOpportunity.Status.choices,
+			"level_choices": RiskOpportunity.Level.choices,
+			"kind_choices": RiskOpportunity.Kind.choices,
+			"selected_process_type": process_type,
+			"selected_process_id": process_id,
+			"selected_stakeholder_id": stakeholder_id,
+			"selected_status": status,
+			"selected_level": level,
+			"selected_kind": kind,
+		},
+	)
+
+
+@login_required
+def risk_detail(request, pk):
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	risk = get_object_or_404(
+		RiskOpportunity,
+		pk=pk,
+		organization=organization,
+	)
+	can_edit = can_edit_risks(request.user)
+
+	return render(
+		request,
+		"core/risks_detail.html",
+		{
+			"risk": risk,
+			"organization": organization,
+			"can_edit": can_edit,
+		},
+	)
+
+
+@login_required
+def risk_create(request):
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	if not can_edit_risks(request.user):
+		messages.error(request, "No tiene permisos para crear riesgos u oportunidades.")
+		return redirect("core:risk_list")
+
+	if request.method == "POST":
+		form = RiskOpportunityForm(request.POST)
+		_configure_risk_form(form, organization)
+		if form.is_valid():
+			risk = form.save(commit=False)
+			risk.organization = organization
+			risk.save()
+			log_audit_event(
+				actor=request.user,
+				action="risk_created",
+				instance=risk,
+				metadata={
+					"kind": risk.kind,
+					"score": risk.score,
+					"level": risk.level,
+					"process_id": risk.related_process_id,
+					"stakeholder_id": risk.stakeholder_id,
+					"status": risk.status,
+				},
+				object_type_override="RiskOpportunity",
+			)
+			messages.success(request, "Riesgo u oportunidad creado correctamente.")
+			return redirect("core:risk_detail", pk=risk.pk)
+	else:
+		form = RiskOpportunityForm()
+		_configure_risk_form(form, organization)
+
+	return render(
+		request,
+		"core/risks_form.html",
+		{
+			"form": form,
+			"organization": organization,
+			"is_edit": False,
+		},
+	)
+
+
+@login_required
+def risk_edit(request, pk):
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	risk = get_object_or_404(
+		RiskOpportunity,
+		pk=pk,
+		organization=organization,
+	)
+	if not can_edit_risks(request.user):
+		messages.error(request, "No tiene permisos para editar riesgos u oportunidades.")
+		return redirect("core:risk_detail", pk=risk.pk)
+
+	if request.method == "POST":
+		form = RiskOpportunityForm(request.POST, instance=risk)
+		_configure_risk_form(form, organization)
+		if form.is_valid():
+			risk = form.save(commit=False)
+			risk.organization = organization
+			risk.save()
+			log_audit_event(
+				actor=request.user,
+				action="risk_updated",
+				instance=risk,
+				metadata={
+					"kind": risk.kind,
+					"score": risk.score,
+					"level": risk.level,
+					"process_id": risk.related_process_id,
+					"stakeholder_id": risk.stakeholder_id,
+					"status": risk.status,
+				},
+				object_type_override="RiskOpportunity",
+			)
+			messages.success(request, "Riesgo u oportunidad actualizado correctamente.")
+			return redirect("core:risk_detail", pk=risk.pk)
+	else:
+		form = RiskOpportunityForm(instance=risk)
+		_configure_risk_form(form, organization)
+
+	return render(
+		request,
+		"core/risks_form.html",
+		{
+			"form": form,
+			"organization": organization,
+			"risk": risk,
+			"is_edit": True,
+		},
+	)
+
+
+@login_required
+def risk_dashboard(request):
+	"""
+	Dashboard visual de riesgos y oportunidades con matriz 5x5 (Probabilidad vs Impacto).
+	Reutiliza los mismos filtros que risk_list.
+	"""
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	risks = RiskOpportunity.objects.filter(organization=organization)
+
+	# Aplicar los mismos filtros que risk_list
+	process_type = request.GET.get("process_type", "")
+	process_id = request.GET.get("process_id", "")
+	stakeholder_id = request.GET.get("stakeholder_id", "")
+	status = request.GET.get("status", "")
+	level = request.GET.get("level", "")
+	kind = request.GET.get("kind", "")
+
+	if process_type:
+		risks = risks.filter(related_process__process_type=process_type)
+	if process_id:
+		risks = risks.filter(related_process_id=process_id)
+	if stakeholder_id:
+		risks = risks.filter(stakeholder_id=stakeholder_id)
+	if status:
+		risks = risks.filter(status=status)
+	if level:
+		risks = risks.filter(level=level)
+	if kind:
+		risks = risks.filter(kind=kind)
+
+	# Agregar conteos por probabilidad e impacto (matriz 5x5)
+	matrix_data = risks.values("probability", "impact").annotate(count=Count("id"))
+
+	# Construir matriz 5x5 para renderear en template
+	# matriz[probabilidad-1][impacto-1] = {count, level_class}
+	def get_level_class(probability, impact):
+		score = probability * impact
+		if score <= 7:
+			return "level-low"
+		elif score <= 14:
+			return "level-medium"
+		else:
+			return "level-high"
+
+	# Crear dict para acceso rápido
+	matrix_dict = {(row["probability"], row["impact"]): row["count"] for row in matrix_data}
+
+	# Construir matriz estructura para el template (filas: prob 5..1, cols: impact 1..5)
+	# El riesgo matriz clásica tiene probablidad en Y (de arriba a abajo) e impacto en X
+	matrix_grid = []
+	for prob in range(5, 0, -1):  # 5, 4, 3, 2, 1
+		row = []
+		for impact in range(1, 6):  # 1, 2, 3, 4, 5
+			count = matrix_dict.get((prob, impact), 0)
+			row.append({
+				"probability": prob,
+				"impact": impact,
+				"count": count,
+				"level_class": get_level_class(prob, impact),
+			})
+		matrix_grid.append(row)
+
+	# Contar por nivel (usando los datos filtrados ya que level se calcula desde score)
+	level_summary = risks.values("level").annotate(count=Count("id")).order_by("level")
+	level_dict = {row["level"]: row["count"] for row in level_summary}
+
+	# Contar por tipo (RISK/OPPORTUNITY)
+	kind_summary = risks.values("kind").annotate(count=Count("id")).order_by("kind")
+	kind_dict = {row["kind"]: row["count"] for row in kind_summary}
+
+	# Total de riesgos filtrados
+	total_risks = risks.count()
+
+	can_edit = can_edit_risks(request.user)
+	processes = Process.objects.filter(organization=organization, is_active=True).order_by("code")
+	stakeholders = Stakeholder.objects.filter(organization=organization).order_by("name")
+
+	# Armar query string para el botón "Ver Lista"
+	query_params = "&".join([
+		f"process_type={process_type}" if process_type else "",
+		f"process_id={process_id}" if process_id else "",
+		f"stakeholder_id={stakeholder_id}" if stakeholder_id else "",
+		f"status={status}" if status else "",
+		f"level={level}" if level else "",
+		f"kind={kind}" if kind else "",
+	]).lstrip("&")
+
+	return render(
+		request,
+		"core/risks_dashboard.html",
+		{
+			"organization": organization,
+			"matrix_grid": matrix_grid,
+			"level_summary": level_dict,
+			"kind_summary": kind_dict,
+			"total_risks": total_risks,
+			"can_edit": can_edit,
+			"process_types": Process.ProcessType.choices,
+			"processes": processes,
+			"stakeholders": stakeholders,
+			"status_choices": RiskOpportunity.Status.choices,
+			"level_choices": RiskOpportunity.Level.choices,
+			"kind_choices": RiskOpportunity.Kind.choices,
+			"selected_process_type": process_type,
+			"selected_process_id": process_id,
+			"selected_stakeholder_id": stakeholder_id,
+			"selected_status": status,
+			"selected_level": level,
+			"selected_kind": kind,
+			"query_params": query_params,
 		},
 	)

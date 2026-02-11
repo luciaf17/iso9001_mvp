@@ -4,7 +4,7 @@ from django.contrib.auth.models import User, Group
 from django.core.exceptions import ValidationError
 from django.urls import reverse
 
-from .models import AuditEvent, Organization, Process, Site, Stakeholder
+from .models import AuditEvent, Organization, Process, Site, Stakeholder, RiskOpportunity
 from .services import log_audit_event
 
 
@@ -264,3 +264,247 @@ class StakeholderViewsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Regulador")
+
+
+class RiskOpportunityTests(TestCase):
+    def setUp(self):
+        self.organization, _created = Organization.objects.get_or_create(name="Empresa")
+        self.process = Process.objects.create(
+            organization=self.organization,
+            code="R1",
+            name="Proceso Riesgos",
+            process_type=Process.ProcessType.MISSIONAL,
+            level=Process.Level.PROCESS,
+            is_active=True,
+        )
+        self.admin_group = Group.objects.create(name="Admin")
+        self.admin_user = User.objects.create_user(username="admin_risk", password="testpass")
+        self.admin_user.groups.add(self.admin_group)
+        self.normal_user = User.objects.create_user(username="user_risk", password="testpass")
+
+    def test_score_level_calculation(self):
+        risk = RiskOpportunity.objects.create(
+            organization=self.organization,
+            related_process=self.process,
+            title="Riesgo critico",
+            description="Descripcion",
+            kind=RiskOpportunity.Kind.RISK,
+            probability=5,
+            impact=5,
+            status=RiskOpportunity.Status.OPEN,
+            is_active=True,
+        )
+
+        self.assertEqual(risk.score, 25)
+        self.assertEqual(risk.level, RiskOpportunity.Level.HIGH)
+
+    def test_non_admin_cannot_create_or_edit(self):
+        self.client.login(username="user_risk", password="testpass")
+
+        response = self.client.post(
+            reverse("core:risk_new"),
+            data={
+                "title": "Riesgo no autorizado",
+                "description": "Descripcion",
+                "kind": RiskOpportunity.Kind.RISK,
+                "probability": 3,
+                "impact": 3,
+                "status": RiskOpportunity.Status.OPEN,
+                "related_process": self.process.id,
+                "is_active": "on",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(RiskOpportunity.objects.filter(title="Riesgo no autorizado").exists())
+
+        risk = RiskOpportunity.objects.create(
+            organization=self.organization,
+            related_process=self.process,
+            title="Riesgo editable",
+            description="Descripcion",
+            kind=RiskOpportunity.Kind.RISK,
+            probability=2,
+            impact=2,
+            status=RiskOpportunity.Status.OPEN,
+            is_active=True,
+        )
+
+        response = self.client.post(
+            reverse("core:risk_edit", args=[risk.pk]),
+            data={
+                "title": "Riesgo editado",
+                "description": "Descripcion",
+                "kind": RiskOpportunity.Kind.RISK,
+                "probability": 2,
+                "impact": 2,
+                "status": RiskOpportunity.Status.OPEN,
+                "related_process": self.process.id,
+                "is_active": "on",
+            },
+        )
+
+        risk.refresh_from_db()
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(risk.title, "Riesgo editable")
+
+    def test_list_renders(self):
+        RiskOpportunity.objects.create(
+            organization=self.organization,
+            related_process=self.process,
+            title="Oportunidad",
+            description="Descripcion",
+            kind=RiskOpportunity.Kind.OPPORTUNITY,
+            probability=2,
+            impact=3,
+            status=RiskOpportunity.Status.OPEN,
+            is_active=True,
+        )
+
+        self.client.login(username="user_risk", password="testpass")
+        response = self.client.get(reverse("core:risk_list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Oportunidad")
+    def test_dashboard_renders(self):
+        """Test that dashboard renders with matrix and summaries."""
+        # Create risks with different probability/impact combinations
+        RiskOpportunity.objects.create(
+            organization=self.organization,
+            related_process=self.process,
+            title="Riesgo bajo",
+            description="Bajo riesgo",
+            kind=RiskOpportunity.Kind.RISK,
+            probability=1,  # score = 1*1 = 1 (LOW)
+            impact=1,
+            status=RiskOpportunity.Status.OPEN,
+            is_active=True,
+        )
+
+        RiskOpportunity.objects.create(
+            organization=self.organization,
+            related_process=self.process,
+            title="Riesgo medio",
+            description="Riesgo medio",
+            kind=RiskOpportunity.Kind.RISK,
+            probability=3,  # score = 3*3 = 9 (MEDIUM)
+            impact=3,
+            status=RiskOpportunity.Status.OPEN,
+            is_active=True,
+        )
+
+        RiskOpportunity.objects.create(
+            organization=self.organization,
+            related_process=self.process,
+            title="Riesgo alto",
+            description="Riesgo alto",
+            kind=RiskOpportunity.Kind.RISK,
+            probability=5,  # score = 5*5 = 25 (HIGH)
+            impact=5,
+            status=RiskOpportunity.Status.OPEN,
+            is_active=True,
+        )
+
+        RiskOpportunity.objects.create(
+            organization=self.organization,
+            related_process=self.process,
+            title="Oportunidad",
+            description="Oportunidad",
+            kind=RiskOpportunity.Kind.OPPORTUNITY,
+            probability=2,  # score = 2*4 = 8 (MEDIUM)
+            impact=4,
+            status=RiskOpportunity.Status.OPEN,
+            is_active=True,
+        )
+
+        self.client.login(username="user_risk", password="testpass")
+        response = self.client.get(reverse("core:risk_dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        # Check that the matrix cells with data are present
+        self.assertContains(response, "(1,1)")  # LOW cell
+        self.assertContains(response, "(3,3)")  # MEDIUM cell
+        self.assertContains(response, "(5,5)")  # HIGH cell
+        self.assertContains(response, "(2,4)")  # MEDIUM cell
+
+    def test_dashboard_matrix_cell_counts(self):
+        """Test that matrix cells show correct counts based on probability/impact."""
+        # Create two risks with same probability/impact
+        RiskOpportunity.objects.create(
+            organization=self.organization,
+            related_process=self.process,
+            title="Riesgo 1",
+            description="Riesgo 1",
+            kind=RiskOpportunity.Kind.RISK,
+            probability=2,
+            impact=3,
+            status=RiskOpportunity.Status.OPEN,
+            is_active=True,
+        )
+
+        RiskOpportunity.objects.create(
+            organization=self.organization,
+            related_process=self.process,
+            title="Riesgo 2",
+            description="Riesgo 2",
+            kind=RiskOpportunity.Kind.RISK,
+            probability=2,
+            impact=3,
+            status=RiskOpportunity.Status.OPEN,
+            is_active=True,
+        )
+
+        # One different cell
+        RiskOpportunity.objects.create(
+            organization=self.organization,
+            related_process=self.process,
+            title="Riesgo 3",
+            description="Riesgo 3",
+            kind=RiskOpportunity.Kind.RISK,
+            probability=4,
+            impact=5,
+            status=RiskOpportunity.Status.OPEN,
+            is_active=True,
+        )
+
+        self.client.login(username="user_risk", password="testpass")
+        response = self.client.get(reverse("core:risk_dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        # Check that cell (2,3) shows count 2
+        self.assertContains(response, "(2,3)")
+
+    def test_dashboard_kind_summary(self):
+        """Test that kind summary shows correct counts for RISK and OPPORTUNITY."""
+        RiskOpportunity.objects.create(
+            organization=self.organization,
+            related_process=self.process,
+            title="Riesgo 1",
+            description="Riesgo 1",
+            kind=RiskOpportunity.Kind.RISK,
+            probability=2,
+            impact=2,
+            status=RiskOpportunity.Status.OPEN,
+            is_active=True,
+        )
+
+        RiskOpportunity.objects.create(
+            organization=self.organization,
+            related_process=self.process,
+            title="Oportunidad 1",
+            description="Oportunidad 1",
+            kind=RiskOpportunity.Kind.OPPORTUNITY,
+            probability=2,
+            impact=2,
+            status=RiskOpportunity.Status.OPEN,
+            is_active=True,
+        )
+
+        self.client.login(username="user_risk", password="testpass")
+        response = self.client.get(reverse("core:risk_dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        # Check that the dashboard summary shows kind counts exist
+        self.assertContains(response, "Total de registros:")
+        self.assertContains(response, "Riesgos")
+        self.assertContains(response, "Oportunidades")

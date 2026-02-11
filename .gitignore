@@ -1,7 +1,9 @@
 # Python
 __pycache__/
+.pytest_cache/
 *.py[cod]
 *.pyd
+*.pyc
 *.so
 *.egg-info/
 dist/
@@ -29,3 +31,4 @@ staticfiles/
 .DS_Store
 Thumbs.db
 
+media/

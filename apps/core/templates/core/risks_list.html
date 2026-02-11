@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+
+{% block title %}Riesgos y Oportunidades{% endblock %}
+
+{% block extra_css %}
+<style>
+    .risks-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-xl);
+    }
+
+    .risks-header h1 {
+        font-size: var(--font-size-3xl);
+        color: var(--color-primary);
+    }
+
+    .filter-card {
+        background: var(--color-white);
+        border: 2px solid var(--color-primary-light);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-lg);
+        margin-bottom: var(--spacing-xl);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .filter-form {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: var(--spacing-lg);
+        align-items: flex-end;
+    }
+
+    .filter-form label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: var(--spacing-sm);
+        color: var(--color-dark);
+    }
+
+    .filter-form select {
+        padding: var(--spacing-sm) var(--spacing-md);
+        border: 2px solid var(--color-gray-300);
+        border-radius: var(--border-radius-md);
+        font-size: var(--font-size-sm);
+        transition: var(--transition);
+        background-color: var(--color-white);
+        width: 100%;
+    }
+
+    .filter-form select:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px var(--color-primary-light);
+    }
+
+    .filter-actions {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: flex-end;
+        gap: var(--spacing-sm);
+    }
+
+    .risks-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .risks-table th,
+    .risks-table td {
+        padding: 0.75rem;
+        text-align: left;
+    }
+
+    .risks-table thead tr {
+        background: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .risks-table tbody tr {
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .risks-table tbody tr:hover {
+        background-color: var(--color-gray-50);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .level-badge {
+        padding: 4px 8px;
+        border-radius: var(--border-radius-sm);
+        font-weight: 600;
+        font-size: var(--font-size-xs);
+        text-transform: uppercase;
+    }
+
+    .level-low {
+        background: var(--color-success-light);
+        color: var(--color-success);
+    }
+
+    .level-medium {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .level-high {
+        background: #f8d7da;
+        color: var(--color-danger);
+    }
+
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: var(--border-radius-sm);
+        font-weight: 600;
+        font-size: var(--font-size-xs);
+        text-transform: uppercase;
+        background: var(--color-gray-100);
+        color: var(--color-gray-600);
+    }
+
+    .action-links {
+        display: flex;
+        gap: var(--spacing-sm);
+    }
+
+    .action-links .btn {
+        padding: 6px 12px;
+        font-size: var(--font-size-xs);
+        border-radius: var(--border-radius-sm);
+        box-shadow: var(--shadow-sm);
+        transition: var(--transition);
+    }
+
+    .action-links .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .empty-state {
+        color: var(--color-gray-600);
+        text-align: center;
+        padding: 3rem;
+    }
+
+    @media (max-width: 1024px) {
+        .filter-form {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 640px) {
+        .filter-form {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="risks-header">
+    <div>
+        <h1>⚠️ Riesgos y Oportunidades</h1>
+        <div class="text-muted">Organizacion: {{ organization.name }}</div>
+    </div>
+    <div style="display: flex; gap: var(--spacing-sm);">
+        <a class="btn btn-secondary" href="{% url 'core:risk_dashboard' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">📊 Ver Dashboard</a>
+        {% if can_edit %}
+        <a class="btn btn-primary" href="{% url 'core:risk_new' %}">+ Nuevo</a>
+        {% endif %}
+    </div>
+</div>
+
+<form method="get" class="filter-card">
+    <div class="filter-form">
+        <div>
+            <label for="process_type">🧭 Tipo de proceso</label>
+            <select id="process_type" name="process_type">
+                <option value="">Todos</option>
+                {% for value, label in process_types %}
+                <option value="{{ value }}" {% if selected_process_type == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="process_id">🔗 Proceso</label>
+            <select id="process_id" name="process_id">
+                <option value="">Todos</option>
+                {% for process in processes %}
+                <option value="{{ process.id }}" {% if selected_process_id == process.id|stringformat:"s" %}selected{% endif %}>{{ process }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="stakeholder_id">🤝 Parte interesada</label>
+            <select id="stakeholder_id" name="stakeholder_id">
+                <option value="">Todas</option>
+                {% for stakeholder in stakeholders %}
+                <option value="{{ stakeholder.id }}" {% if selected_stakeholder_id == stakeholder.id|stringformat:"s" %}selected{% endif %}>{{ stakeholder.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="status">📌 Estado</label>
+            <select id="status" name="status">
+                <option value="">Todos</option>
+                {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="level">🎯 Nivel</label>
+            <select id="level" name="level">
+                <option value="">Todos</option>
+                {% for value, label in level_choices %}
+                <option value="{{ value }}" {% if selected_level == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="kind">📊 Tipo</label>
+            <select id="kind" name="kind">
+                <option value="">Todos</option>
+                {% for value, label in kind_choices %}
+                <option value="{{ value }}" {% if selected_kind == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-primary">🔍 Filtrar</button>
+            <a class="btn btn-secondary" href="{% url 'core:risk_list' %}">Limpiar</a>
+        </div>
+    </div>
+</form>
+
+{% if risks %}
+<table class="risks-table">
+    <thead>
+        <tr>
+            <th>Titulo</th>
+            <th>Tipo</th>
+            <th>Proceso</th>
+            <th>Puntaje</th>
+            <th>Nivel</th>
+            <th>Estado</th>
+            <th>Vencimiento</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for risk in risks %}
+        <tr>
+            <td><strong>{{ risk.title }}</strong></td>
+            <td>{{ risk.get_kind_display }}</td>
+            <td>{% if risk.related_process %}{{ risk.related_process }}{% else %}-{% endif %}</td>
+            <td>{{ risk.score }}</td>
+            <td>
+                <span class="level-badge {% if risk.level == 'LOW' %}level-low{% elif risk.level == 'MEDIUM' %}level-medium{% else %}level-high{% endif %}">
+                    {{ risk.get_level_display }}
+                </span>
+            </td>
+            <td><span class="status-badge">{{ risk.get_status_display }}</span></td>
+            <td>{% if risk.due_date %}{{ risk.due_date|date:"d/m/Y" }}{% else %}-{% endif %}</td>
+            <td>
+                <div class="action-links">
+                    <a class="btn btn-secondary" href="{% url 'core:risk_detail' risk.pk %}">Ver</a>
+                    {% if can_edit %}
+                    <a class="btn btn-primary" href="{% url 'core:risk_edit' risk.pk %}">Editar</a>
+                    {% endif %}
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="empty-state">No hay riesgos u oportunidades registrados.</p>
+{% endif %}
+{% endblock %}

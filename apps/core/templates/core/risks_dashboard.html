@@ -1,0 +1,401 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard de Riesgos y Oportunidades{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-xl);
+    }
+
+    .dashboard-header h1 {
+        font-size: var(--font-size-3xl);
+        color: var(--color-primary);
+    }
+
+    .dashboard-header .actions {
+        display: flex;
+        gap: var(--spacing-md);
+    }
+
+    .filter-card {
+        background: var(--color-white);
+        border: 2px solid var(--color-primary-light);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-lg);
+        margin-bottom: var(--spacing-xl);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .filter-form {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: var(--spacing-lg);
+        align-items: flex-end;
+    }
+
+    .filter-form label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: var(--spacing-sm);
+        color: var(--color-dark);
+    }
+
+    .filter-form select {
+        padding: var(--spacing-sm) var(--spacing-md);
+        border: 2px solid var(--color-gray-300);
+        border-radius: var(--border-radius-md);
+        font-size: var(--font-size-sm);
+        transition: var(--transition);
+        background-color: var(--color-white);
+        width: 100%;
+    }
+
+    .filter-form select:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px var(--color-primary-light);
+    }
+
+    .filter-actions {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: flex-end;
+        gap: var(--spacing-sm);
+    }
+
+    .matrix-card {
+        background: var(--color-white);
+        border: 2px solid var(--color-primary-light);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-lg);
+        margin-bottom: var(--spacing-xl);
+        box-shadow: var(--shadow-sm);
+        overflow-x: auto;
+    }
+
+    .matrix-card h2 {
+        margin-bottom: var(--spacing-lg);
+        color: var(--color-dark);
+        font-size: var(--font-size-xl);
+    }
+
+    .matrix-container {
+        display: inline-block;
+        min-width: 100%;
+    }
+
+    .matrix-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0;
+    }
+
+    .matrix-table th,
+    .matrix-table td {
+        border: 1px solid var(--color-gray-300);
+        padding: var(--spacing-sm);
+        text-align: center;
+        font-weight: 600;
+    }
+
+    .matrix-table th {
+        background: #f8f9fa;
+        color: var(--color-dark);
+        font-size: var(--font-size-sm);
+    }
+
+    .matrix-table tbody tr:first-child td {
+        border-top: 2px solid var(--color-primary);
+    }
+
+    .matrix-table tbody td:first-child {
+        border-left: 2px solid var(--color-primary);
+        background: #f8f9fa;
+    }
+
+    .matrix-cell {
+        min-width: 60px;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .matrix-cell:hover {
+        transform: scale(1.05);
+        box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .cell-count {
+        font-size: var(--font-size-md);
+        font-weight: 700;
+    }
+
+    .cell-coords {
+        font-size: var(--font-size-xs);
+        opacity: 0.6;
+    }
+
+    .level-low {
+        background: var(--color-success-light);
+        color: var(--color-success);
+    }
+
+    .level-medium {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .level-high {
+        background: #f8d7da;
+        color: var(--color-danger);
+    }
+
+    .summary-section {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-lg);
+        margin-bottom: var(--spacing-xl);
+    }
+
+    .summary-card {
+        background: var(--color-white);
+        border: 2px solid var(--color-primary-light);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-lg);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .summary-card h3 {
+        margin-bottom: var(--spacing-lg);
+        color: var(--color-dark);
+        font-size: var(--font-size-lg);
+    }
+
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--spacing-sm) 0;
+        border-bottom: 1px solid var(--color-gray-200);
+    }
+
+    .summary-item:last-child {
+        border-bottom: none;
+    }
+
+    .summary-item-label {
+        color: var(--color-dark);
+        font-weight: 500;
+    }
+
+    .summary-item-count {
+        font-size: var(--font-size-xl);
+        font-weight: 700;
+        color: var(--color-primary);
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: var(--border-radius-sm);
+        font-weight: 600;
+        font-size: var(--font-size-xs);
+        text-transform: uppercase;
+    }
+
+    .stats-info {
+        padding: var(--spacing-md);
+        background: var(--color-gray-50);
+        border-radius: var(--border-radius-md);
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .stats-info p {
+        margin: 0;
+        color: var(--color-gray-700);
+        font-size: var(--font-size-sm);
+    }
+
+    @media (max-width: 1024px) {
+        .filter-form {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .summary-section {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .filter-form {
+            grid-template-columns: 1fr;
+        }
+
+        .dashboard-header {
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+
+        .matrix-card {
+            padding: var(--spacing-md);
+        }
+
+        .matrix-table th,
+        .matrix-table td {
+            padding: 6px;
+            font-size: var(--font-size-xs);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div>
+        <h1>📊 Dashboard de Riesgos y Oportunidades</h1>
+        <div class="text-muted">Organizacion: {{ organization.name }}</div>
+    </div>
+    <div class="actions">
+        <a class="btn btn-secondary" href="{% url 'core:risk_list' %}{% if query_params %}?{{ query_params }}{% endif %}">📋 Ver Lista</a>
+    </div>
+</div>
+
+<form method="get" class="filter-card">
+    <div class="filter-form">
+        <div>
+            <label for="process_type">🧭 Tipo de proceso</label>
+            <select id="process_type" name="process_type">
+                <option value="">Todos</option>
+                {% for value, label in process_types %}
+                <option value="{{ value }}" {% if selected_process_type == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="process_id">🔗 Proceso</label>
+            <select id="process_id" name="process_id">
+                <option value="">Todos</option>
+                {% for process in processes %}
+                <option value="{{ process.id }}" {% if selected_process_id == process.id|stringformat:"s" %}selected{% endif %}>{{ process }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="stakeholder_id">🤝 Parte interesada</label>
+            <select id="stakeholder_id" name="stakeholder_id">
+                <option value="">Todas</option>
+                {% for stakeholder in stakeholders %}
+                <option value="{{ stakeholder.id }}" {% if selected_stakeholder_id == stakeholder.id|stringformat:"s" %}selected{% endif %}>{{ stakeholder.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="status">📌 Estado</label>
+            <select id="status" name="status">
+                <option value="">Todos</option>
+                {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="level">🎯 Nivel</label>
+            <select id="level" name="level">
+                <option value="">Todos</option>
+                {% for value, label in level_choices %}
+                <option value="{{ value }}" {% if selected_level == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="kind">📊 Tipo</label>
+            <select id="kind" name="kind">
+                <option value="">Todos</option>
+                {% for value, label in kind_choices %}
+                <option value="{{ value }}" {% if selected_kind == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-primary">🔍 Filtrar</button>
+            <a class="btn btn-secondary" href="{% url 'core:risk_dashboard' %}">Limpiar</a>
+        </div>
+    </div>
+</form>
+
+<div class="stats-info">
+    <p><strong>Total de registros:</strong> {{ total_risks }} riesgos y oportunidades en los filtros aplicados</p>
+</div>
+
+<div class="matrix-card">
+    <h2>📈 Matriz de Probabilidad vs Impacto (5x5)</h2>
+    <div class="matrix-container">
+        <table class="matrix-table">
+            <thead>
+                <tr>
+                    <th style="width: 80px;">Prob/Imp</th>
+                    {% for i in "12345" %}
+                    <th>{{ i }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in matrix_grid %}
+                <tr>
+                    <td>{{ row.0.probability }}</td>
+                    {% for cell in row %}
+                    <td class="matrix-cell {% if cell.count > 0 %}{{ cell.level_class }}{% endif %}">
+                        {% if cell.count > 0 %}
+                            <div class="cell-count">{{ cell.count }}</div>
+                            <div class="cell-coords">({{ cell.probability }},{{ cell.impact }})</div>
+                        {% else %}
+                            <div style="opacity: 0.3;">-</div>
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="summary-section">
+    <div class="summary-card">
+        <h3>🚦 Resumen por Nivel</h3>
+        <div class="summary-item">
+            <span class="summary-item-label">
+                <span class="badge" style="background: var(--color-success-light); color: var(--color-success);">Bajo</span>
+            </span>
+            <span class="summary-item-count">{{ level_summary.LOW|default:0 }}</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-item-label">
+                <span class="badge" style="background: #fff3cd; color: #856404;">Medio</span>
+            </span>
+            <span class="summary-item-count">{{ level_summary.MEDIUM|default:0 }}</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-item-label">
+                <span class="badge" style="background: #f8d7da; color: var(--color-danger);">Alto</span>
+            </span>
+            <span class="summary-item-count">{{ level_summary.HIGH|default:0 }}</span>
+        </div>
+    </div>
+
+    <div class="summary-card">
+        <h3>📋 Resumen por Tipo</h3>
+        <div class="summary-item">
+            <span class="summary-item-label">⚠️ Riesgos</span>
+            <span class="summary-item-count">{{ kind_summary.RISK|default:0 }}</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-item-label">💡 Oportunidades</span>
+            <span class="summary-item-count">{{ kind_summary.OPPORTUNITY|default:0 }}</span>
+        </div>
+    </div>
+</div>
+{% endblock %}

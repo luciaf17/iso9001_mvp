@@ -114,3 +114,107 @@ Esto permite demostrar trazabilidad ante auditoría ISO.
 - DOCS-05 UI básica + HTMX: COMPLETADO
 - DOCS-07: Motivo del cambio en versiones: COMPLETADO
 
+9. App core – Gestión Organizacional ISO
+
+Además de funcionalidades transversales, la app core contiene actualmente:
+
+Organización y estructura
+
+Organization
+
+Site
+
+Process jerárquico (Proceso → Subproceso → Sector)
+
+Mapa de procesos visual
+
+Carga masiva inicial vía management command
+
+Contexto de la organización (ISO 4.1 – 4.2)
+
+OrganizationContext editable
+
+Alcance del SGC
+
+Historial de actualización
+
+Auditoría automática
+
+Partes interesadas (INT-01)
+
+Registro de stakeholders
+
+Necesidades y expectativas
+
+Relación con procesos
+
+Evidencia documental
+
+Control de estado y revisión
+
+Riesgos y Oportunidades (RSK-01)
+
+Identificación por proceso o stakeholder
+
+Probabilidad (1–5)
+
+Impacto (1–5)
+
+Cálculo automático de score
+
+Nivel automático (LOW / MEDIUM / HIGH)
+
+Plan de tratamiento
+
+Responsable y vencimiento
+
+Evidencia documental
+
+Registro en AuditEvent
+
+10. Control de permisos
+
+Solo grupos Admin y Calidad pueden crear y editar:
+
+Procesos
+
+Contexto
+
+Stakeholders
+
+Riesgos
+
+Documentos
+
+Otros usuarios:
+
+Solo lectura
+
+11. Principios arquitectónicos
+
+Monolito Django
+
+Single-tenant por instancia
+
+Lógica de negocio en servicios
+
+Cálculos automáticos en modelo
+
+Auditoría transversal obligatoria
+
+UI simple, auditable y sin dependencia SPA
+
+---
+
+## 12. Mantenimiento y limpieza
+
+### Limpieza de archivos cacheados
+
+Si es necesario eliminar archivos `__pycache__/` del control de versiones:
+
+```bash
+git rm -r --cached **/__pycache__
+git commit -m "Remove pycache from tracking"
+```
+
+Los archivos `.pyc` y `__pycache__/` ya están en `.gitignore` para evitar commits futuros.
