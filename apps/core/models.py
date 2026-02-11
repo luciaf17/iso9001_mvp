@@ -154,6 +154,244 @@ class Process(models.Model):
         super().save(*args, **kwargs)
 
 
+class Stakeholder(models.Model):
+    """Parte interesada segun ISO 9001 (clausula 4.2)."""
+
+    class StakeholderType(models.TextChoices):
+        CUSTOMER = "CUSTOMER", "Cliente"
+        SUPPLIER = "SUPPLIER", "Proveedor"
+        INTERNAL = "INTERNAL", "Interno"
+        REGULATOR = "REGULATOR", "Regulador"
+        COMMUNITY = "COMMUNITY", "Comunidad"
+        OTHER = "OTHER", "Otro"
+
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.PROTECT,
+        related_name="stakeholders",
+        verbose_name="Organizacion",
+    )
+    site = models.ForeignKey(
+        Site,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="stakeholders",
+        verbose_name="Sede",
+    )
+    name = models.CharField(
+        max_length=150,
+        verbose_name="Nombre",
+    )
+    stakeholder_type = models.CharField(
+        max_length=20,
+        choices=StakeholderType.choices,
+        verbose_name="Tipo",
+    )
+    expectations = models.TextField(
+        verbose_name="Expectativas",
+    )
+    related_process = models.ForeignKey(
+        Process,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="stakeholders",
+        verbose_name="Proceso relacionado",
+    )
+    related_document = models.ForeignKey(
+        "docs.Document",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="stakeholders",
+        verbose_name="Documento relacionado",
+    )
+    review_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de revision",
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Activo",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Creado el",
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Actualizado el",
+    )
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name = "Parte interesada"
+        verbose_name_plural = "Partes interesadas"
+
+    def __str__(self):
+        return f"{self.name} ({self.stakeholder_type})"
+
+
+class RiskOpportunity(models.Model):
+    """Registro de riesgos y oportunidades por proceso (ISO 9001)."""
+
+    class Kind(models.TextChoices):
+        RISK = "RISK", "Riesgo"
+        OPPORTUNITY = "OPPORTUNITY", "Oportunidad"
+
+    class Level(models.TextChoices):
+        LOW = "LOW", "Bajo"
+        MEDIUM = "MEDIUM", "Medio"
+        HIGH = "HIGH", "Alto"
+
+    class Status(models.TextChoices):
+        OPEN = "OPEN", "Abierto"
+        IN_PROGRESS = "IN_PROGRESS", "En progreso"
+        CLOSED = "CLOSED", "Cerrado"
+
+    PROBABILITY_CHOICES = [(i, str(i)) for i in range(1, 6)]
+    IMPACT_CHOICES = [(i, str(i)) for i in range(1, 6)]
+
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.PROTECT,
+        related_name="risks_opportunities",
+        verbose_name="Organizacion",
+    )
+    site = models.ForeignKey(
+        Site,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="risks_opportunities",
+        verbose_name="Sede",
+    )
+    related_process = models.ForeignKey(
+        Process,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="risks_opportunities",
+        verbose_name="Proceso relacionado",
+    )
+    stakeholder = models.ForeignKey(
+        "core.Stakeholder",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="risks_opportunities",
+        verbose_name="Parte interesada",
+    )
+    title = models.CharField(
+        max_length=200,
+        verbose_name="Titulo",
+    )
+    description = models.TextField(
+        verbose_name="Descripcion",
+    )
+    kind = models.CharField(
+        max_length=20,
+        choices=Kind.choices,
+        verbose_name="Tipo",
+    )
+    probability = models.PositiveSmallIntegerField(
+        choices=PROBABILITY_CHOICES,
+        verbose_name="Probabilidad",
+    )
+    impact = models.PositiveSmallIntegerField(
+        choices=IMPACT_CHOICES,
+        verbose_name="Impacto",
+    )
+    score = models.PositiveSmallIntegerField(
+        editable=False,
+        verbose_name="Puntaje",
+    )
+    level = models.CharField(
+        max_length=10,
+        choices=Level.choices,
+        editable=False,
+        verbose_name="Nivel",
+    )
+    treatment_plan = models.TextField(
+        blank=True,
+        verbose_name="Plan de tratamiento",
+    )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="risks_opportunities",
+        verbose_name="Responsable",
+    )
+    due_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha limite",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.OPEN,
+        verbose_name="Estado",
+    )
+    evidence_document = models.ForeignKey(
+        "docs.Document",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="risks_opportunities",
+        verbose_name="Documento evidencia",
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Activo",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Creado el",
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Actualizado el",
+    )
+
+    class Meta:
+        ordering = ["-updated_at"]
+        verbose_name = "Riesgo u oportunidad"
+        verbose_name_plural = "Riesgos y oportunidades"
+
+    def __str__(self):
+        return f"{self.title} ({self.get_kind_display()})"
+
+    def clean(self):
+        super().clean()
+        if self.probability is not None and not 1 <= self.probability <= 5:
+            raise ValidationError({"probability": "La probabilidad debe estar entre 1 y 5."})
+        if self.impact is not None and not 1 <= self.impact <= 5:
+            raise ValidationError({"impact": "El impacto debe estar entre 1 y 5."})
+
+    def _calculate_score_level(self):
+        if self.probability is None or self.impact is None:
+            return 0, self.Level.LOW
+
+        score = self.probability * self.impact
+        if score <= 7:
+            level = self.Level.LOW
+        elif score <= 14:
+            level = self.Level.MEDIUM
+        else:
+            level = self.Level.HIGH
+        return score, level
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        self.score, self.level = self._calculate_score_level()
+        super().save(*args, **kwargs)
+
+
 class AuditEvent(models.Model):
     """Modelo para trazabilidad transversal de eventos del sistema."""
     

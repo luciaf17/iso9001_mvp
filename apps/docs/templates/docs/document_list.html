@@ -89,6 +89,78 @@
         display: flex;
         gap: var(--spacing-sm);
     }
+
+    .doc-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-md);
+    }
+
+    .doc-card {
+        background: var(--color-white);
+        border: 2px solid var(--color-primary-light);
+        border-left: 4px solid var(--color-primary);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-lg);
+        box-shadow: var(--shadow-sm);
+        transition: var(--transition);
+    }
+
+    .doc-card:hover {
+        box-shadow: var(--shadow-lg);
+        transform: translateY(-2px);
+    }
+
+    .doc-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .doc-card-title {
+        font-weight: 700;
+        color: var(--color-dark);
+        font-size: var(--font-size-lg);
+    }
+
+    .doc-card-title a {
+        color: var(--color-primary);
+        text-decoration: none;
+    }
+
+    .doc-card-title a:hover {
+        text-decoration: underline;
+    }
+
+    .doc-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--spacing-md);
+        color: var(--color-gray-600);
+        font-size: var(--font-size-sm);
+        margin-top: var(--spacing-sm);
+    }
+
+    .doc-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+    }
+
+    .doc-processes {
+        margin-top: var(--spacing-sm);
+        color: var(--color-gray-700);
+        font-size: var(--font-size-sm);
+    }
+
+    .doc-actions {
+        display: flex;
+        gap: var(--spacing-sm);
+        margin-top: var(--spacing-md);
+        flex-wrap: wrap;
+    }
     
     @media (max-width: 1024px) {
         .filter-form {
@@ -141,43 +213,39 @@
 </div>
 
 {% if documents %}
-<table style="width: 100%; border-collapse: collapse;">
-    <thead>
-        <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
-            <th style="padding: 0.75rem; text-align: left;">Código</th>
-            <th style="padding: 0.75rem; text-align: left;">Título</th>
-            <th style="padding: 0.75rem; text-align: left;">Tipo</th>
-            <th style="padding: 0.75rem; text-align: left;">Procesos</th>
-            <th style="padding: 0.75rem; text-align: left;">Vigente</th>
-            <th style="padding: 0.75rem; text-align: left;">Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for doc in documents %}
-        <tr style="border-bottom: 1px solid #dee2e6;">
-            <td style="padding: 0.75rem;"><strong>{{ doc.code }}</strong></td>
-            <td style="padding: 0.75rem;">{{ doc.title }}</td>
-            <td style="padding: 0.75rem;">{{ doc.get_doc_type_display }}</td>
-            <td style="padding: 0.75rem;">
-                {% if doc.processes.all %}
-                <ul style="margin: 0.25rem 0 0 1rem;">
-                    {% for process in doc.processes.all %}
-                    <li>{{ process.code }} - {{ process.name }}</li>
-                    {% endfor %}
-                </ul>
-                {% else %}-{% endif %}
-            </td>
-            <td style="padding: 0.75rem;">{% if doc.current_version %}v{{ doc.current_version.version_number }}{% else %}-{% endif %}</td>
-            <td style="padding: 0.75rem;">
-                <a href="{% url 'docs:docs_detail' doc.pk %}" style="color: #3498db; text-decoration: none; margin-right: 0.75rem;">Ver</a>
+<div class="doc-list">
+    {% for doc in documents %}
+    <div class="doc-card">
+        <div class="doc-card-header">
+            <div>
+                <div class="doc-card-title">
+                    <a href="{% url 'docs:docs_detail' doc.pk %}">{{ doc.code }} - {{ doc.title }}</a>
+                </div>
+                <div class="doc-meta">
+                    <span>📋 {{ doc.get_doc_type_display }}</span>
+                    <span>📄 Vigente: {% if doc.current_version %}v{{ doc.current_version.version_number }}{% else %}-{% endif %}</span>
+                </div>
+            </div>
+            <div class="doc-actions">
+                <a class="btn btn-secondary" href="{% url 'docs:docs_detail' doc.pk %}">Ver</a>
                 {% if doc.current_version and doc.current_version.file %}
-                <a href="{{ doc.current_version.file.url }}" style="color: #2c3e50; text-decoration: none;" download>Descargar vigente</a>
+                <a class="btn btn-primary" href="{{ doc.current_version.file.url }}" download>Descargar vigente</a>
                 {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+            </div>
+        </div>
+        <div class="doc-processes">
+            <strong>Procesos:</strong>
+            {% if doc.processes.all %}
+            <span>
+                {% for process in doc.processes.all %}
+                {{ process.code }} - {{ process.name }}{% if not forloop.last %} • {% endif %}
+                {% endfor %}
+            </span>
+            {% else %}-{% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
 {% else %}
 <p style="color: #6c757d; text-align: center; padding: 3rem;">No hay documentos que coincidan con los filtros.</p>
 {% endif %}

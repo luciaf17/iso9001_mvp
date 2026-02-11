@@ -1,6 +1,6 @@
 from django import forms
 
-from apps.core.models import OrganizationContext, Process
+from apps.core.models import OrganizationContext, Process, Stakeholder, RiskOpportunity
 
 
 class ProcessForm(forms.ModelForm):
@@ -28,4 +28,48 @@ class OrganizationContextForm(forms.ModelForm):
         ]
         widgets = {
             "review_date": forms.DateInput(attrs={"type": "date"}),
+        }
+
+
+class StakeholderForm(forms.ModelForm):
+    class Meta:
+        model = Stakeholder
+        fields = [
+            "name",
+            "stakeholder_type",
+            "expectations",
+            "related_process",
+            "related_document",
+            "review_date",
+            "is_active",
+        ]
+        widgets = {
+            "review_date": forms.DateInput(attrs={"type": "date"}),
+            "expectations": forms.Textarea(attrs={"rows": 4}),
+        }
+
+
+class RiskOpportunityForm(forms.ModelForm):
+    class Meta:
+        model = RiskOpportunity
+        fields = [
+            "site",
+            "related_process",
+            "stakeholder",
+            "title",
+            "description",
+            "kind",
+            "probability",
+            "impact",
+            "treatment_plan",
+            "owner",
+            "due_date",
+            "status",
+            "evidence_document",
+            "is_active",
+        ]
+        widgets = {
+            "due_date": forms.DateInput(attrs={"type": "date"}),
+            "description": forms.Textarea(attrs={"rows": 4}),
+            "treatment_plan": forms.Textarea(attrs={"rows": 4}),
         }

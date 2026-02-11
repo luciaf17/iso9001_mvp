@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AuditEvent, Organization, Site, Process
+from .models import AuditEvent, Organization, Site, Process, Stakeholder, RiskOpportunity
 
 
 @admin.register(AuditEvent)
@@ -55,3 +55,36 @@ class SiteAdmin(admin.ModelAdmin):
     list_display = ("name", "organization", "is_active")
     list_filter = ("organization", "is_active")
     search_fields = ("name",)
+
+
+@admin.register(Stakeholder)
+class StakeholderAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "stakeholder_type",
+        "organization",
+        "related_process",
+        "review_date",
+        "is_active",
+    )
+    list_filter = ("stakeholder_type", "organization", "is_active")
+    search_fields = ("name", "expectations")
+
+
+@admin.register(RiskOpportunity)
+class RiskOpportunityAdmin(admin.ModelAdmin):
+    list_display = (
+        "title",
+        "kind",
+        "related_process",
+        "stakeholder",
+        "probability",
+        "impact",
+        "score",
+        "level",
+        "status",
+        "due_date",
+        "is_active",
+    )
+    list_filter = ("kind", "level", "status", "organization", "is_active")
+    search_fields = ("title", "description", "treatment_plan")

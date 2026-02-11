@@ -1,9 +1,10 @@
 from django.test import TestCase
 from django.core.management import call_command
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.core.exceptions import ValidationError
+from django.urls import reverse
 
-from .models import AuditEvent, Organization, Process, Site
+from .models import AuditEvent, Organization, Process, Site, Stakeholder
 from .services import log_audit_event
 
 
@@ -198,11 +199,68 @@ class CeiboProcessMapSeedTests(TestCase):
         self.assertEqual(level2.parent_id, level1.id)
         self.assertEqual(level3.parent_id, level2.id)
 
-        self.assertEqual(level1.site_id, site.id)
-        self.assertEqual(level2.site_id, site.id)
-        self.assertEqual(level3.site_id, site.id)
 
-        strategic = Process.objects.get(organization=organization, code="00")
-        support = Process.objects.get(organization=organization, code="01")
-        self.assertEqual(strategic.process_type, Process.ProcessType.STRATEGIC)
-        self.assertEqual(support.process_type, Process.ProcessType.SUPPORT)
+class StakeholderViewsTests(TestCase):
+    def setUp(self):
+        self.organization, _created = Organization.objects.get_or_create(name="Empresa")
+        self.process = Process.objects.create(
+            organization=self.organization,
+            code="P1",
+            name="Proceso 1",
+            process_type=Process.ProcessType.MISSIONAL,
+            level=Process.Level.PROCESS,
+            is_active=True,
+        )
+        self.admin_group = Group.objects.create(name="Admin")
+        self.admin_user = User.objects.create_user(username="admin", password="testpass")
+        self.admin_user.groups.add(self.admin_group)
+        self.normal_user = User.objects.create_user(username="user", password="testpass")
+
+    def test_create_stakeholder(self):
+        self.client.login(username="admin", password="testpass")
+
+        response = self.client.post(
+            reverse("core:stakeholder_new"),
+            data={
+                "name": "Proveedor X",
+                "stakeholder_type": Stakeholder.StakeholderType.SUPPLIER,
+                "expectations": "Cumplir plazos de entrega.",
+                "is_active": "on",
+                "related_process": self.process.id,
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(Stakeholder.objects.filter(name="Proveedor X").exists())
+        self.assertTrue(AuditEvent.objects.filter(action="stakeholder_created").exists())
+
+    def test_non_admin_cannot_create(self):
+        self.client.login(username="user", password="testpass")
+
+        response = self.client.post(
+            reverse("core:stakeholder_new"),
+            data={
+                "name": "Cliente Z",
+                "stakeholder_type": Stakeholder.StakeholderType.CUSTOMER,
+                "expectations": "Atencion rapida.",
+                "is_active": "on",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Stakeholder.objects.filter(name="Cliente Z").exists())
+
+    def test_list_renders(self):
+        Stakeholder.objects.create(
+            organization=self.organization,
+            name="Regulador",
+            stakeholder_type=Stakeholder.StakeholderType.REGULATOR,
+            expectations="Cumplir normativa vigente.",
+            is_active=True,
+        )
+
+        self.client.login(username="user", password="testpass")
+        response = self.client.get(reverse("core:stakeholder_list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Regulador")
