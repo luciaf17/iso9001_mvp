@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Editar{% else %}Nueva{% endif %} No Conformidad{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 800px;
+        background: var(--color-white);
+        border: 2px solid var(--color-primary-light);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-2xl);
+        box-shadow: var(--shadow-md);
+    }
+
+    .form-container h1 {
+        color: var(--color-primary);
+        margin-bottom: var(--spacing-xl);
+        font-size: var(--font-size-2xl);
+    }
+
+    .form-group {
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: var(--spacing-sm);
+        color: var(--color-dark);
+    }
+
+    .form-group label .required {
+        color: var(--color-danger);
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: var(--spacing-sm) var(--spacing-md);
+        border: 2px solid var(--color-gray-300);
+        border-radius: var(--border-radius-md);
+        font-size: var(--font-size-sm);
+        transition: var(--transition);
+        box-sizing: border-box;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px var(--color-primary-light);
+    }
+
+    .form-group textarea {
+        min-height: 110px;
+        resize: vertical;
+    }
+
+    .error-list {
+        color: var(--color-danger);
+        font-size: var(--font-size-sm);
+        margin-top: var(--spacing-xs);
+        list-style: none;
+        padding: 0;
+    }
+
+    .helptext {
+        color: var(--color-gray-600);
+        font-size: var(--font-size-xs);
+        margin-top: var(--spacing-xs);
+        font-style: italic;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: var(--spacing-md);
+        margin-top: var(--spacing-2xl);
+        padding-top: var(--spacing-lg);
+        border-top: 2px solid var(--color-gray-200);
+    }
+
+    .form-actions a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h1>{% if is_edit %}✏️ Editar{% else %}🚨 Nueva{% endif %} No Conformidad</h1>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger" style="padding: var(--spacing-md); background: var(--color-danger-light); border: 2px solid var(--color-danger); border-radius: var(--border-radius-md); margin-bottom: var(--spacing-lg); color: var(--color-danger);">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
+        {% for field in form %}
+        <div class="form-group">
+            <label for="{{ field.id_for_label }}">
+                {{ field.label }}
+                {% if field.field.required %}<span class="required">*</span>{% endif %}
+            </label>
+            {{ field }}
+            {% if field.errors %}
+            <ul class="error-list">
+                {% for error in field.errors %}
+                <li>❌ {{ error }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+            {% if field.help_text %}
+            <div class="helptext">{{ field.help_text }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-success">✅ Guardar</button>
+            <a href="{% url 'core:nc_list' %}" class="btn btn-secondary">← Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

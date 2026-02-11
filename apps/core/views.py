@@ -5,10 +5,10 @@ from django.contrib.auth.views import LogoutView
 from django.db.models import Count
 from django.shortcuts import redirect, render, get_object_or_404
 
-from apps.core.forms import OrganizationContextForm, StakeholderForm, RiskOpportunityForm
-from apps.core.models import Organization, OrganizationContext, Site, Stakeholder, Process, RiskOpportunity
+from apps.core.forms import OrganizationContextForm, StakeholderForm, RiskOpportunityForm, NoConformityForm
+from apps.core.models import Organization, OrganizationContext, Site, Stakeholder, Process, RiskOpportunity, NoConformity
 from apps.core.services import log_audit_event
-from apps.core.utils import can_edit_context, can_edit_stakeholders, can_edit_risks
+from apps.core.utils import can_edit_context, can_edit_stakeholders, can_edit_risks, can_edit_nc
 from apps.docs.models import Document
 
 
@@ -587,5 +587,199 @@ def risk_dashboard(request):
 			"selected_level": level,
 			"selected_kind": kind,
 			"query_params": query_params,
+		},
+	)
+
+def _configure_nc_form(form, organization):
+	"""Configure NoConformity form with organization-filtered querysets."""
+	User = get_user_model()
+	form.fields["site"].queryset = Site.objects.filter(organization=organization, is_active=True)
+	form.fields["related_process"].queryset = Process.objects.filter(
+		organization=organization,
+		is_active=True,
+	).order_by("code")
+	form.fields["related_document"].queryset = Document.objects.filter(is_active=True)
+	form.fields["evidence_document"].queryset = Document.objects.filter(is_active=True)
+	form.fields["owner"].queryset = User.objects.filter(is_active=True)
+
+
+@login_required
+def nc_list(request):
+	"""List all no conformities with filters."""
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	ncs = NoConformity.objects.filter(organization=organization).select_related(
+		"related_process",
+		"owner",
+		"organization",
+		"site",
+	)
+
+	# Apply filters
+	origin = request.GET.get("origin", "")
+	severity = request.GET.get("severity", "")
+	status = request.GET.get("status", "")
+	process_id = request.GET.get("process_id", "")
+
+	if origin:
+		ncs = ncs.filter(origin=origin)
+	if severity:
+		ncs = ncs.filter(severity=severity)
+	if status:
+		ncs = ncs.filter(status=status)
+	if process_id:
+		ncs = ncs.filter(related_process_id=process_id)
+
+	can_edit = can_edit_nc(request.user)
+	processes = Process.objects.filter(organization=organization, is_active=True).order_by("code")
+
+	return render(
+		request,
+		"core/nc_list.html",
+		{
+			"ncs": ncs,
+			"organization": organization,
+			"can_edit": can_edit,
+			"processes": processes,
+			"origin_choices": NoConformity.Origin.choices,
+			"severity_choices": NoConformity.Severity.choices,
+			"status_choices": NoConformity.Status.choices,
+			"selected_origin": origin,
+			"selected_severity": severity,
+			"selected_status": status,
+			"selected_process_id": process_id,
+		},
+	)
+
+
+@login_required
+def nc_detail(request, pk):
+	"""Detail view for a no conformity."""
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	nc = get_object_or_404(
+		NoConformity,
+		pk=pk,
+		organization=organization,
+	)
+	can_edit = can_edit_nc(request.user)
+
+	return render(
+		request,
+		"core/nc_detail.html",
+		{
+			"nc": nc,
+			"organization": organization,
+			"can_edit": can_edit,
+		},
+	)
+
+
+@login_required
+def nc_create(request):
+	"""Create a new no conformity."""
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	if not can_edit_nc(request.user):
+		messages.error(request, "No tiene permisos para crear no conformidades.")
+		return redirect("core:nc_list")
+
+	if request.method == "POST":
+		form = NoConformityForm(request.POST)
+		_configure_nc_form(form, organization)
+		if form.is_valid():
+			nc = form.save(commit=False)
+			nc.organization = organization
+			nc.save()
+			log_audit_event(
+				actor=request.user,
+				action="core.nc.created",
+				instance=nc,
+				metadata={
+					"origin": nc.origin,
+					"severity": nc.severity,
+					"status": nc.status,
+					"process_id": nc.related_process_id,
+					"owner_id": nc.owner_id,
+				},
+				object_type_override="NoConformity",
+			)
+			messages.success(request, "No conformidad creada correctamente.")
+			return redirect("core:nc_detail", pk=nc.pk)
+	else:
+		form = NoConformityForm()
+		_configure_nc_form(form, organization)
+
+	return render(
+		request,
+		"core/nc_form.html",
+		{
+			"form": form,
+			"organization": organization,
+			"is_edit": False,
+		},
+	)
+
+
+@login_required
+def nc_edit(request, pk):
+	"""Edit an existing no conformity."""
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	nc = get_object_or_404(
+		NoConformity,
+		pk=pk,
+		organization=organization,
+	)
+	if not can_edit_nc(request.user):
+		messages.error(request, "No tiene permisos para editar no conformidades.")
+		return redirect("core:nc_detail", pk=nc.pk)
+
+	if request.method == "POST":
+		form = NoConformityForm(request.POST, instance=nc)
+		_configure_nc_form(form, organization)
+		if form.is_valid():
+			nc = form.save(commit=False)
+			nc.organization = organization
+			nc.save()
+			log_audit_event(
+				actor=request.user,
+				action="core.nc.updated",
+				instance=nc,
+				metadata={
+					"origin": nc.origin,
+					"severity": nc.severity,
+					"status": nc.status,
+					"process_id": nc.related_process_id,
+					"owner_id": nc.owner_id,
+				},
+				object_type_override="NoConformity",
+			)
+			messages.success(request, "No conformidad actualizada correctamente.")
+			return redirect("core:nc_detail", pk=nc.pk)
+	else:
+		form = NoConformityForm(instance=nc)
+		_configure_nc_form(form, organization)
+
+	return render(
+		request,
+		"core/nc_form.html",
+		{
+			"form": form,
+			"organization": organization,
+			"nc": nc,
+			"is_edit": True,
 		},
 	)

@@ -26,3 +26,13 @@ def can_edit_risks(user):
         return True
 
     return user.groups.filter(name__in=["Admin", "Calidad"]).exists()
+
+def can_edit_nc(user):
+    """Check if user can create/edit no conformities."""
+    if user is None:
+        return False
+
+    if getattr(user, "is_superuser", False):
+        return True
+
+    return user.groups.filter(name__in=["Admin", "Calidad"]).exists()

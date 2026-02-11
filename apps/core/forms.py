@@ -1,6 +1,6 @@
 from django import forms
 
-from apps.core.models import OrganizationContext, Process, Stakeholder, RiskOpportunity
+from apps.core.models import OrganizationContext, Process, Stakeholder, RiskOpportunity, NoConformity
 
 
 class ProcessForm(forms.ModelForm):
@@ -72,4 +72,28 @@ class RiskOpportunityForm(forms.ModelForm):
             "due_date": forms.DateInput(attrs={"type": "date"}),
             "description": forms.Textarea(attrs={"rows": 4}),
             "treatment_plan": forms.Textarea(attrs={"rows": 4}),
+        }
+
+class NoConformityForm(forms.ModelForm):
+    class Meta:
+        model = NoConformity
+        fields = [
+            "site",
+            "related_process",
+            "related_document",
+            "title",
+            "description",
+            "origin",
+            "severity",
+            "detected_at",
+            "owner",
+            "due_date",
+            "status",
+            "evidence_document",
+            "is_active",
+        ]
+        widgets = {
+            "detected_at": forms.DateInput(attrs={"type": "date"}),
+            "due_date": forms.DateInput(attrs={"type": "date"}),
+            "description": forms.Textarea(attrs={"rows": 4}),
         }

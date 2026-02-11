@@ -3,6 +3,10 @@ from django.urls import path
 from apps.core.views import (
     context_detail,
     context_edit,
+    nc_create,
+    nc_detail,
+    nc_edit,
+    nc_list,
     risk_create,
     risk_dashboard,
     risk_detail,
@@ -28,4 +32,8 @@ urlpatterns = [
     path("risks/new/", risk_create, name="risk_new"),
     path("risks/<int:pk>/", risk_detail, name="risk_detail"),
     path("risks/<int:pk>/edit/", risk_edit, name="risk_edit"),
+    path("nc/", nc_list, name="nc_list"),
+    path("nc/new/", nc_create, name="nc_new"),
+    path("nc/<int:pk>/", nc_detail, name="nc_detail"),
+    path("nc/<int:pk>/edit/", nc_edit, name="nc_edit"),
 ]

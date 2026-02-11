@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}No Conformidades{% endblock %}
+
+{% block extra_css %}
+<style>
+    .nc-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-xl);
+    }
+
+    .nc-header h1 {
+        font-size: var(--font-size-3xl);
+        color: var(--color-primary);
+    }
+
+    .filter-card {
+        background: var(--color-white);
+        border: 2px solid var(--color-primary-light);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-lg);
+        margin-bottom: var(--spacing-xl);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .filter-form {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--spacing-lg);
+        align-items: flex-end;
+    }
+
+    .filter-form label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: var(--spacing-sm);
+        color: var(--color-dark);
+    }
+
+    .filter-form select {
+        padding: var(--spacing-sm) var(--spacing-md);
+        border: 2px solid var(--color-gray-300);
+        border-radius: var(--border-radius-md);
+        font-size: var(--font-size-sm);
+        transition: var(--transition);
+        background-color: var(--color-white);
+        width: 100%;
+    }
+
+    .filter-form select:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px var(--color-primary-light);
+    }
+
+    .filter-actions {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: flex-end;
+        gap: var(--spacing-sm);
+    }
+
+    .nc-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .nc-table th,
+    .nc-table td {
+        padding: 0.75rem;
+        text-align: left;
+    }
+
+    .nc-table thead tr {
+        background: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .nc-table tbody tr {
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .nc-table tbody tr:hover {
+        background-color: var(--color-gray-50);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .severity-badge {
+        padding: 4px 8px;
+        border-radius: var(--border-radius-sm);
+        font-weight: 600;
+        font-size: var(--font-size-xs);
+        text-transform: uppercase;
+    }
+
+    .severity-minor {
+        background: var(--color-success-light);
+        color: var(--color-success);
+    }
+
+    .severity-major {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .severity-critical {
+        background: #f8d7da;
+        color: var(--color-danger);
+    }
+
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: var(--border-radius-sm);
+        font-weight: 600;
+        font-size: var(--font-size-xs);
+        text-transform: uppercase;
+        background: var(--color-gray-100);
+        color: var(--color-gray-600);
+    }
+
+    .action-links {
+        display: flex;
+        gap: var(--spacing-sm);
+    }
+
+    .action-links .btn {
+        padding: 6px 12px;
+        font-size: var(--font-size-xs);
+        border-radius: var(--border-radius-sm);
+        box-shadow: var(--shadow-sm);
+        transition: var(--transition);
+    }
+
+    .action-links .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .empty-state {
+        color: var(--color-gray-600);
+        text-align: center;
+        padding: 3rem;
+    }
+
+    @media (max-width: 1024px) {
+        .filter-form {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 640px) {
+        .filter-form {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="nc-header">
+    <div>
+        <h1>🚨 No Conformidades</h1>
+        <div class="text-muted">Organizacion: {{ organization.name }}</div>
+    </div>
+    <div style="display: flex; gap: var(--spacing-sm);">
+        {% if can_edit %}
+        <a class="btn btn-primary" href="{% url 'core:nc_new' %}">+ Nueva</a>
+        {% endif %}
+    </div>
+</div>
+
+<form method="get" class="filter-card">
+    <div class="filter-form">
+        <div>
+            <label for="origin">📍 Origen</label>
+            <select id="origin" name="origin">
+                <option value="">Todos</option>
+                {% for value, label in origin_choices %}
+                <option value="{{ value }}" {% if selected_origin == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="severity">⚠️ Severidad</label>
+            <select id="severity" name="severity">
+                <option value="">Todas</option>
+                {% for value, label in severity_choices %}
+                <option value="{{ value }}" {% if selected_severity == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="status">📌 Estado</label>
+            <select id="status" name="status">
+                <option value="">Todos</option>
+                {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="process_id">🔗 Proceso</label>
+            <select id="process_id" name="process_id">
+                <option value="">Todos</option>
+                {% for process in processes %}
+                <option value="{{ process.id }}" {% if selected_process_id == process.id|stringformat:"s" %}selected{% endif %}>{{ process }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-primary">🔍 Filtrar</button>
+            <a class="btn btn-secondary" href="{% url 'core:nc_list' %}">Limpiar</a>
+        </div>
+    </div>
+</form>
+
+{% if ncs %}
+<table class="nc-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Titulo</th>
+            <th>Origen</th>
+            <th>Severidad</th>
+            <th>Estado</th>
+            <th>Detectado</th>
+            <th>Responsable</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for nc in ncs %}
+        <tr>
+            <td><strong>NC-{{ nc.id }}</strong></td>
+            <td>{{ nc.title }}</td>
+            <td>{{ nc.get_origin_display }}</td>
+            <td>
+                <span class="severity-badge {% if nc.severity == 'MINOR' %}severity-minor{% elif nc.severity == 'MAJOR' %}severity-major{% else %}severity-critical{% endif %}">
+                    {{ nc.get_severity_display }}
+                </span>
+            </td>
+            <td><span class="status-badge">{{ nc.get_status_display }}</span></td>
+            <td>{{ nc.detected_at|date:"d/m/Y" }}</td>
+            <td>{{ nc.owner|default:"-" }}</td>
+            <td>
+                <div class="action-links">
+                    <a href="{% url 'core:nc_detail' nc.pk %}" class="btn btn-secondary">Ver</a>
+                    {% if can_edit %}
+                    <a href="{% url 'core:nc_edit' nc.pk %}" class="btn btn-primary">Editar</a>
+                    {% endif %}
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="empty-state">
+    <p>📭 No se encontraron no conformidades.</p>
+</div>
+{% endif %}
+{% endblock %}

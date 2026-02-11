@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle No Conformidad{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-xl);
+    }
+
+    .detail-header a {
+        color: var(--color-gray-600);
+        text-decoration: none;
+        transition: var(--transition);
+    }
+
+    .detail-header a:hover {
+        color: var(--color-primary);
+        text-decoration: underline;
+    }
+
+    .detail-card {
+        background: var(--color-white);
+        border: 2px solid var(--color-primary-light);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-lg);
+        margin-bottom: var(--spacing-xl);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .detail-card h1 {
+        margin-bottom: var(--spacing-lg);
+        color: var(--color-primary);
+    }
+
+    .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-lg);
+    }
+
+    .detail-item strong {
+        color: var(--color-dark);
+        display: block;
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .severity-badge {
+        padding: 4px 8px;
+        border-radius: var(--border-radius-sm);
+        font-weight: 600;
+        font-size: var(--font-size-xs);
+        text-transform: uppercase;
+    }
+
+    .severity-minor {
+        background: var(--color-success-light);
+        color: var(--color-success);
+    }
+
+    .severity-major {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .severity-critical {
+        background: #f8d7da;
+        color: var(--color-danger);
+    }
+
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: var(--border-radius-sm);
+        font-weight: 600;
+        font-size: var(--font-size-xs);
+        text-transform: uppercase;
+        background: var(--color-gray-100);
+        color: var(--color-gray-600);
+    }
+
+    @media (max-width: 768px) {
+        .detail-header {
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-header">
+    <a href="{% url 'core:nc_list' %}">← 🚨 Volver a No Conformidades</a>
+    {% if can_edit %}
+    <a href="{% url 'core:nc_edit' nc.pk %}" class="btn btn-primary">✏️ Editar</a>
+    {% endif %}
+</div>
+
+<div class="detail-card">
+    <h1>{{ nc.title }}</h1>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <strong>📋 Origen</strong>
+            <span>{{ nc.get_origin_display }}</span>
+        </div>
+        <div class="detail-item">
+            <strong>🚦 Severidad</strong>
+            <span class="severity-badge {% if nc.severity == 'MINOR' %}severity-minor{% elif nc.severity == 'MAJOR' %}severity-major{% else %}severity-critical{% endif %}">
+                {{ nc.get_severity_display }}
+            </span>
+        </div>
+        <div class="detail-item">
+            <strong>📌 Estado</strong>
+            <span class="status-badge">{{ nc.get_status_display }}</span>
+        </div>
+        <div class="detail-item">
+            <strong>🔗 Proceso</strong>
+            <span>{% if nc.related_process %}{{ nc.related_process }}{% else %}-{% endif %}</span>
+        </div>
+        <div class="detail-item">
+            <strong>🏢 Sitio</strong>
+            <span>{% if nc.site %}{{ nc.site }}{% else %}-{% endif %}</span>
+        </div>
+        <div class="detail-item">
+            <strong>📄 Documento relacionado</strong>
+            <span>{% if nc.related_document %}{{ nc.related_document }}{% else %}-{% endif %}</span>
+        </div>
+        <div class="detail-item">
+            <strong>📅 Fecha detección</strong>
+            <span>{% if nc.detected_at %}{{ nc.detected_at|date:"d/m/Y" }}{% else %}-{% endif %}</span>
+        </div>
+        <div class="detail-item">
+            <strong>🔍 Detectado por</strong>
+            <span>{% if nc.detected_by %}{{ nc.detected_by.get_username }}{% else %}-{% endif %}</span>
+        </div>
+        <div class="detail-item">
+            <strong>👤 Responsable</strong>
+            <span>{% if nc.owner %}{{ nc.owner.get_username }}{% else %}-{% endif %}</span>
+        </div>
+        <div class="detail-item">
+            <strong>📅 Fecha limite</strong>
+            <span>{% if nc.due_date %}{{ nc.due_date|date:"d/m/Y" }}{% else %}-{% endif %}</span>
+        </div>
+        <div class="detail-item">
+            <strong>📄 Evidencia</strong>
+            <span>{% if nc.evidence_document %}{{ nc.evidence_document }}{% else %}-{% endif %}</span>
+        </div>
+        <div class="detail-item" style="grid-column: 1 / -1;">
+            <strong>📝 Descripción</strong>
+            <span>{{ nc.description }}</span>
+        </div>
+        <div class="detail-item" style="grid-column: 1 / -1;">
+            <strong>🔎 Análisis de causa raíz</strong>
+            <span>{% if nc.root_cause_analysis %}{{ nc.root_cause_analysis }}{% else %}-{% endif %}</span>
+        </div>
+        <div class="detail-item" style="grid-column: 1 / -1;">
+            <strong>✅ Acciones correctivas</strong>
+            <span>{% if nc.corrective_action %}{{ nc.corrective_action }}{% else %}-{% endif %}</span>
+        </div>
+    </div>
+</div>
+{% endblock %}

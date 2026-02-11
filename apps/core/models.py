@@ -512,3 +512,123 @@ class OrganizationContext(models.Model):
 
     def __str__(self):
         return f"Contexto - {self.organization}"
+
+class NoConformity(models.Model):
+    """No conformidad detectada en el sistema de gestion."""
+
+    class Origin(models.TextChoices):
+        AUDIT = "AUDIT", "Auditoria"
+        CUSTOMER = "CUSTOMER", "Cliente"
+        INTERNAL = "INTERNAL", "Interna"
+        PRODUCTION = "PRODUCTION", "Produccion"
+        OTHER = "OTHER", "Otro"
+
+    class Severity(models.TextChoices):
+        MINOR = "MINOR", "Menor"
+        MAJOR = "MAJOR", "Mayor"
+        CRITICAL = "CRITICAL", "Critica"
+
+    class Status(models.TextChoices):
+        OPEN = "OPEN", "Abierta"
+        ANALYSIS = "ANALYSIS", "En analisis"
+        ACTION = "ACTION", "En accion"
+        CLOSED = "CLOSED", "Cerrada"
+
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.PROTECT,
+        related_name="nonconformities",
+        verbose_name="Organizacion",
+    )
+    site = models.ForeignKey(
+        Site,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="nonconformities",
+        verbose_name="Sede",
+    )
+    related_process = models.ForeignKey(
+        Process,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="nonconformities",
+        verbose_name="Proceso relacionado",
+    )
+    related_document = models.ForeignKey(
+        "docs.Document",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="nonconformities_as_related",
+        verbose_name="Documento relacionado",
+    )
+    title = models.CharField(
+        max_length=200,
+        verbose_name="Titulo",
+    )
+    description = models.TextField(
+        verbose_name="Descripcion",
+    )
+    origin = models.CharField(
+        max_length=20,
+        choices=Origin.choices,
+        verbose_name="Origen",
+    )
+    severity = models.CharField(
+        max_length=20,
+        choices=Severity.choices,
+        verbose_name="Severidad",
+    )
+    detected_at = models.DateField(
+        verbose_name="Fecha deteccion",
+        help_text="Fecha en la que se detecto la no conformidad",
+    )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="nonconformities",
+        verbose_name="Responsable",
+    )
+    due_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha limite",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.OPEN,
+        verbose_name="Estado",
+    )
+    evidence_document = models.ForeignKey(
+        "docs.Document",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="nonconformities_as_evidence",
+        verbose_name="Documento evidencia",
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Activo",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Creado",
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Actualizado",
+    )
+
+    class Meta:
+        ordering = ["-updated_at"]
+        verbose_name = "No conformidad"
+        verbose_name_plural = "No conformidades"
+
+    def __str__(self):
+        return f"NC-{self.id}: {self.title}"

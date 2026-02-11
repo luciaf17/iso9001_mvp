@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AuditEvent, Organization, Site, Process, Stakeholder, RiskOpportunity
+from .models import AuditEvent, Organization, Site, Process, Stakeholder, RiskOpportunity, NoConformity
 
 
 @admin.register(AuditEvent)
@@ -88,3 +88,21 @@ class RiskOpportunityAdmin(admin.ModelAdmin):
     )
     list_filter = ("kind", "level", "status", "organization", "is_active")
     search_fields = ("title", "description", "treatment_plan")
+
+
+@admin.register(NoConformity)
+class NoConformityAdmin(admin.ModelAdmin):
+    list_display = (
+        "title",
+        "origin",
+        "severity",
+        "status",
+        "organization",
+        "related_process",
+        "site",
+        "detected_at",
+        "owner",
+        "due_date",
+    )
+    list_filter = ("origin", "severity", "status", "organization", "site")
+    search_fields = ("title", "description", "root_cause_analysis", "corrective_action")

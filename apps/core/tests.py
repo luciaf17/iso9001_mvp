@@ -4,7 +4,7 @@ from django.contrib.auth.models import User, Group
 from django.core.exceptions import ValidationError
 from django.urls import reverse
 
-from .models import AuditEvent, Organization, Process, Site, Stakeholder, RiskOpportunity
+from .models import AuditEvent, Organization, Process, Site, Stakeholder, RiskOpportunity, NoConformity
 from .services import log_audit_event
 
 
@@ -508,3 +508,179 @@ class RiskOpportunityTests(TestCase):
         self.assertContains(response, "Total de registros:")
         self.assertContains(response, "Riesgos")
         self.assertContains(response, "Oportunidades")
+
+
+class NoConformityTests(TestCase):
+    """Tests para el modelo NoConformity y sus vistas."""
+    
+    def setUp(self):
+        self.organization, _created = Organization.objects.get_or_create(name="Empresa")
+        self.process = Process.objects.create(
+            organization=self.organization,
+            code="NC1",
+            name="Proceso NC",
+            process_type=Process.ProcessType.MISSIONAL,
+            level=Process.Level.PROCESS,
+            is_active=True,
+        )
+        self.admin_group = Group.objects.create(name="Admin")
+        self.calidad_group = Group.objects.create(name="Calidad")
+        self.admin_user = User.objects.create_user(username="admin_nc", password="testpass")
+        self.admin_user.groups.add(self.admin_group)
+        self.calidad_user = User.objects.create_user(username="calidad_nc", password="testpass")
+        self.calidad_user.groups.add(self.calidad_group)
+        self.normal_user = User.objects.create_user(username="user_nc", password="testpass")
+    
+    def test_create_nc_generates_audit_event(self):
+        """Verifica que crear una NC genera un evento de auditoría."""
+        from .models import NoConformity
+        
+        self.client.login(username="admin_nc", password="testpass")
+        
+        from datetime import date
+        
+        response = self.client.post(
+            reverse("core:nc_new"),
+            data={
+                "title": "NC de prueba",
+                "description": "Descripcion NC",
+                "origin": "AUDIT",
+                "severity": "MAJOR",
+                "status": "OPEN",
+                "detected_at": date.today().isoformat(),
+                "related_process": self.process.id,
+            },
+        )
+        
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(NoConformity.objects.filter(title="NC de prueba").exists())
+        
+        # Verificar evento de auditoría
+        self.assertTrue(
+            AuditEvent.objects.filter(
+                action="core.nc.created",
+                actor=self.admin_user
+            ).exists()
+        )
+    
+    def test_non_admin_cannot_create_nc(self):
+        """Verifica que usuarios sin permisos no pueden crear NCs."""
+        from .models import NoConformity
+        
+        self.client.login(username="user_nc", password="testpass")
+        
+        from datetime import date
+        
+        response = self.client.post(
+            reverse("core:nc_new"),
+            data={
+                "title": "NC no autorizada",
+                "description": "Descripcion",
+                "origin": "AUDIT",
+                "severity": "MINOR",
+                "status": "OPEN",
+                "detected_at": date.today().isoformat(),
+                "related_process": self.process.id,
+            },
+        )
+        
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(NoConformity.objects.filter(title="NC no autorizada").exists())
+    
+    def test_calidad_can_create_and_edit_nc(self):
+        """Verifica que usuarios del grupo Calidad pueden crear y editar NCs."""
+        from .models import NoConformity
+        
+        self.client.login(username="calidad_nc", password="testpass")
+        
+        from datetime import date
+        
+        # Crear NC
+        response = self.client.post(
+            reverse("core:nc_new"),
+            data={
+                "title": "NC Calidad",
+                "description": "Descripcion",
+                "origin": "AUDIT",
+                "severity": "CRITICAL",
+                "status": "OPEN",
+                "detected_at": date.today().isoformat(),
+                "related_process": self.process.id,
+            },
+        )
+        
+        self.assertEqual(response.status_code, 302)
+        nc = NoConformity.objects.get(title="NC Calidad")
+        
+        # Editar NC
+        response = self.client.post(
+            reverse("core:nc_edit", args=[nc.pk]),
+            data={
+                "title": "NC Calidad Editada",
+                "description": "Descripcion actualizada",
+                "origin": "AUDIT",
+                "severity": "MAJOR",
+                "status": "ANALYSIS",
+                "detected_at": nc.detected_at.isoformat(),
+                "related_process": self.process.id,
+            },
+        )
+        
+        nc.refresh_from_db()
+        self.assertEqual(nc.title, "NC Calidad Editada")
+        self.assertEqual(nc.status, "ANALYSIS")
+        
+        # Verificar evento de auditoría de edición
+        self.assertTrue(
+            AuditEvent.objects.filter(
+                action="core.nc.updated",
+                actor=self.calidad_user
+            ).exists()
+        )
+    
+    def test_nc_list_renders(self):
+        """Verifica que la lista de NCs se renderiza correctamente."""
+        from .models import NoConformity
+        
+        from datetime import date
+        
+        NoConformity.objects.create(
+            organization=self.organization,
+            related_process=self.process,
+            title="NC Lista",
+            description="Descripcion",
+            origin="CUSTOMER",
+            severity="MINOR",
+            status="OPEN",
+            detected_at=date.today(),
+        )
+        
+        self.client.login(username="user_nc", password="testpass")
+        response = self.client.get(reverse("core:nc_list"))
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "NC Lista")
+    
+    def test_nc_detail_renders(self):
+        """Verifica que el detalle de NC se renderiza correctamente."""
+        from .models import NoConformity
+        
+        from datetime import date
+        
+        nc = NoConformity.objects.create(
+            organization=self.organization,
+            related_process=self.process,
+            title="NC Detalle",
+            description="Descripcion detallada",
+            origin="INTERNAL",
+            severity="MAJOR",
+            status="ANALYSIS",
+            detected_at=date.today(),
+        )
+        
+        self.client.login(username="user_nc", password="testpass")
+        response = self.client.get(reverse("core:nc_detail", args=[nc.pk]))
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "NC Detalle")
+        self.assertContains(response, "Descripcion detallada")
