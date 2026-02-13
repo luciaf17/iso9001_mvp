@@ -18,6 +18,10 @@ from apps.core.views import (
     stakeholder_detail,
     stakeholder_edit,
     stakeholder_list,
+    quality_objective_list,
+    quality_objective_detail,
+    quality_objective_create,
+    quality_objective_edit,
 )
 
 app_name = "core"
@@ -40,4 +44,8 @@ urlpatterns = [
     path("nc/<int:pk>/edit/", nc_edit, name="nc_edit"),
     path("nc/<int:nc_id>/actions/new/", capa_action_create, name="capa_action_create"),
     path("capa/<int:action_id>/edit/", capa_action_edit, name="capa_action_edit"),
+    path("objectives/", quality_objective_list, name="quality_objective_list"),
+    path("objectives/new/", quality_objective_create, name="quality_objective_new"),
+    path("objectives/<int:pk>/", quality_objective_detail, name="quality_objective_detail"),
+    path("objectives/<int:pk>/edit/", quality_objective_edit, name="quality_objective_edit"),
 ]

@@ -16,6 +16,7 @@ from .models import (
     RiskOpportunity,
     NoConformity,
     CAPAAction,
+    QualityObjective,
 )
 from .services import log_audit_event
 
@@ -1279,3 +1280,251 @@ class NoConformityCAPACrossValidationTests(TestCase):
             detected_by=self.user,
         )
         self.assertEqual(nc_critical.severity_score, 3)
+
+
+class QualityObjectiveModelTests(TestCase):
+    """Tests para el modelo QualityObjective."""
+
+    def setUp(self):
+        self.organization = Organization.objects.create(name="Empresa Test")
+        self.process = Process.objects.create(
+            organization=self.organization,
+            code="P1",
+            name="Proceso 1",
+            process_type=Process.ProcessType.MISSIONAL,
+            level=Process.Level.PROCESS,
+            is_active=True,
+        )
+        self.user = User.objects.create_user(username="owner", password="testpass")
+
+    def test_status_achieved_when_current_reaches_target(self):
+        """Verifica que status cambia a ACHIEVED cuando current_value >= target_value."""
+        objective = QualityObjective.objects.create(
+            organization=self.organization,
+            related_process=self.process,
+            title="Objetivo Test",
+            description="Descripcion",
+            indicator="% Entregas",
+            target_value=95.0,
+            current_value=95.0,
+            unit="%",
+            frequency=QualityObjective.Frequency.MONTHLY,
+            start_date=date.today(),
+            due_date=date.today() + timedelta(days=30),
+            owner=self.user,
+            is_active=True,
+        )
+        self.assertEqual(objective.status, QualityObjective.Status.ACHIEVED)
+
+    def test_status_overdue_when_due_date_passed(self):
+        """Verifica que status cambia a OVERDUE cuando vence la fecha."""
+        objective = QualityObjective.objects.create(
+            organization=self.organization,
+            related_process=self.process,
+            title="Objetivo Vencido",
+            description="Descripcion",
+            indicator="% Entregas",
+            target_value=95.0,
+            current_value=80.0,
+            unit="%",
+            frequency=QualityObjective.Frequency.MONTHLY,
+            start_date=date.today() - timedelta(days=60),
+            due_date=date.today() - timedelta(days=10),  # Pasado
+            owner=self.user,
+            is_active=True,
+        )
+        self.assertEqual(objective.status, QualityObjective.Status.OVERDUE)
+
+    def test_status_active_by_default(self):
+        """Verifica que status es ACTIVE cuando está en tiempo y sin alcanzar meta."""
+        objective = QualityObjective.objects.create(
+            organization=self.organization,
+            related_process=self.process,
+            title="Objetivo Activo",
+            description="Descripcion",
+            indicator="% Entregas",
+            target_value=95.0,
+            current_value=50.0,
+            unit="%",
+            frequency=QualityObjective.Frequency.MONTHLY,
+            start_date=date.today(),
+            due_date=date.today() + timedelta(days=30),
+            owner=self.user,
+            is_active=True,
+        )
+        self.assertEqual(objective.status, QualityObjective.Status.ACTIVE)
+
+
+class QualityObjectiveViewsTests(TestCase):
+    """Tests para las vistas de objetivos de calidad."""
+
+    def setUp(self):
+        # Get the organization that the view will retrieve via _get_current_organization()
+        # This is the first active org if one exists, otherwise the first org period
+        self.organization = Organization.objects.filter(is_active=True).first() or Organization.objects.first()
+        
+        # If no orgs exist at all, create one
+        if not self.organization:
+            self.organization = Organization.objects.create(name="Test Org", is_active=True)
+            
+        self.process = Process.objects.create(
+            organization=self.organization,
+            code="QO-P1",
+            name="QO Test Process",
+            process_type=Process.ProcessType.MISSIONAL,
+            level=Process.Level.PROCESS,
+            is_active=True,
+        )
+        
+        self.admin_group, _ = Group.objects.get_or_create(name="Admin")
+        self.calidad_group, _ = Group.objects.get_or_create(name="Calidad")
+        
+        self.admin_user = User.objects.create_user(username="qo_admin", password="testpass")
+        self.admin_user.groups.add(self.admin_group)
+        
+        self.calidad_user = User.objects.create_user(username="qo_calidad", password="testpass")
+        self.calidad_user.groups.add(self.calidad_group)
+        
+        self.normal_user = User.objects.create_user(username="user", password="testpass")
+
+    def test_create_objective_generates_audit_event(self):
+        """Verifica que crear un objetivo genera AuditEvent."""
+        self.client.login(username="qo_admin", password="testpass")
+
+        response = self.client.post(
+            reverse("core:quality_objective_new"),
+            data={
+                "title": "Objetivo Test",
+                "description": "Descripcion",
+                "indicator": "% Entregas",
+                "target_value": "95.0",
+                "current_value": "0.0",
+                "unit": "%",
+                "frequency": "MONTHLY",
+                "start_date": date.today().isoformat(),
+                "due_date": (date.today() + timedelta(days=30)).isoformat(),
+                "owner": self.admin_user.id,
+                "related_process": self.process.id,
+                "is_active": "on",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(
+            QualityObjective.objects.filter(title="Objetivo Test").exists()
+        )
+        self.assertTrue(
+            AuditEvent.objects.filter(
+                action="core.objective.created",
+                actor=self.admin_user
+            ).exists()
+        )
+
+    def test_non_authorized_cannot_create_objective(self):
+        """Verifica que usuario sin permisos no puede crear objetivo."""
+        self.client.login(username="user", password="testpass")
+
+        response = self.client.post(
+            reverse("core:quality_objective_new"),
+            data={
+                "title": "Objetivo No Autorizado",
+                "description": "Descripcion",
+                "indicator": "%",
+                "target_value": "95.0",
+                "current_value": "0.0",
+                "unit": "%",
+                "frequency": "MONTHLY",
+                "start_date": date.today().isoformat(),
+                "due_date": (date.today() + timedelta(days=30)).isoformat(),
+                "is_active": "on",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(
+            QualityObjective.objects.filter(
+                title="Objetivo No Autorizado"
+            ).exists()
+        )
+
+    def test_calidad_can_create_and_edit_objective(self):
+        """Verifica que usuarios del grupo Calidad pueden crear y editar objetivos."""
+        self.client.login(username="qo_calidad", password="testpass")
+
+        # Crear
+        response = self.client.post(
+            reverse("core:quality_objective_new"),
+            data={
+                "title": "Objetivo Calidad",
+                "description": "Descripcion",
+                "indicator": "Entregas",
+                "target_value": "100.0",
+                "current_value": "0.0",
+                "unit": "unidades",
+                "frequency": "QUARTERLY",
+                "start_date": date.today().isoformat(),
+                "due_date": (date.today() + timedelta(days=90)).isoformat(),
+                "owner": self.calidad_user.id,
+                "related_process": self.process.id,
+                "is_active": "on",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        objective = QualityObjective.objects.get(title="Objetivo Calidad")
+
+        # Editar
+        response = self.client.post(
+            reverse("core:quality_objective_edit", args=[objective.pk]),
+            data={
+                "title": "Objetivo Calidad Editado",
+                "description": "Descripcion actualizada",
+                "indicator": "Entregas",
+                "target_value": "100.0",
+                "current_value": "50.0",
+                "unit": "unidades",
+                "frequency": "QUARTERLY",
+                "start_date": objective.start_date.isoformat(),
+                "due_date": objective.due_date.isoformat(),
+                "owner": self.calidad_user.id,
+                "related_process": self.process.id,
+                "is_active": "on",
+            },
+        )
+
+        objective.refresh_from_db()
+        self.assertEqual(objective.title, "Objetivo Calidad Editado")
+        self.assertEqual(objective.current_value, 50.0)
+
+        # Verificar evento de auditoría de edición
+        self.assertTrue(
+            AuditEvent.objects.filter(
+                action="core.objective.updated",
+                actor=self.calidad_user
+            ).exists()
+        )
+
+    def test_objective_list_renders(self):
+        """Verifica que la vista de lista renderiza correctamente."""
+        QualityObjective.objects.create(
+            organization=self.organization,
+            related_process=self.process,
+            title="Objetivo 1",
+            description="Test",
+            indicator="Entregas",
+            target_value=95.0,
+            current_value=50.0,
+            unit="%",
+            frequency=QualityObjective.Frequency.MONTHLY,
+            start_date=date.today(),
+            due_date=date.today() + timedelta(days=30),
+            owner=self.admin_user,
+            is_active=True,
+        )
+
+        self.client.login(username="user", password="testpass")
+        response = self.client.get(reverse("core:quality_objective_list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Objetivo 1")
+        self.assertContains(response, "Entregas")

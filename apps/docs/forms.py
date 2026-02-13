@@ -41,8 +41,8 @@ class DocumentVersionForm(forms.ModelForm):
 			"notes": "Describí brevemente el motivo del cambio, alcance o qué se modificó.",
 		}
 		widgets = {
-			"effective_date": forms.DateInput(attrs={"type": "date"}),
-			"review_due_date": forms.DateInput(attrs={"type": "date"}),
+			"effective_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+			"review_due_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
 		}
 
 	def __init__(self, *args, document=None, created_by=None, **kwargs):
@@ -53,6 +53,9 @@ class DocumentVersionForm(forms.ModelForm):
 		super().__init__(*args, **kwargs)
 		self.document = document
 		self.created_by = created_by
+		# Configurar formato de fechas para input type="date"
+		self.fields["effective_date"].input_formats = ["%Y-%m-%d"]
+		self.fields["review_due_date"].input_formats = ["%Y-%m-%d"]
 
 	def clean_version_number(self):
 		version_number = self.cleaned_data.get("version_number", "")

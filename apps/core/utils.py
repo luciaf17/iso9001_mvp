@@ -36,3 +36,14 @@ def can_edit_nc(user):
         return True
 
     return user.groups.filter(name__in=["Admin", "Calidad"]).exists()
+
+
+def can_edit_objective(user):
+    """Check if user can create/edit quality objectives."""
+    if user is None:
+        return False
+
+    if getattr(user, "is_superuser", False):
+        return True
+
+    return user.groups.filter(name__in=["Admin", "Calidad"]).exists()

@@ -11,6 +11,7 @@ from apps.core.forms import (
 	RiskOpportunityForm,
 	NoConformityForm,
 	CAPAActionForm,
+	QualityObjectiveForm,
 )
 from apps.core.models import (
 	Organization,
@@ -21,9 +22,16 @@ from apps.core.models import (
 	RiskOpportunity,
 	NoConformity,
 	CAPAAction,
+	QualityObjective,
 )
 from apps.core.services import log_audit_event
-from apps.core.utils import can_edit_context, can_edit_stakeholders, can_edit_risks, can_edit_nc
+from apps.core.utils import (
+	can_edit_context,
+	can_edit_stakeholders,
+	can_edit_risks,
+	can_edit_nc,
+	can_edit_objective,
+)
 from apps.docs.models import Document
 
 
@@ -780,6 +788,9 @@ def nc_edit(request, pk):
 		if form.is_valid():
 			nc = form.save(commit=False)
 			nc.organization = organization
+			# Auto-set closed_by cuando se cierra la NC
+			if nc.status == NoConformity.Status.CLOSED and not nc.closed_by:
+				nc.closed_by = request.user
 			nc.save()
 			log_audit_event(
 				actor=request.user,
@@ -927,6 +938,225 @@ def capa_action_edit(request, action_id):
 			"form": form,
 			"nc": capa.no_conformity,
 			"capa": capa,
+			"organization": organization,
+			"is_edit": True,
+		},
+	)
+
+
+def _configure_objective_form(form, organization):
+	"""Configura los QuerySets de campos relacionales en el formulario de objetivos."""
+	User = get_user_model()
+	form.fields["site"].queryset = Site.objects.filter(
+		organization=organization,
+		is_active=True,
+	)
+	form.fields["related_process"].queryset = Process.objects.filter(
+		organization=organization,
+		is_active=True,
+	).order_by("code")
+	form.fields["owner"].queryset = User.objects.filter(is_active=True)
+
+
+@login_required
+def quality_objective_list(request):
+	"""Lista de objetivos de calidad con filtros."""
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	objectives = QualityObjective.objects.filter(
+		organization=organization,
+	).select_related(
+		"related_process",
+		"owner",
+		"site",
+		"organization",
+	)
+
+	# Filtros
+	status = request.GET.get("status", "")
+	process_id = request.GET.get("process_id", "")
+	owner_id = request.GET.get("owner_id", "")
+
+	if status:
+		objectives = objectives.filter(status=status)
+	if process_id:
+		objectives = objectives.filter(related_process_id=process_id)
+	if owner_id:
+		objectives = objectives.filter(owner_id=owner_id)
+
+	# Calcular porcentajes para cada objetivo
+	objectives_with_progress = []
+	for obj in objectives:
+		if obj.target_value > 0:
+			progress = min((obj.current_value / obj.target_value) * 100, 100)
+		else:
+			progress = 0
+		objectives_with_progress.append({
+			'obj': obj,
+			'progress': progress
+		})
+
+	can_edit = can_edit_objective(request.user)
+	User = get_user_model()
+	processes = Process.objects.filter(
+		organization=organization,
+		is_active=True,
+	).order_by("code")
+	owners = User.objects.filter(is_active=True).filter(
+		quality_objectives__organization=organization,
+	).distinct()
+
+	return render(
+		request,
+		"core/objective_list.html",
+		{
+			"objectives": objectives_with_progress,
+			"organization": organization,
+			"can_edit": can_edit,
+			"status_choices": QualityObjective.Status.choices,
+			"processes": processes,
+			"owners": owners,
+			"selected_status": status,
+			"selected_process_id": process_id,
+			"selected_owner_id": owner_id,
+		},
+	)
+
+
+@login_required
+def quality_objective_detail(request, pk):
+	"""Detalle de un objetivo de calidad."""
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	objective = get_object_or_404(
+		QualityObjective,
+		pk=pk,
+		organization=organization,
+	)
+	can_edit = can_edit_objective(request.user)
+
+	# Calcular porcentaje
+	if objective.target_value > 0:
+		progress_percent = (objective.current_value / objective.target_value) * 100
+		progress_percent = min(progress_percent, 100)  # No exceder 100%
+	else:
+		progress_percent = 0
+
+	return render(
+		request,
+		"core/objective_detail.html",
+		{
+			"objective": objective,
+			"organization": organization,
+			"can_edit": can_edit,
+			"progress_percent": progress_percent,
+		},
+	)
+
+
+@login_required
+def quality_objective_create(request):
+	"""Crear un nuevo objetivo de calidad."""
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	if not can_edit_objective(request.user):
+		messages.error(request, "No tiene permisos para crear objetivos de calidad.")
+		return redirect("core:quality_objective_list")
+
+	if request.method == "POST":
+		form = QualityObjectiveForm(request.POST)
+		_configure_objective_form(form, organization)
+		if form.is_valid():
+			objective = form.save(commit=False)
+			objective.organization = organization
+			objective.save()
+			log_audit_event(
+				actor=request.user,
+				action="core.objective.created",
+				instance=objective,
+				metadata={
+					"title": objective.title,
+					"indicator": objective.indicator,
+					"target_value": objective.target_value,
+					"status": objective.status,
+				},
+				object_type_override="QualityObjective",
+			)
+			messages.success(request, "Objetivo de calidad creado correctamente.")
+			return redirect("core:quality_objective_detail", pk=objective.pk)
+	else:
+		form = QualityObjectiveForm()
+		_configure_objective_form(form, organization)
+
+	return render(
+		request,
+		"core/objective_form.html",
+		{
+			"form": form,
+			"organization": organization,
+			"is_edit": False,
+		},
+	)
+
+
+@login_required
+def quality_objective_edit(request, pk):
+	"""Editar un objetivo de calidad."""
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	objective = get_object_or_404(
+		QualityObjective,
+		pk=pk,
+		organization=organization,
+	)
+
+	if not can_edit_objective(request.user):
+		messages.error(request, "No tiene permisos para editar objetivos de calidad.")
+		return redirect("core:quality_objective_detail", pk=objective.pk)
+
+	if request.method == "POST":
+		form = QualityObjectiveForm(request.POST, instance=objective)
+		_configure_objective_form(form, organization)
+		if form.is_valid():
+			objective = form.save(commit=False)
+			objective.organization = organization
+			objective.save()
+			log_audit_event(
+				actor=request.user,
+				action="core.objective.updated",
+				instance=objective,
+				metadata={
+					"title": objective.title,
+					"indicator": objective.indicator,
+					"current_value": objective.current_value,
+					"status": objective.status,
+				},
+				object_type_override="QualityObjective",
+			)
+			messages.success(request, "Objetivo de calidad actualizado correctamente.")
+			return redirect("core:quality_objective_detail", pk=objective.pk)
+	else:
+		form = QualityObjectiveForm(instance=objective)
+		_configure_objective_form(form, organization)
+
+	return render(
+		request,
+		"core/objective_form.html",
+		{
+			"form": form,
+			"objective": objective,
 			"organization": organization,
 			"is_edit": True,
 		},

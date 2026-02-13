@@ -898,3 +898,151 @@ class CAPAAction(models.Model):
                 nc.status = nc.Status.VERIFICATION
                 nc.verification_date = timezone.now().date()
                 nc.save(update_fields=['status', 'verification_date'])
+
+
+class QualityObjective(models.Model):
+    """Objetivo de calidad medible segun ISO 9001 clausula 6.2."""
+
+    class Status(models.TextChoices):
+        ACTIVE = "ACTIVE", "Activo"
+        ACHIEVED = "ACHIEVED", "Cumplido"
+        OVERDUE = "OVERDUE", "Vencido"
+        CANCELLED = "CANCELLED", "Cancelado"
+
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.PROTECT,
+        related_name="quality_objectives",
+        verbose_name="Organizacion",
+    )
+
+    site = models.ForeignKey(
+        Site,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="quality_objectives",
+        verbose_name="Sede",
+    )
+
+    related_process = models.ForeignKey(
+        Process,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="quality_objectives",
+        verbose_name="Proceso relacionado",
+    )
+
+    title = models.CharField(
+        max_length=200,
+        verbose_name="Titulo",
+    )
+
+    description = models.TextField(
+        verbose_name="Descripcion",
+    )
+
+    indicator = models.CharField(
+        max_length=200,
+        verbose_name="Indicador",
+        help_text="Ej: % entregas en termino",
+    )
+
+    target_value = models.FloatField(
+        verbose_name="Valor meta",
+        help_text="Valor objetivo a alcanzar",
+    )
+
+    current_value = models.FloatField(
+        default=0,
+        verbose_name="Valor actual",
+    )
+
+    unit = models.CharField(
+        max_length=50,
+        verbose_name="Unidad",
+        help_text="Ej: %, días, unidades, horas",
+    )
+
+    class Frequency(models.TextChoices):
+        WEEKLY = "WEEKLY", "Semanal"
+        BIWEEKLY = "BIWEEKLY", "Quincenal"
+        MONTHLY = "MONTHLY", "Mensual"
+        BIMONTHLY = "BIMONTHLY", "Bimestral"
+        QUARTERLY = "QUARTERLY", "Trimestral"
+        SEMIANNUAL = "SEMIANNUAL", "Semestral"
+        ANNUAL = "ANNUAL", "Anual"
+        OTHER = "OTHER", "Otra"
+
+    frequency = models.CharField(
+        max_length=20,
+        choices=Frequency.choices,
+        verbose_name="Frecuencia",
+        help_text="Frecuencia de medicion del objetivo",
+    )
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="quality_objectives",
+        verbose_name="Responsable",
+    )
+
+    start_date = models.DateField(
+        verbose_name="Fecha inicio",
+    )
+
+    due_date = models.DateField(
+        verbose_name="Fecha vencimiento",
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.ACTIVE,
+        verbose_name="Estado",
+        editable=False,
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Activo",
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Creado el",
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Actualizado el",
+    )
+
+    class Meta:
+        ordering = ["due_date"]
+        verbose_name = "Objetivo de calidad"
+        verbose_name_plural = "Objetivos de calidad"
+
+    def __str__(self):
+        return f"{self.title} ({self.organization})"
+
+    def calculate_status(self):
+        """Calcula el estado basado en valores y fechas."""
+        from django.utils import timezone
+
+        if self.current_value >= self.target_value:
+            return self.Status.ACHIEVED
+        if timezone.now().date() > self.due_date:
+            return self.Status.OVERDUE
+        return self.Status.ACTIVE
+
+    def save(self, *args, **kwargs):
+        """Actualiza status automaticamente antes de guardar."""
+        # Respetar CANCELLED: no recalcular si fue cancelado manualmente
+        if self.status != self.Status.CANCELLED:
+            self.status = self.calculate_status()
+        super().save(*args, **kwargs)

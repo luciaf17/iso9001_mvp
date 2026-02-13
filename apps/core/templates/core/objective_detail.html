@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}Objetivo de Calidad{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-xl);
+    }
+
+    .detail-header a {
+        color: var(--color-gray-600);
+        text-decoration: none;
+        transition: var(--transition);
+    }
+
+    .detail-header a:hover {
+        color: var(--color-primary);
+        text-decoration: underline;
+    }
+
+    .detail-card {
+        background: var(--color-white);
+        border: 2px solid var(--color-primary-light);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-lg);
+        margin-bottom: var(--spacing-xl);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .detail-card h1 {
+        margin-bottom: var(--spacing-lg);
+        color: var(--color-primary);
+    }
+
+    .status-badge {
+        padding: 6px 12px;
+        border-radius: var(--border-radius-sm);
+        font-weight: 600;
+        font-size: var(--font-size-sm);
+        text-transform: uppercase;
+        display: inline-block;
+        margin-left: var(--spacing-md);
+    }
+
+    .status-active {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+
+    .status-achieved {
+        background: var(--color-success-light);
+        color: var(--color-success);
+    }
+
+    .status-overdue {
+        background: #f8d7da;
+        color: var(--color-danger);
+    }
+
+    .status-cancelled {
+        background: var(--color-gray-100);
+        color: var(--color-gray-600);
+    }
+
+    .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-lg);
+    }
+
+    .detail-item strong {
+        color: var(--color-dark);
+        display: block;
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .progress-container {
+        background: #f8f9fa;
+        padding: var(--spacing-lg);
+        border-radius: var(--border-radius-md);
+        margin-top: var(--spacing-md);
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 24px;
+        background: #e9ecef;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-top: var(--spacing-md);
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: var(--color-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: var(--font-size-xs);
+        min-width: 30px;
+        transition: var(--transition);
+    }
+
+    @media (max-width: 768px) {
+        .detail-header {
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-header">
+    <div>
+        <a href="{% url 'core:quality_objective_list' %}">← 🎯 Volver a Objetivos</a>
+    </div>
+    {% if can_edit %}
+    <a href="{% url 'core:quality_objective_edit' objective.pk %}" class="btn btn-primary">✏️ Editar</a>
+    {% endif %}
+</div>
+
+<div class="detail-card">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--spacing-lg);">
+        <h1 style="margin: 0;">{{ objective.title }}</h1>
+        <span class="status-badge status-{{ objective.status|lower }}">
+            {{ objective.get_status_display }}
+        </span>
+    </div>
+
+    <div class="detail-grid">
+        <div class="detail-item">
+            <strong>📊 Indicador</strong>
+            <span>{{ objective.indicator }}</span>
+        </div>
+        <div class="detail-item">
+            <strong>🔗 Proceso</strong>
+            <span>{% if objective.related_process %}{{ objective.related_process }}{% else %}-{% endif %}</span>
+        </div>
+        <div class="detail-item">
+            <strong>🏢 Sede</strong>
+            <span>{% if objective.site %}{{ objective.site }}{% else %}-{% endif %}</span>
+        </div>
+        <div class="detail-item">
+            <strong>👤 Responsable</strong>
+            <span>{% if objective.owner %}{{ objective.owner.get_username }}{% else %}-{% endif %}</span>
+        </div>
+        <div class="detail-item">
+            <strong>📅 Inicio</strong>
+            <span>{{ objective.start_date|date:"d/m/Y" }}</span>
+        </div>
+        <div class="detail-item">
+            <strong>⏳ Vencimiento</strong>
+            <span>{{ objective.due_date|date:"d/m/Y" }}</span>
+        </div>
+        <div class="detail-item">
+            <strong>🔁 Frecuencia</strong>
+            <span>{{ objective.frequency }}</span>
+        </div>
+        <div class="detail-item">
+            <strong>📝 Descripcion</strong>
+            <span>{{ objective.description }}</span>
+        </div>
+    </div>
+
+    <div class="progress-container">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-lg);">
+            <div>
+                <strong style="display: block; margin-bottom: var(--spacing-sm);">🎯 Meta</strong>
+                <div style="font-size: var(--font-size-2xl); color: var(--color-primary); font-weight: 700;">
+                    {{ objective.target_value }} {{ objective.unit }}
+                </div>
+            </div>
+            <div>
+                <strong style="display: block; margin-bottom: var(--spacing-sm);">📈 Actual</strong>
+                <div style="font-size: var(--font-size-2xl); color: var(--color-dark); font-weight: 700;">
+                    {{ objective.current_value }} {{ objective.unit }}
+                </div>
+            </div>
+            <div>
+                <strong style="display: block; margin-bottom: var(--spacing-sm);">✅ Avance</strong>
+                <div style="font-size: var(--font-size-2xl); color: var(--color-success); font-weight: 700;">
+                    {{ progress_percent|floatformat:1 }}%
+                </div>
+            </div>
+        </div>
+
+        <div class="progress-bar" style="margin-top: var(--spacing-lg);">
+            <div class="progress-fill" style="width: {{ progress_percent|floatformat:0 }}%">
+                {{ progress_percent|floatformat:0 }}%
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

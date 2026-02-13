@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AuditEvent, Organization, Site, Process, Stakeholder, RiskOpportunity, NoConformity, CAPAAction
+from .models import AuditEvent, Organization, Site, Process, Stakeholder, RiskOpportunity, NoConformity, CAPAAction, QualityObjective
 
 
 @admin.register(AuditEvent)
@@ -202,6 +202,93 @@ class CAPAActionAdmin(admin.ModelAdmin):
         (
             "Completitud",
             {"fields": ("completed_at", "completion_notes", "evidence_document")},
+        ),
+        (
+            "Metadata",
+            {
+                "fields": ("is_active", "created_at", "updated_at"),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+
+@admin.register(QualityObjective)
+class QualityObjectiveAdmin(admin.ModelAdmin):
+    list_display = (
+        "title",
+        "indicator",
+        "target_value",
+        "current_value",
+        "status",
+        "owner",
+        "due_date",
+        "organization",
+    )
+    list_filter = (
+        "status",
+        "organization",
+        "site",
+        "related_process",
+    )
+    search_fields = (
+        "title",
+        "indicator",
+        "description",
+    )
+    readonly_fields = (
+        "status",
+        "created_at",
+        "updated_at",
+    )
+
+    fieldsets = (
+        (
+            "Identificacion",
+            {
+                "fields": (
+                    "organization",
+                    "site",
+                    "title",
+                    "description",
+                )
+            },
+        ),
+        (
+            "Indicador y Meta",
+            {
+                "fields": (
+                    "indicator",
+                    "unit",
+                    "target_value",
+                    "current_value",
+                )
+            },
+        ),
+        (
+            "Vinculacion y Responsabilidad",
+            {
+                "fields": (
+                    "related_process",
+                    "owner",
+                    "frequency",
+                )
+            },
+        ),
+        (
+            "Fechas",
+            {
+                "fields": (
+                    "start_date",
+                    "due_date",
+                )
+            },
+        ),
+        (
+            "Estado",
+            {
+                "fields": ("status",)
+            },
         ),
         (
             "Metadata",
