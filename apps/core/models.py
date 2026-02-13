@@ -591,6 +591,12 @@ class NoConformity(models.Model):
         choices=Severity.choices,
         verbose_name="Severidad",
     )
+    severity_score = models.IntegerField(
+        default=0,
+        verbose_name="Score de criticidad",
+        help_text="Puntuación automática basada en severidad (1=Menor, 2=Mayor, 3=Crítica)",
+        editable=False,
+    )
     detected_at = models.DateField(
         verbose_name="Fecha deteccion",
         help_text="Fecha en la que se detecto la no conformidad",
@@ -715,9 +721,26 @@ class NoConformity(models.Model):
                     "Debe realizar analisis de causa raiz antes de cerrar la NC."
                 )
             })
+        
+        # Validación cruzada: No cerrar si hay CAPA abiertas
+        if self.status == self.Status.CLOSED:
+            open_capa = self.capa_actions.exclude(status="DONE")
+            if open_capa.exists():
+                raise ValidationError(
+                    "No se puede cerrar la NC mientras existan acciones CAPA abiertas o en progreso. "
+                    f"Hay {open_capa.count()} CAPA pendientes."
+                )
 
     def save(self, *args, **kwargs):
         from django.utils import timezone
+
+        # Auto-calculate severity_score based on severity
+        severity_map = {
+            self.Severity.MINOR: 1,
+            self.Severity.MAJOR: 2,
+            self.Severity.CRITICAL: 3,
+        }
+        self.severity_score = severity_map.get(self.severity, 0)
 
         if not self.code:
             year = timezone.now().year
@@ -864,3 +887,14 @@ class CAPAAction(models.Model):
             self.completed_at = None
 
         super().save(*args, **kwargs)
+        
+        # Auto-cierre de NC cuando todas las CAPA estén DONE
+        if self.status == self.Status.DONE and self.no_conformity_id:
+            nc = self.no_conformity
+            # Verificar si todas las CAPA están DONE
+            open_capa = nc.capa_actions.exclude(status=self.Status.DONE)
+            if not open_capa.exists() and nc.status == nc.Status.IN_TREATMENT:
+                # Auto-transicionar a VERIFICATION
+                nc.status = nc.Status.VERIFICATION
+                nc.verification_date = timezone.now().date()
+                nc.save(update_fields=['status', 'verification_date'])

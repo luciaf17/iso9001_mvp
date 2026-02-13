@@ -1117,3 +1117,165 @@ class NoConformityAutoGenerationTests(TestCase):
         # closed_date se llenó automáticamente
         self.assertIsNotNone(nc.closed_date)
         self.assertEqual(nc.closed_date, date.today())
+
+
+class NoConformityCAPACrossValidationTests(TestCase):
+    """Tests para validaciones cruzadas entre NC y CAPA."""
+
+    def setUp(self):
+        self.organization, _ = Organization.objects.get_or_create(name="Empresa")
+        self.process = Process.objects.create(
+            organization=self.organization,
+            code="NC1",
+            name="Proceso NC",
+            process_type=Process.ProcessType.MISSIONAL,
+            level=Process.Level.PROCESS,
+            is_active=True,
+        )
+        self.user = User.objects.create_user(username="detector", password="pass")
+
+    def test_cannot_close_nc_with_open_capa(self):
+        """Test que NO se puede cerrar NC si hay CAPA abiertas."""
+        nc = NoConformity.objects.create(
+            organization=self.organization,
+            related_process=self.process,
+            title="NC con CAPA abierta",
+            description="Test",
+            origin=NoConformity.Origin.INTERNAL,
+            severity=NoConformity.Severity.MINOR,
+            detected_at=date.today(),
+            detected_by=self.user,
+            status=NoConformity.Status.IN_TREATMENT,
+            root_cause_analysis="Causa test",
+            corrective_action="Accion test",
+        )
+        
+        # Crear una CAPA abierta
+        capa = CAPAAction.objects.create(
+            no_conformity=nc,
+            title="Test Action",
+            action_type=CAPAAction.ActionType.CORRECTIVE,
+            status=CAPAAction.Status.OPEN,
+        )
+        
+        # Intentar cerrar la NC debe fallar
+        nc.status = NoConformity.Status.CLOSED
+        with self.assertRaises(ValidationError) as cm:
+            nc.full_clean()
+        
+        self.assertIn("acciones CAPA abiertas", str(cm.exception))
+
+    def test_can_close_nc_when_all_capa_done(self):
+        """Test que SÍ se puede cerrar NC cuando todas las CAPA son DONE."""
+        nc = NoConformity.objects.create(
+            organization=self.organization,
+            related_process=self.process,
+            title="NC con CAPA completada",
+            description="Test",
+            origin=NoConformity.Origin.INTERNAL,
+            severity=NoConformity.Severity.MINOR,
+            detected_at=date.today(),
+            detected_by=self.user,
+            status=NoConformity.Status.IN_TREATMENT,
+            root_cause_analysis="Causa test",
+            corrective_action="Accion test",
+        )
+        
+        # Crear una CAPA y marcarla como DONE
+        capa = CAPAAction.objects.create(
+            no_conformity=nc,
+            title="Test Action",
+            action_type=CAPAAction.ActionType.CORRECTIVE,
+            status=CAPAAction.Status.DONE,
+        )
+        
+        # Ahora SÍ se puede cerrar la NC
+        nc.status = NoConformity.Status.CLOSED
+        nc.full_clean()  # No debe lanzar excepción
+        nc.save()
+        
+        self.assertEqual(nc.status, NoConformity.Status.CLOSED)
+
+    def test_auto_transition_nc_to_verification_when_all_capa_done(self):
+        """Test que NC transiciona automáticamente a VERIFICATION cuando todas las CAPA son DONE."""
+        nc = NoConformity.objects.create(
+            organization=self.organization,
+            related_process=self.process,
+            title="NC para auto-transición",
+            description="Test",
+            origin=NoConformity.Origin.INTERNAL,
+            severity=NoConformity.Severity.MINOR,
+            detected_at=date.today(),
+            detected_by=self.user,
+            status=NoConformity.Status.IN_TREATMENT,
+        )
+        
+        # Crear 2 CAPA
+        capa1 = CAPAAction.objects.create(
+            no_conformity=nc,
+            title="Action 1",
+            action_type=CAPAAction.ActionType.CORRECTIVE,
+            status=CAPAAction.Status.OPEN,
+        )
+        capa2 = CAPAAction.objects.create(
+            no_conformity=nc,
+            title="Action 2",
+            action_type=CAPAAction.ActionType.CORRECTIVE,
+            status=CAPAAction.Status.IN_PROGRESS,
+        )
+        
+        # Marcar primera como DONE - NC no debe cambiar (hay una aún en progreso)
+        capa1.status = CAPAAction.Status.DONE
+        capa1.save()
+        
+        nc.refresh_from_db()
+        self.assertEqual(nc.status, NoConformity.Status.IN_TREATMENT)
+        
+        # Marcar segunda como DONE - Ahora SÍ debe transicionar
+        capa2.status = CAPAAction.Status.DONE
+        capa2.save()
+        
+        nc.refresh_from_db()
+        self.assertEqual(nc.status, NoConformity.Status.VERIFICATION)
+        self.assertIsNotNone(nc.verification_date)
+
+    def test_severity_score_auto_calculation(self):
+        """Test que severity_score se calcula automáticamente basado en severity."""
+        # Test MINOR = 1
+        nc_minor = NoConformity.objects.create(
+            organization=self.organization,
+            related_process=self.process,
+            title="NC Menor",
+            description="Test",
+            origin=NoConformity.Origin.INTERNAL,
+            severity=NoConformity.Severity.MINOR,
+            detected_at=date.today(),
+            detected_by=self.user,
+        )
+        self.assertEqual(nc_minor.severity_score, 1)
+        
+        # Test MAJOR = 2
+        nc_major = NoConformity.objects.create(
+            organization=self.organization,
+            related_process=self.process,
+            title="NC Mayor",
+            description="Test",
+            origin=NoConformity.Origin.INTERNAL,
+            severity=NoConformity.Severity.MAJOR,
+            detected_at=date.today(),
+            detected_by=self.user,
+        )
+        self.assertEqual(nc_major.severity_score, 2)
+        
+        # Test CRITICAL = 3
+        nc_critical = NoConformity.objects.create(
+            organization=self.organization,
+            related_process=self.process,
+            title="NC Crítica",
+            description="Test",
+            origin=NoConformity.Origin.INTERNAL,
+            severity=NoConformity.Severity.CRITICAL,
+            detected_at=date.today(),
+            detected_by=self.user,
+        )
+        self.assertEqual(nc_critical.severity_score, 3)
