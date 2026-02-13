@@ -3,6 +3,8 @@ from django.urls import path
 from apps.core.views import (
     context_detail,
     context_edit,
+    capa_action_create,
+    capa_action_edit,
     nc_create,
     nc_detail,
     nc_edit,
@@ -36,4 +38,6 @@ urlpatterns = [
     path("nc/new/", nc_create, name="nc_new"),
     path("nc/<int:pk>/", nc_detail, name="nc_detail"),
     path("nc/<int:pk>/edit/", nc_edit, name="nc_edit"),
+    path("nc/<int:nc_id>/actions/new/", capa_action_create, name="capa_action_create"),
+    path("capa/<int:action_id>/edit/", capa_action_edit, name="capa_action_edit"),
 ]

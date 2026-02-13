@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AuditEvent, Organization, Site, Process, Stakeholder, RiskOpportunity, NoConformity
+from .models import AuditEvent, Organization, Site, Process, Stakeholder, RiskOpportunity, NoConformity, CAPAAction
 
 
 @admin.register(AuditEvent)
@@ -93,16 +93,121 @@ class RiskOpportunityAdmin(admin.ModelAdmin):
 @admin.register(NoConformity)
 class NoConformityAdmin(admin.ModelAdmin):
     list_display = (
+        "code",
         "title",
         "origin",
         "severity",
         "status",
-        "organization",
-        "related_process",
-        "site",
         "detected_at",
         "owner",
-        "due_date",
     )
-    list_filter = ("origin", "severity", "status", "organization", "site")
-    search_fields = ("title", "description", "root_cause_analysis", "corrective_action")
+    list_filter = ("status", "severity", "origin", "organization", "site")
+    search_fields = ("code", "title", "description")
+    readonly_fields = ("code", "created_at", "updated_at")
+
+    fieldsets = (
+        (
+            "Identificacion",
+            {
+                "fields": (
+                    "organization",
+                    "site",
+                    "code",
+                    "title",
+                    "description",
+                )
+            },
+        ),
+        (
+            "Clasificacion",
+            {"fields": ("origin", "severity", "status")},
+        ),
+        (
+            "Deteccion",
+            {"fields": ("detected_at", "detected_by")},
+        ),
+        (
+            "Responsabilidad",
+            {"fields": ("owner", "due_date")},
+        ),
+        (
+            "Vinculacion",
+            {"fields": ("related_process", "related_document")},
+        ),
+        (
+            "Analisis y Acciones (ISO 10.2)",
+            {
+                "fields": ("root_cause_analysis", "corrective_action"),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "Verificacion de Eficacia",
+            {
+                "fields": ("verification_date", "is_effective", "verification_notes"),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "Evidencia y Cierre",
+            {"fields": ("evidence_document", "closed_date", "closed_by")},
+        ),
+        (
+            "Metadata",
+            {
+                "fields": ("is_active", "created_at", "updated_at"),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+
+@admin.register(CAPAAction)
+class CAPAActionAdmin(admin.ModelAdmin):
+    list_display = (
+        "title",
+        "no_conformity",
+        "action_type",
+        "status",
+        "owner",
+        "due_date",
+        "completed_at",
+    )
+    list_filter = (
+        "action_type",
+        "status",
+        "organization",
+    )
+    search_fields = (
+        "title",
+        "description",
+        "no_conformity__code",
+        "no_conformity__title",
+    )
+    readonly_fields = ("organization", "completed_at", "created_at", "updated_at")
+
+    fieldsets = (
+        (
+            "Vinculacion",
+            {"fields": ("no_conformity", "organization")},
+        ),
+        (
+            "Informacion",
+            {"fields": ("title", "description", "action_type")},
+        ),
+        (
+            "Responsabilidad",
+            {"fields": ("owner", "due_date", "status")},
+        ),
+        (
+            "Completitud",
+            {"fields": ("completed_at", "completion_notes", "evidence_document")},
+        ),
+        (
+            "Metadata",
+            {
+                "fields": ("is_active", "created_at", "updated_at"),
+                "classes": ("collapse",),
+            },
+        ),
+    )

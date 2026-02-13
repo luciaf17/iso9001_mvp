@@ -1,6 +1,6 @@
 from django import forms
 
-from apps.core.models import OrganizationContext, Process, Stakeholder, RiskOpportunity, NoConformity
+from apps.core.models import OrganizationContext, Process, Stakeholder, RiskOpportunity, NoConformity, CAPAAction
 
 
 class ProcessForm(forms.ModelForm):
@@ -86,14 +86,49 @@ class NoConformityForm(forms.ModelForm):
             "origin",
             "severity",
             "detected_at",
+            "detected_by",
             "owner",
             "due_date",
             "status",
+            "root_cause_analysis",
+            "corrective_action",
+            "verification_date",
+            "is_effective",
+            "verification_notes",
             "evidence_document",
+            "closed_date",
+            "closed_by",
             "is_active",
         ]
         widgets = {
             "detected_at": forms.DateInput(attrs={"type": "date"}),
             "due_date": forms.DateInput(attrs={"type": "date"}),
             "description": forms.Textarea(attrs={"rows": 4}),
+            "root_cause_analysis": forms.Textarea(attrs={"rows": 4}),
+            "corrective_action": forms.Textarea(attrs={"rows": 4}),
+            "verification_date": forms.DateInput(attrs={"type": "date"}),
+            "verification_notes": forms.Textarea(attrs={"rows": 4}),
+            "closed_date": forms.DateInput(attrs={"type": "date"}),
+        }
+
+
+class CAPAActionForm(forms.ModelForm):
+    """Formulario para crear/editar acciones CAPA."""
+
+    class Meta:
+        model = CAPAAction
+        fields = [
+            "title",
+            "description",
+            "action_type",
+            "owner",
+            "due_date",
+            "status",
+            "completion_notes",
+            "evidence_document",
+        ]
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 3}),
+            "due_date": forms.DateInput(attrs={"type": "date"}),
+            "completion_notes": forms.Textarea(attrs={"rows": 3}),
         }

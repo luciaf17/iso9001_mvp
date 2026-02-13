@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Editar{% else %}Nueva{% endif %} Accion CAPA{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 900px;
+        background: var(--color-white);
+        border: 2px solid var(--color-primary-light);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-2xl);
+        box-shadow: var(--shadow-md);
+    }
+
+    .form-container h1 {
+        color: var(--color-primary);
+        margin-bottom: var(--spacing-sm);
+        font-size: var(--font-size-2xl);
+    }
+
+    .form-container p {
+        color: var(--color-gray-600);
+        margin-bottom: var(--spacing-xl);
+    }
+
+    .form-section {
+        border: 1px solid var(--color-gray-200);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-lg);
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .form-section h3 {
+        margin-bottom: var(--spacing-md);
+        color: var(--color-dark);
+    }
+
+    .form-group {
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-lg);
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: var(--spacing-sm);
+        color: var(--color-dark);
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: var(--spacing-sm) var(--spacing-md);
+        border: 2px solid var(--color-gray-300);
+        border-radius: var(--border-radius-md);
+        font-size: var(--font-size-sm);
+        transition: var(--transition);
+        box-sizing: border-box;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px var(--color-primary-light);
+    }
+
+    .form-group textarea {
+        min-height: 110px;
+        resize: vertical;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: var(--spacing-md);
+        margin-top: var(--spacing-xl);
+        padding-top: var(--spacing-lg);
+        border-top: 2px solid var(--color-gray-200);
+    }
+
+    .error {
+        color: var(--color-danger);
+        font-size: var(--font-size-sm);
+        margin-top: var(--spacing-xs);
+    }
+
+    .form-text {
+        color: var(--color-gray-600);
+        font-size: var(--font-size-xs);
+        margin-top: var(--spacing-xs);
+        display: block;
+    }
+
+    @media (max-width: 768px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h1>{% if is_edit %}✏️ Editar Accion CAPA{% else %}➕ Nueva Accion CAPA{% endif %}</h1>
+    <p>Para NC: {{ nc.code }} - {{ nc.title }}</p>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="error">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="form-section">
+            <h3>📋 Informacion de la Accion</h3>
+
+            <div class="form-group">
+                <label for="{{ form.title.id_for_label }}">Titulo *</label>
+                {{ form.title }}
+                {% if form.title.errors %}
+                <div class="error">{{ form.title.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.description.id_for_label }}">Descripcion</label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                <div class="error">{{ form.description.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.action_type.id_for_label }}">Tipo de Accion *</label>
+                    {{ form.action_type }}
+                    {% if form.action_type.errors %}
+                    <div class="error">{{ form.action_type.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.status.id_for_label }}">Estado *</label>
+                    {{ form.status }}
+                    {% if form.status.errors %}
+                    <div class="error">{{ form.status.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>👤 Responsabilidad y Plazo</h3>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.owner.id_for_label }}">Responsable</label>
+                    {{ form.owner }}
+                    {% if form.owner.errors %}
+                    <div class="error">{{ form.owner.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.due_date.id_for_label }}">Fecha Limite</label>
+                    {{ form.due_date }}
+                    {% if form.due_date.errors %}
+                    <div class="error">{{ form.due_date.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>✅ Completitud y Evidencia</h3>
+
+            <div class="form-group">
+                <label for="{{ form.completion_notes.id_for_label }}">Notas de Completitud</label>
+                {{ form.completion_notes }}
+                <small class="form-text">Detalles sobre como se completo la accion</small>
+                {% if form.completion_notes.errors %}
+                <div class="error">{{ form.completion_notes.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.evidence_document.id_for_label }}">Documento Evidencia</label>
+                {{ form.evidence_document }}
+                {% if form.evidence_document.errors %}
+                <div class="error">{{ form.evidence_document.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="{% url 'core:nc_detail' nc.pk %}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">
+                {% if is_edit %}💾 Guardar Cambios{% else %}➕ Crear Accion{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

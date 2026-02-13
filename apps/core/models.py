@@ -517,10 +517,12 @@ class NoConformity(models.Model):
     """No conformidad detectada en el sistema de gestion."""
 
     class Origin(models.TextChoices):
-        AUDIT = "AUDIT", "Auditoria"
+        INTERNAL_AUDIT = "INTERNAL_AUDIT", "Auditoria interna"
+        EXTERNAL_AUDIT = "EXTERNAL_AUDIT", "Auditoria externa"
         CUSTOMER = "CUSTOMER", "Cliente"
         INTERNAL = "INTERNAL", "Interna"
         PRODUCTION = "PRODUCTION", "Produccion"
+        SUPPLIER = "SUPPLIER", "Proveedor"
         OTHER = "OTHER", "Otro"
 
     class Severity(models.TextChoices):
@@ -530,8 +532,9 @@ class NoConformity(models.Model):
 
     class Status(models.TextChoices):
         OPEN = "OPEN", "Abierta"
-        ANALYSIS = "ANALYSIS", "En analisis"
-        ACTION = "ACTION", "En accion"
+        IN_ANALYSIS = "IN_ANALYSIS", "En analisis"
+        IN_TREATMENT = "IN_TREATMENT", "En tratamiento"
+        VERIFICATION = "VERIFICATION", "En verificacion"
         CLOSED = "CLOSED", "Cerrada"
 
     organization = models.ForeignKey(
@@ -564,6 +567,13 @@ class NoConformity(models.Model):
         related_name="nonconformities_as_related",
         verbose_name="Documento relacionado",
     )
+    code = models.CharField(
+        max_length=20,
+        unique=True,
+        verbose_name="Codigo",
+        help_text="NC-2025-001, NC-2025-002, etc.",
+        editable=False,
+    )
     title = models.CharField(
         max_length=200,
         verbose_name="Titulo",
@@ -572,7 +582,7 @@ class NoConformity(models.Model):
         verbose_name="Descripcion",
     )
     origin = models.CharField(
-        max_length=20,
+        max_length=30,
         choices=Origin.choices,
         verbose_name="Origen",
     )
@@ -584,6 +594,15 @@ class NoConformity(models.Model):
     detected_at = models.DateField(
         verbose_name="Fecha deteccion",
         help_text="Fecha en la que se detecto la no conformidad",
+    )
+    detected_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="detected_nonconformities",
+        verbose_name="Detectado por",
+        help_text="Usuario que detecto la no conformidad",
     )
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -604,6 +623,31 @@ class NoConformity(models.Model):
         default=Status.OPEN,
         verbose_name="Estado",
     )
+    root_cause_analysis = models.TextField(
+        blank=True,
+        verbose_name="Analisis de causa raiz",
+        help_text="Por que ocurrio la NC? Usar 5 Por ques, Ishikawa, etc.",
+    )
+    corrective_action = models.TextField(
+        blank=True,
+        verbose_name="Accion correctiva",
+        help_text="Que se hara para evitar que vuelva a ocurrir?",
+    )
+    verification_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de verificacion",
+        help_text="Fecha en la que se verifico la eficacia de la accion",
+    )
+    is_effective = models.BooleanField(
+        default=False,
+        verbose_name="Accion efectiva?",
+        help_text="La accion correctiva funciono?",
+    )
+    verification_notes = models.TextField(
+        blank=True,
+        verbose_name="Notas de verificacion",
+    )
     evidence_document = models.ForeignKey(
         "docs.Document",
         on_delete=models.SET_NULL,
@@ -611,6 +655,19 @@ class NoConformity(models.Model):
         blank=True,
         related_name="nonconformities_as_evidence",
         verbose_name="Documento evidencia",
+    )
+    closed_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de cierre",
+    )
+    closed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="closed_nonconformities",
+        verbose_name="Cerrada por",
     )
     is_active = models.BooleanField(
         default=True,
@@ -631,4 +688,179 @@ class NoConformity(models.Model):
         verbose_name_plural = "No conformidades"
 
     def __str__(self):
-        return f"NC-{self.id}: {self.title}"
+        code = self.code or f"NC-{self.id}"
+        return f"{code}: {self.title}"
+
+    def clean(self):
+        super().clean()
+
+        if self.status == self.Status.VERIFICATION and not self.verification_date:
+            raise ValidationError({
+                "verification_date": (
+                    "Debe especificar fecha de verificacion cuando el estado es "
+                    "En verificacion."
+                )
+            })
+
+        if self.status == self.Status.CLOSED and not self.corrective_action:
+            raise ValidationError({
+                "corrective_action": (
+                    "Debe especificar accion correctiva antes de cerrar la NC."
+                )
+            })
+
+        if self.status == self.Status.CLOSED and not self.root_cause_analysis:
+            raise ValidationError({
+                "root_cause_analysis": (
+                    "Debe realizar analisis de causa raiz antes de cerrar la NC."
+                )
+            })
+
+    def save(self, *args, **kwargs):
+        from django.utils import timezone
+
+        if not self.code:
+            year = timezone.now().year
+            last_nc = NoConformity.objects.filter(
+                organization=self.organization,
+                code__startswith=f"NC-{year}",
+            ).order_by("-code").first()
+
+            if last_nc and last_nc.code:
+                try:
+                    last_num = int(last_nc.code.split("-")[-1])
+                    new_num = last_num + 1
+                except (ValueError, IndexError):
+                    new_num = 1
+            else:
+                new_num = 1
+
+            self.code = f"NC-{year}-{new_num:03d}"
+
+        if self.status == self.Status.CLOSED and not self.closed_date:
+            self.closed_date = timezone.now().date()
+
+        super().save(*args, **kwargs)
+
+
+class CAPAAction(models.Model):
+    """Accion CAPA (Corrective and Preventive Action) vinculada a una NC.
+
+    Representa tareas especificas de ejecucion para resolver una NC.
+    La NC contiene el analisis y la decision; CAPA gestiona la ejecucion.
+    """
+
+    class ActionType(models.TextChoices):
+        CORRECTIVE = "CORRECTIVE", "Correctiva"
+        CONTAINMENT = "CONTAINMENT", "Contencion"
+        PREVENTIVE = "PREVENTIVE", "Preventiva"
+
+    class Status(models.TextChoices):
+        OPEN = "OPEN", "Abierta"
+        IN_PROGRESS = "IN_PROGRESS", "En progreso"
+        DONE = "DONE", "Completada"
+
+    no_conformity = models.ForeignKey(
+        NoConformity,
+        on_delete=models.CASCADE,
+        related_name="capa_actions",
+        verbose_name="No conformidad",
+    )
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.PROTECT,
+        related_name="capa_actions",
+        verbose_name="Organizacion",
+    )
+
+    title = models.CharField(
+        max_length=200,
+        verbose_name="Titulo",
+        help_text="Descripcion breve de la accion",
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name="Descripcion detallada",
+    )
+    action_type = models.CharField(
+        max_length=20,
+        choices=ActionType.choices,
+        default=ActionType.CORRECTIVE,
+        verbose_name="Tipo de accion",
+    )
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="capa_actions",
+        verbose_name="Responsable",
+    )
+    due_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha limite",
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.OPEN,
+        verbose_name="Estado",
+    )
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Completada el",
+    )
+    completion_notes = models.TextField(
+        blank=True,
+        verbose_name="Notas de completitud",
+        help_text="Detalles sobre como se completo la accion",
+    )
+
+    evidence_document = models.ForeignKey(
+        "docs.Document",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="capa_actions_as_evidence",
+        verbose_name="Documento evidencia",
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Activo",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Creado",
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Actualizado",
+    )
+
+    class Meta:
+        ordering = ["due_date", "created_at"]
+        verbose_name = "Accion CAPA"
+        verbose_name_plural = "Acciones CAPA"
+
+    def __str__(self):
+        nc_code = self.no_conformity.code if self.no_conformity_id else "-"
+        return f"{self.get_action_type_display()}: {self.title} (NC: {nc_code})"
+
+    def save(self, *args, **kwargs):
+        from django.utils import timezone
+
+        if not self.organization_id and self.no_conformity_id:
+            self.organization = self.no_conformity.organization
+
+        if self.status == self.Status.DONE and not self.completed_at:
+            self.completed_at = timezone.now()
+
+        if self.status in [self.Status.OPEN, self.Status.IN_PROGRESS] and self.completed_at:
+            self.completed_at = None
+
+        super().save(*args, **kwargs)

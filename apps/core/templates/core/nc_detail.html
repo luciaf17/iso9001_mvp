@@ -81,6 +81,126 @@
         color: var(--color-gray-600);
     }
 
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-md);
+    }
+
+    .capa-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-md);
+    }
+
+    .capa-item {
+        border: 1px solid var(--color-gray-200);
+        border-radius: var(--border-radius-md);
+        padding: var(--spacing-md);
+        background: var(--color-white);
+    }
+
+    .capa-item.capa-done {
+        background: var(--color-success-light);
+        border-color: var(--color-success);
+    }
+
+    .capa-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .capa-title {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+    }
+
+    .capa-type-badge {
+        padding: 4px 8px;
+        border-radius: var(--border-radius-sm);
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .capa-type-corrective {
+        background: #e3f2fd;
+        color: #1976d2;
+    }
+
+    .capa-type-containment {
+        background: #fff3e0;
+        color: #f57c00;
+    }
+
+    .capa-type-preventive {
+        background: #f3e5f5;
+        color: #7b1fa2;
+    }
+
+    .capa-description {
+        margin: var(--spacing-sm) 0;
+        color: var(--color-gray-600);
+    }
+
+    .capa-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--spacing-md);
+        font-size: var(--font-size-sm);
+        color: var(--color-gray-600);
+        margin-top: var(--spacing-sm);
+    }
+
+    .capa-actions {
+        margin-top: var(--spacing-sm);
+        padding-top: var(--spacing-sm);
+        border-top: 1px solid var(--color-gray-200);
+    }
+
+    .status-done {
+        background: var(--color-success);
+        color: var(--color-white);
+    }
+
+    .status-in_progress {
+        background: #2196f3;
+        color: var(--color-white);
+    }
+
+    .status-open {
+        background: var(--color-gray-300);
+        color: var(--color-dark);
+    }
+
+    .alert {
+        padding: var(--spacing-sm) var(--spacing-md);
+        border-radius: var(--border-radius-md);
+        margin-top: var(--spacing-md);
+    }
+
+    .alert-warning {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        color: #856404;
+    }
+
+    .alert-info {
+        background: #d1ecf1;
+        border: 1px solid #17a2b8;
+        color: #0c5460;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: var(--spacing-xl);
+        color: var(--color-gray-600);
+    }
+
     @media (max-width: 768px) {
         .detail-header {
             flex-direction: column;
@@ -103,8 +223,80 @@
 </div>
 
 <div class="detail-card">
+    <div class="section-header">
+        <h2>📋 Plan de Acciones CAPA</h2>
+        {% if can_edit %}
+        <a href="{% url 'core:capa_action_create' nc.pk %}" class="btn btn-primary">➕ Nueva Acción</a>
+        {% endif %}
+    </div>
+
+    {% if capa_actions %}
+    <div class="capa-list">
+        {% for capa in capa_actions %}
+        <div class="capa-item {% if capa.status == 'DONE' %}capa-done{% endif %}">
+            <div class="capa-header">
+                <div class="capa-title">
+                    <span class="capa-type-badge capa-type-{{ capa.action_type|lower }}">
+                        {{ capa.get_action_type_display }}
+                    </span>
+                    <strong>{{ capa.title }}</strong>
+                </div>
+                <span class="status-badge status-{{ capa.status|lower }}">
+                    {{ capa.get_status_display }}
+                </span>
+            </div>
+
+            {% if capa.description %}
+            <p class="capa-description">{{ capa.description }}</p>
+            {% endif %}
+
+            <div class="capa-meta">
+                <span>👤 {{ capa.owner|default:"Sin asignar" }}</span>
+                <span>📅 {{ capa.due_date|date:"d/m/Y"|default:"Sin fecha" }}</span>
+                {% if capa.completed_at %}
+                <span>✅ Completada: {{ capa.completed_at|date:"d/m/Y H:i" }}</span>
+                {% endif %}
+            </div>
+
+            {% if can_edit %}
+            <div class="capa-actions">
+                <a href="{% url 'core:capa_action_edit' capa.pk %}" class="btn-link">✏️ Editar</a>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if nc.status == 'IN_TREATMENT' %}
+        {% if capa_done_count == 0 %}
+        <div class="alert alert-warning">
+            ⚠️ La NC esta en tratamiento pero no hay acciones completadas aun.
+        </div>
+        {% elif capa_all_done %}
+        <div class="alert alert-info">
+            ℹ️ Todas las acciones estan completadas. Considere mover la NC a VERIFICATION.
+        </div>
+        {% endif %}
+    {% endif %}
+    {% else %}
+    <div class="empty-state">
+        <p>No hay acciones CAPA definidas para esta NC.</p>
+        {% if nc.status == 'IN_TREATMENT' %}
+        <div class="alert alert-warning">
+            ⚠️ Defina las acciones necesarias para resolver esta NC.
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<div class="detail-card">
     <h1>{{ nc.title }}</h1>
     <div class="detail-grid">
+        <div class="detail-item">
+            <strong>🏷️ Codigo</strong>
+            <span>{{ nc.code|default:"-" }}</span>
+        </div>
         <div class="detail-item">
             <strong>📋 Origen</strong>
             <span>{{ nc.get_origin_display }}</span>
@@ -151,6 +343,22 @@
             <strong>📄 Evidencia</strong>
             <span>{% if nc.evidence_document %}{{ nc.evidence_document }}{% else %}-{% endif %}</span>
         </div>
+        <div class="detail-item">
+            <strong>📅 Fecha verificacion</strong>
+            <span>{% if nc.verification_date %}{{ nc.verification_date|date:"d/m/Y" }}{% else %}-{% endif %}</span>
+        </div>
+        <div class="detail-item">
+            <strong>✅ Accion efectiva</strong>
+            <span>{% if nc.is_effective %}Si{% else %}No{% endif %}</span>
+        </div>
+        <div class="detail-item">
+            <strong>📅 Fecha cierre</strong>
+            <span>{% if nc.closed_date %}{{ nc.closed_date|date:"d/m/Y" }}{% else %}-{% endif %}</span>
+        </div>
+        <div class="detail-item">
+            <strong>👤 Cerrada por</strong>
+            <span>{% if nc.closed_by %}{{ nc.closed_by.get_username }}{% else %}-{% endif %}</span>
+        </div>
         <div class="detail-item" style="grid-column: 1 / -1;">
             <strong>📝 Descripción</strong>
             <span>{{ nc.description }}</span>
@@ -162,6 +370,10 @@
         <div class="detail-item" style="grid-column: 1 / -1;">
             <strong>✅ Acciones correctivas</strong>
             <span>{% if nc.corrective_action %}{{ nc.corrective_action }}{% else %}-{% endif %}</span>
+        </div>
+        <div class="detail-item" style="grid-column: 1 / -1;">
+            <strong>🧪 Notas de verificacion</strong>
+            <span>{% if nc.verification_notes %}{{ nc.verification_notes }}{% else %}-{% endif %}</span>
         </div>
     </div>
 </div>

@@ -5,8 +5,23 @@ from django.contrib.auth.views import LogoutView
 from django.db.models import Count
 from django.shortcuts import redirect, render, get_object_or_404
 
-from apps.core.forms import OrganizationContextForm, StakeholderForm, RiskOpportunityForm, NoConformityForm
-from apps.core.models import Organization, OrganizationContext, Site, Stakeholder, Process, RiskOpportunity, NoConformity
+from apps.core.forms import (
+	OrganizationContextForm,
+	StakeholderForm,
+	RiskOpportunityForm,
+	NoConformityForm,
+	CAPAActionForm,
+)
+from apps.core.models import (
+	Organization,
+	OrganizationContext,
+	Site,
+	Stakeholder,
+	Process,
+	RiskOpportunity,
+	NoConformity,
+	CAPAAction,
+)
 from apps.core.services import log_audit_event
 from apps.core.utils import can_edit_context, can_edit_stakeholders, can_edit_risks, can_edit_nc
 from apps.docs.models import Document
@@ -601,6 +616,10 @@ def _configure_nc_form(form, organization):
 	form.fields["related_document"].queryset = Document.objects.filter(is_active=True)
 	form.fields["evidence_document"].queryset = Document.objects.filter(is_active=True)
 	form.fields["owner"].queryset = User.objects.filter(is_active=True)
+	if "detected_by" in form.fields:
+		form.fields["detected_by"].queryset = User.objects.filter(is_active=True)
+	if "closed_by" in form.fields:
+		form.fields["closed_by"].queryset = User.objects.filter(is_active=True)
 
 
 @login_required
@@ -668,6 +687,10 @@ def nc_detail(request, pk):
 		pk=pk,
 		organization=organization,
 	)
+	capa_actions = nc.capa_actions.select_related("owner").order_by("due_date", "created_at")
+	capa_done_count = capa_actions.filter(status=CAPAAction.Status.DONE).count()
+	capa_total_count = capa_actions.count()
+	capa_all_done = capa_total_count > 0 and capa_done_count == capa_total_count
 	can_edit = can_edit_nc(request.user)
 
 	return render(
@@ -675,6 +698,10 @@ def nc_detail(request, pk):
 		"core/nc_detail.html",
 		{
 			"nc": nc,
+			"capa_actions": capa_actions,
+			"capa_done_count": capa_done_count,
+			"capa_total_count": capa_total_count,
+			"capa_all_done": capa_all_done,
 			"organization": organization,
 			"can_edit": can_edit,
 		},
@@ -780,6 +807,127 @@ def nc_edit(request, pk):
 			"form": form,
 			"organization": organization,
 			"nc": nc,
+			"is_edit": True,
+		},
+	)
+
+
+# ============================================
+# VISTAS CAPA (Acciones de No Conformidades)
+# ============================================
+
+def _configure_capa_form(form, organization):
+	"""Configurar querysets del formulario CAPA."""
+	User = get_user_model()
+	form.fields["owner"].queryset = User.objects.filter(is_active=True)
+	form.fields["evidence_document"].queryset = Document.objects.filter(is_active=True)
+
+
+@login_required
+def capa_action_create(request, nc_id):
+	"""Crear nueva accion CAPA para una NC."""
+	# First try to get the NC by ID alone
+	nc = get_object_or_404(NoConformity, pk=nc_id)
+	organization = nc.organization
+	
+	# Verify the org is active
+	if not organization.is_active:
+		messages.error(request, "La organizacion de esta NC no está activa.")
+		return redirect("home")
+
+	if not can_edit_nc(request.user):
+		messages.error(request, "No tiene permisos para crear acciones CAPA.")
+		return redirect("core:nc_detail", pk=nc.pk)
+
+	if request.method == "POST":
+		form = CAPAActionForm(request.POST)
+		_configure_capa_form(form, organization)
+		if form.is_valid():
+			capa = form.save(commit=False)
+			capa.no_conformity = nc
+			capa.organization = organization
+			capa.save()
+			log_audit_event(
+				actor=request.user,
+				action="core.capa_action.created",
+				instance=capa,
+				metadata={
+					"nc_id": nc.id,
+					"nc_code": nc.code,
+					"action_type": capa.action_type,
+					"status": capa.status,
+					"owner_id": capa.owner_id,
+					"due_date": str(capa.due_date) if capa.due_date else None,
+				},
+				object_type_override="CAPAAction",
+			)
+			messages.success(request, "Accion CAPA creada correctamente.")
+			return redirect("core:nc_detail", pk=nc.pk)
+	else:
+		form = CAPAActionForm()
+		_configure_capa_form(form, organization)
+
+	return render(
+		request,
+		"core/capa_action_form.html",
+		{
+			"form": form,
+			"nc": nc,
+			"organization": organization,
+			"is_edit": False,
+		},
+	)
+
+
+@login_required
+def capa_action_edit(request, action_id):
+	"""Editar accion CAPA existente."""
+	# Get the CAPA action by ID alone
+	capa = get_object_or_404(CAPAAction, pk=action_id)
+	organization = capa.organization
+	
+	# Verify the org is active
+	if not organization.is_active:
+		messages.error(request, "La organizacion de esta accion CAPA no está activa.")
+		return redirect("home")
+
+	if not can_edit_nc(request.user):
+		messages.error(request, "No tiene permisos para editar acciones CAPA.")
+		return redirect("core:nc_detail", pk=capa.no_conformity.pk)
+
+	if request.method == "POST":
+		form = CAPAActionForm(request.POST, instance=capa)
+		_configure_capa_form(form, organization)
+		if form.is_valid():
+			capa = form.save()
+			log_audit_event(
+				actor=request.user,
+				action="core.capa_action.updated",
+				instance=capa,
+				metadata={
+					"nc_id": capa.no_conformity.id,
+					"nc_code": capa.no_conformity.code,
+					"action_type": capa.action_type,
+					"status": capa.status,
+					"owner_id": capa.owner_id,
+					"due_date": str(capa.due_date) if capa.due_date else None,
+				},
+				object_type_override="CAPAAction",
+			)
+			messages.success(request, "Accion CAPA actualizada correctamente.")
+			return redirect("core:nc_detail", pk=capa.no_conformity.pk)
+	else:
+		form = CAPAActionForm(instance=capa)
+		_configure_capa_form(form, organization)
+
+	return render(
+		request,
+		"core/capa_action_form.html",
+		{
+			"form": form,
+			"nc": capa.no_conformity,
+			"capa": capa,
+			"organization": organization,
 			"is_edit": True,
 		},
 	)

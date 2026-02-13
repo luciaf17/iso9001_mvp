@@ -220,7 +220,7 @@
 <table class="nc-table">
     <thead>
         <tr>
-            <th>ID</th>
+            <th>Codigo</th>
             <th>Titulo</th>
             <th>Origen</th>
             <th>Severidad</th>
@@ -233,7 +233,7 @@
     <tbody>
         {% for nc in ncs %}
         <tr>
-            <td><strong>NC-{{ nc.id }}</strong></td>
+            <td><strong>{{ nc.code|default:"-" }}</strong></td>
             <td>{{ nc.title }}</td>
             <td>{{ nc.get_origin_display }}</td>
             <td>
