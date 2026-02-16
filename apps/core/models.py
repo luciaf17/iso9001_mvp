@@ -786,8 +786,18 @@ class CAPAAction(models.Model):
     no_conformity = models.ForeignKey(
         NoConformity,
         on_delete=models.CASCADE,
+        null=True,
+        blank=True,
         related_name="capa_actions",
         verbose_name="No conformidad",
+    )
+    finding = models.ForeignKey(
+        "core.AuditFinding",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="capa_actions",
+        verbose_name="Hallazgo asociado",
     )
     organization = models.ForeignKey(
         Organization,
@@ -843,6 +853,28 @@ class CAPAAction(models.Model):
         help_text="Detalles sobre como se completo la accion",
     )
 
+    class EffectivenessResult(models.TextChoices):
+        EFFECTIVE = "EFFECTIVE", "Efectiva"
+        NOT_EFFECTIVE = "NOT_EFFECTIVE", "No efectiva"
+
+    effectiveness_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de evaluacion de eficacia",
+    )
+    effectiveness_result = models.CharField(
+        max_length=20,
+        choices=EffectivenessResult.choices,
+        null=True,
+        blank=True,
+        verbose_name="Resultado de eficacia",
+    )
+    effectiveness_notes = models.TextField(
+        blank=True,
+        verbose_name="Notas de eficacia",
+        help_text="Detalles sobre la evaluacion de eficacia de la accion",
+    )
+
     evidence_document = models.ForeignKey(
         "docs.Document",
         on_delete=models.SET_NULL,
@@ -871,14 +903,44 @@ class CAPAAction(models.Model):
         verbose_name_plural = "Acciones CAPA"
 
     def __str__(self):
-        nc_code = self.no_conformity.code if self.no_conformity_id else "-"
-        return f"{self.get_action_type_display()}: {self.title} (NC: {nc_code})"
+        if self.no_conformity_id:
+            return f"{self.get_action_type_display()}: {self.title} (NC: {self.no_conformity.code})"
+        elif self.finding_id:
+            return f"{self.get_action_type_display()}: {self.title} (Hallazgo: {self.finding.id})"
+        else:
+            return f"{self.get_action_type_display()}: {self.title}"
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        
+        # Exactly one of no_conformity or finding must be set
+        has_nc = bool(self.no_conformity_id)
+        has_finding = bool(self.finding_id)
+        
+        if not has_nc and not has_finding:
+            raise ValidationError("CAPAAction debe estar vinculada a una NC o a un Hallazgo de auditoría.")
+        
+        if has_nc and has_finding:
+            raise ValidationError("CAPAAction no puede estar vinculada a ambas: NC y Hallazgo. Elige uno.")
+        
+        # Validate organization consistency
+        if has_nc and self.no_conformity and self.organization:
+            if self.no_conformity.organization_id != self.organization_id:
+                raise ValidationError("La organización de la NC no coincide con la de la acción CAPA.")
+        
+        if has_finding and self.finding and self.organization:
+            if self.finding.audit.organization_id != self.organization_id:
+                raise ValidationError("La organización del hallazgo no coincide con la de la acción CAPA.")
 
     def save(self, *args, **kwargs):
         from django.utils import timezone
 
-        if not self.organization_id and self.no_conformity_id:
-            self.organization = self.no_conformity.organization
+        # Auto-derive organization if not set
+        if not self.organization_id:
+            if self.no_conformity_id:
+                self.organization = self.no_conformity.organization
+            elif self.finding_id:
+                self.organization = self.finding.audit.organization
 
         if self.status == self.Status.DONE and not self.completed_at:
             self.completed_at = timezone.now()
@@ -898,6 +960,264 @@ class CAPAAction(models.Model):
                 nc.status = nc.Status.VERIFICATION
                 nc.verification_date = timezone.now().date()
                 nc.save(update_fields=['status', 'verification_date'])
+
+
+class InternalAudit(models.Model):
+    """Auditoria interna planificada (ISO 9001 9.2)."""
+
+    class Status(models.TextChoices):
+        PLANNED = "PLANNED", "Planificada"
+        IN_PROGRESS = "IN_PROGRESS", "En progreso"
+        COMPLETED = "COMPLETED", "Completada"
+        CANCELLED = "CANCELLED", "Cancelada"
+
+    class AuditType(models.TextChoices):
+        INTERNAL = "INTERNAL", "Interna"
+        EXTERNAL = "EXTERNAL", "Externa"
+
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.PROTECT,
+        related_name="internal_audits",
+        verbose_name="Organizacion",
+    )
+    site = models.ForeignKey(
+        Site,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="internal_audits",
+        verbose_name="Sede",
+    )
+    title = models.CharField(
+        max_length=200,
+        verbose_name="Titulo",
+    )
+    audit_date = models.DateField(
+        verbose_name="Fecha de auditoria",
+    )
+    audit_type = models.CharField(
+        max_length=10,
+        choices=AuditType.choices,
+        default=AuditType.INTERNAL,
+        verbose_name="Tipo de auditoria",
+    )
+    scope = models.TextField(
+        blank=True,
+        verbose_name="Alcance",
+    )
+    auditor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="audits_as_auditor",
+        verbose_name="Auditor",
+    )
+    auditee = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name="Auditado",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PLANNED,
+        verbose_name="Estado",
+    )
+    related_processes = models.ManyToManyField(
+        Process,
+        blank=True,
+        related_name="internal_audits",
+        verbose_name="Procesos relacionados",
+    )
+    evidence_document = models.ForeignKey(
+        "docs.Document",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="internal_audits_as_evidence",
+        verbose_name="Documento evidencia",
+    )
+    plan_file = models.FileField(
+        upload_to="audits/plan/",
+        null=True,
+        blank=True,
+        verbose_name="Archivo de planificacion",
+    )
+    report_file = models.FileField(
+        upload_to="audits/report/",
+        null=True,
+        blank=True,
+        verbose_name="Archivo de informe",
+    )
+    team_cv_file = models.FileField(
+        upload_to="audits/team_cv/",
+        null=True,
+        blank=True,
+        verbose_name="CV del equipo auditor",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Creado el",
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Actualizado el",
+    )
+
+    class Meta:
+        ordering = ["-audit_date", "title"]
+        verbose_name = "Auditoria interna"
+        verbose_name_plural = "Auditorias internas"
+
+    def __str__(self):
+        return f"{self.title} ({self.audit_date})"
+
+
+class AuditQuestion(models.Model):
+    """Pregunta reusable para checklist de auditoria."""
+
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.PROTECT,
+        related_name="audit_questions",
+        verbose_name="Organizacion",
+    )
+    process_type = models.CharField(
+        max_length=20,
+        choices=Process.ProcessType.choices,
+        null=True,
+        blank=True,
+        verbose_name="Tipo de proceso",
+    )
+    text = models.TextField(
+        verbose_name="Pregunta",
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Activa",
+    )
+    ordering = models.IntegerField(
+        default=0,
+        verbose_name="Orden",
+    )
+
+    class Meta:
+        ordering = ["ordering", "id"]
+        verbose_name = "Pregunta de auditoria"
+        verbose_name_plural = "Preguntas de auditoria"
+
+    def __str__(self):
+        return self.text
+
+
+class AuditAnswer(models.Model):
+    """Respuesta a pregunta de auditoria."""
+
+    class Result(models.TextChoices):
+        OK = "OK", "OK"
+        NOT_OK = "NOT_OK", "No OK"
+        NA = "NA", "No aplica"
+
+    audit = models.ForeignKey(
+        InternalAudit,
+        on_delete=models.CASCADE,
+        related_name="answers",
+        verbose_name="Auditoria",
+    )
+    question = models.ForeignKey(
+        AuditQuestion,
+        on_delete=models.PROTECT,
+        related_name="answers",
+        verbose_name="Pregunta",
+    )
+    result = models.CharField(
+        max_length=10,
+        choices=Result.choices,
+        verbose_name="Resultado",
+    )
+    notes = models.TextField(
+        blank=True,
+        verbose_name="Notas",
+    )
+
+    class Meta:
+        ordering = ["question__ordering", "id"]
+        unique_together = ("audit", "question")
+        verbose_name = "Respuesta de auditoria"
+        verbose_name_plural = "Respuestas de auditoria"
+
+    def __str__(self):
+        return f"{self.audit} - {self.question}"
+
+
+class AuditFinding(models.Model):
+    """Hallazgo de una auditoria."""
+
+    class FindingType(models.TextChoices):
+        AREA_OF_CONCERN = "AREA_OF_CONCERN", "Área de preocupación"
+        IMPROVEMENT_OPPORTUNITY = "IMPROVEMENT_OPPORTUNITY", "Oportunidad de mejora"
+        NONCONFORMITY = "NONCONFORMITY", "No conformidad"
+
+    class Severity(models.TextChoices):
+        MINOR = "MINOR", "Menor"
+        MAJOR = "MAJOR", "Mayor"
+        CRITICAL = "CRITICAL", "Critica"
+
+    audit = models.ForeignKey(
+        InternalAudit,
+        on_delete=models.CASCADE,
+        related_name="findings",
+        verbose_name="Auditoria",
+    )
+    related_process = models.ForeignKey(
+        Process,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="audit_findings",
+        verbose_name="Proceso relacionado",
+    )
+    finding_type = models.CharField(
+        max_length=23,
+        choices=FindingType.choices,
+        verbose_name="Tipo de hallazgo",
+    )
+    description = models.TextField(
+        verbose_name="Descripcion",
+    )
+    severity = models.CharField(
+        max_length=20,
+        choices=Severity.choices,
+        null=True,
+        blank=True,
+        verbose_name="Severidad",
+    )
+    nc = models.ForeignKey(
+        NoConformity,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="audit_findings",
+        verbose_name="No conformidad",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Creado el",
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Actualizado el",
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Hallazgo de auditoria"
+        verbose_name_plural = "Hallazgos de auditoria"
+
+    def __str__(self):
+        return f"{self.get_finding_type_display()} - {self.audit}"
 
 
 class QualityObjective(models.Model):

@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Editar{% else %}Nueva{% endif %} Pregunta{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 720px;
+        background: var(--color-white);
+        border: 2px solid var(--color-primary-light);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-2xl);
+        box-shadow: var(--shadow-md);
+    }
+
+    .form-container h1 {
+        color: var(--color-primary);
+        margin-bottom: var(--spacing-xl);
+        font-size: var(--font-size-2xl);
+    }
+
+    .form-group {
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: var(--spacing-sm);
+        color: var(--color-dark);
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: var(--spacing-sm) var(--spacing-md);
+        border: 2px solid var(--color-gray-300);
+        border-radius: var(--border-radius-md);
+        font-size: var(--font-size-sm);
+        transition: var(--transition);
+        box-sizing: border-box;
+    }
+
+    .form-group textarea {
+        min-height: 110px;
+        resize: vertical;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-lg);
+    }
+
+    .form-actions {
+        display: flex;
+        gap: var(--spacing-md);
+        margin-top: var(--spacing-2xl);
+        padding-top: var(--spacing-lg);
+        border-top: 2px solid var(--color-gray-200);
+    }
+
+    .error-list {
+        color: var(--color-danger);
+        font-size: var(--font-size-sm);
+        margin-top: var(--spacing-xs);
+        list-style: none;
+        padding: 0;
+    }
+
+    #id_is_active {
+        display: inline-block !important;
+        width: 18px !important;
+        height: 18px !important;
+        min-width: 18px !important;
+        min-height: 18px !important;
+        margin: 0 var(--spacing-sm) 0 0 !important;
+        padding: 0 !important;
+        cursor: pointer;
+        accent-color: var(--color-primary);
+        vertical-align: middle;
+    }
+
+    label[for="id_is_active"] {
+        display: flex !important;
+        align-items: center !important;
+        gap: var(--spacing-sm) !important;
+        cursor: pointer !important;
+        margin-bottom: 0 !important;
+    }
+
+    @media (max-width: 640px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h1>{% if is_edit %}Editar{% else %}Nueva{% endif %} Pregunta de Auditoria</h1>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger" style="padding: var(--spacing-md); background: var(--color-danger-light); border: 2px solid var(--color-danger); border-radius: var(--border-radius-md); margin-bottom: var(--spacing-lg); color: var(--color-danger);">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
+        <div class="form-group">
+            <label for="{{ form.text.id_for_label }}">{{ form.text.label }}</label>
+            {{ form.text }}
+            {% if form.text.errors %}
+            <ul class="error-list">
+                {% for error in form.text.errors %}<li>{{ error }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="{{ form.process_type.id_for_label }}">{{ form.process_type.label }}</label>
+                {{ form.process_type }}
+                {% if form.process_type.errors %}
+                <ul class="error-list">
+                    {% for error in form.process_type.errors %}<li>{{ error }}</li>{% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.ordering.id_for_label }}">{{ form.ordering.label }}</label>
+                {{ form.ordering }}
+                {% if form.ordering.errors %}
+                <ul class="error-list">
+                    {% for error in form.ordering.errors %}<li>{{ error }}</li>{% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.is_active.id_for_label }}">{{ form.is_active.label }}</label>
+            {{ form.is_active }}
+            {% if form.is_active.errors %}
+            <ul class="error-list">
+                {% for error in form.is_active.errors %}<li>{{ error }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Guardar</button>
+            <a href="{% url 'core:audit_question_list' %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

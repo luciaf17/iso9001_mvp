@@ -113,6 +113,12 @@
 
 <div class="home-grid">
     <div class="home-card">
+        <h2>🧪 Auditorias</h2>
+        <p>Planifica auditorias, completa checklist y registra hallazgos.</p>
+        <a href="{% url 'core:audit_list' %}">Ir a Auditorias →</a>
+    </div>
+
+    <div class="home-card">
         <h2>🎯 Objetivos de Calidad</h2>
         <p>Define, mide y da seguimiento a los objetivos de calidad de la organización.</p>
         <a href="{% url 'core:quality_objective_list' %}">Ir a Objetivos →</a>
@@ -161,10 +167,18 @@
     </div>
     
     <div class="home-card">
+        <h2>🔍 Hallazgos de Auditorías</h2>
+        <p>Visualiza y gestiona todos los hallazgos registrados en las auditorías internas.</p>
+        <a href="{% url 'core:audit_list' %}">Ir a Hallazgos →</a>
+    </div>
+    
+    <div class="home-card">
         <h2>⚙️ Administración</h2>
         <p>Panel administrativo para gestionar usuarios, permisos y configuración.</p>
         <a href="/admin/">Ir al Admin →</a>
     </div>
 </div>
+
+
 {% endblock %}
 

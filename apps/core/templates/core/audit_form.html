@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Editar{% else %}Nueva{% endif %} Auditoria{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 800px;
+        background: var(--color-white);
+        border: 2px solid var(--color-primary-light);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-2xl);
+        box-shadow: var(--shadow-md);
+    }
+
+    .form-container h1 {
+        color: var(--color-primary);
+        margin-bottom: var(--spacing-xl);
+        font-size: var(--font-size-2xl);
+    }
+
+    .form-group {
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: var(--spacing-sm);
+        color: var(--color-dark);
+    }
+
+    .form-group label .required {
+        color: var(--color-danger);
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: var(--spacing-sm) var(--spacing-md);
+        border: 2px solid var(--color-gray-300);
+        border-radius: var(--border-radius-md);
+        font-size: var(--font-size-sm);
+        transition: var(--transition);
+        box-sizing: border-box;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px var(--color-primary-light);
+    }
+
+    .form-group textarea {
+        min-height: 110px;
+        resize: vertical;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-lg);
+    }
+
+    .form-row .form-group {
+        margin-bottom: 0;
+    }
+
+    .error-list {
+        color: var(--color-danger);
+        font-size: var(--font-size-sm);
+        margin-top: var(--spacing-xs);
+        list-style: none;
+        padding: 0;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: var(--spacing-md);
+        margin-top: var(--spacing-2xl);
+        padding-top: var(--spacing-lg);
+        border-top: 2px solid var(--color-gray-200);
+    }
+
+    @media (max-width: 640px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h1>{% if is_edit %}Editar{% else %}Nueva{% endif %} Auditoria Interna</h1>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger" style="padding: var(--spacing-md); background: var(--color-danger-light); border: 2px solid var(--color-danger); border-radius: var(--border-radius-md); margin-bottom: var(--spacing-lg); color: var(--color-danger);">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
+        <div class="form-group">
+            <label for="{{ form.title.id_for_label }}">{{ form.title.label }}{% if form.title.field.required %}<span class="required">*</span>{% endif %}</label>
+            {{ form.title }}
+            {% if form.title.errors %}
+            <ul class="error-list">
+                {% for error in form.title.errors %}<li>{{ error }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="{{ form.audit_date.id_for_label }}">{{ form.audit_date.label }}{% if form.audit_date.field.required %}<span class="required">*</span>{% endif %}</label>
+                {{ form.audit_date }}
+                {% if form.audit_date.errors %}
+                <ul class="error-list">
+                    {% for error in form.audit_date.errors %}<li>{{ error }}</li>{% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.audit_type.id_for_label }}">{{ form.audit_type.label }}{% if form.audit_type.field.required %}<span class="required">*</span>{% endif %}</label>
+                {{ form.audit_type }}
+                {% if form.audit_type.errors %}
+                <ul class="error-list">
+                    {% for error in form.audit_type.errors %}<li>{{ error }}</li>{% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="{{ form.status.id_for_label }}">{{ form.status.label }}{% if form.status.field.required %}<span class="required">*</span>{% endif %}</label>
+                {{ form.status }}
+                {% if form.status.errors %}
+                <ul class="error-list">
+                    {% for error in form.status.errors %}<li>{{ error }}</li>{% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+            <div class="form-group">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="{{ form.site.id_for_label }}">{{ form.site.label }}</label>
+                {{ form.site }}
+                {% if form.site.errors %}
+                <ul class="error-list">
+                    {% for error in form.site.errors %}<li>{{ error }}</li>{% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.auditor.id_for_label }}">{{ form.auditor.label }}</label>
+                {{ form.auditor }}
+                {% if form.auditor.errors %}
+                <ul class="error-list">
+                    {% for error in form.auditor.errors %}<li>{{ error }}</li>{% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="{{ form.auditee.id_for_label }}">{{ form.auditee.label }}</label>
+                {{ form.auditee }}
+                {% if form.auditee.errors %}
+                <ul class="error-list">
+                    {% for error in form.auditee.errors %}<li>{{ error }}</li>{% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.evidence_document.id_for_label }}">{{ form.evidence_document.label }}</label>
+                {{ form.evidence_document }}
+                {% if form.evidence_document.errors %}
+                <ul class="error-list">
+                    {% for error in form.evidence_document.errors %}<li>{{ error }}</li>{% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.related_processes.id_for_label }}">{{ form.related_processes.label }}</label>
+            {{ form.related_processes }}
+            {% if form.related_processes.errors %}
+            <ul class="error-list">
+                {% for error in form.related_processes.errors %}<li>{{ error }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.scope.id_for_label }}">{{ form.scope.label }}</label>
+            {{ form.scope }}
+            {% if form.scope.errors %}
+            <ul class="error-list">
+                {% for error in form.scope.errors %}<li>{{ error }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="{{ form.plan_file.id_for_label }}">{{ form.plan_file.label }} <span class="required">(Opcional - Solo PDF)</span></label>
+                {{ form.plan_file }}
+                {% if form.plan_file.errors %}
+                <ul class="error-list">
+                    {% for error in form.plan_file.errors %}<li>{{ error }}</li>{% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.report_file.id_for_label }}">{{ form.report_file.label }} <span class="required">(Opcional - Solo PDF)</span></label>
+                {{ form.report_file }}
+                {% if form.report_file.errors %}
+                <ul class="error-list">
+                    {% for error in form.report_file.errors %}<li>{{ error }}</li>{% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.team_cv_file.id_for_label }}">{{ form.team_cv_file.label }} <span class="required">(Opcional - Solo PDF)</span></label>
+            {{ form.team_cv_file }}
+            {% if form.team_cv_file.errors %}
+            <ul class="error-list">
+                {% for error in form.team_cv_file.errors %}<li>{{ error }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Guardar</button>
+            <a href="{% url 'core:audit_list' %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

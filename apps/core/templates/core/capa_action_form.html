@@ -110,7 +110,11 @@
 {% block content %}
 <div class="form-container">
     <h1>{% if is_edit %}✏️ Editar Accion CAPA{% else %}➕ Nueva Accion CAPA{% endif %}</h1>
+    {% if nc %}
     <p>Para NC: {{ nc.code }} - {{ nc.title }}</p>
+    {% elif finding %}
+    <p>Para Hallazgo: {{ finding.get_finding_type_display }} - {{ finding.description|truncatewords:10 }}</p>
+    {% endif %}
 
     <form method="post">
         {% csrf_token %}
@@ -200,8 +204,43 @@
             </div>
         </div>
 
+        <div class="form-section">
+            <h3>📊 Evaluacion de Eficacia</h3>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.effectiveness_date.id_for_label }}">Fecha de Evaluacion</label>
+                    {{ form.effectiveness_date }}
+                    {% if form.effectiveness_date.errors %}
+                    <div class="error">{{ form.effectiveness_date.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.effectiveness_result.id_for_label }}">Resultado de Eficacia</label>
+                    {{ form.effectiveness_result }}
+                    {% if form.effectiveness_result.errors %}
+                    <div class="error">{{ form.effectiveness_result.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.effectiveness_notes.id_for_label }}">Notas de Eficacia</label>
+                {{ form.effectiveness_notes }}
+                <small class="form-text">Detalles sobre la evaluacion de eficacia de la accion</small>
+                {% if form.effectiveness_notes.errors %}
+                <div class="error">{{ form.effectiveness_notes.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+
         <div class="form-actions">
+            {% if nc %}
             <a href="{% url 'core:nc_detail' nc.pk %}" class="btn btn-secondary">Cancelar</a>
+            {% elif finding %}
+            <a href="{% url 'core:audit_detail' finding.audit.pk %}" class="btn btn-secondary">Cancelar</a>
+            {% endif %}
             <button type="submit" class="btn btn-primary">
                 {% if is_edit %}💾 Guardar Cambios{% else %}➕ Crear Accion{% endif %}
             </button>

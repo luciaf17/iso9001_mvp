@@ -47,3 +47,14 @@ def can_edit_objective(user):
         return True
 
     return user.groups.filter(name__in=["Admin", "Calidad"]).exists()
+
+
+def can_edit_audit(user):
+    """Check if user can create/edit internal audits."""
+    if user is None:
+        return False
+
+    if getattr(user, "is_superuser", False):
+        return True
+
+    return user.groups.filter(name__in=["Admin", "Calidad"]).exists()

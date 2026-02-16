@@ -294,10 +294,13 @@ nav a:hover {
 .btn-primary {
     background: var(--color-primary);
     color: var(--color-white);
+    border: 2px solid var(--color-primary);
 }
 
 .btn-primary:hover:not(:disabled) {
     background: var(--color-primary-dark);
+    border-color: var(--color-primary-dark);
+    color: var(--color-white);
     box-shadow: var(--shadow-md);
     transform: translateY(-2px);
 }
@@ -305,40 +308,52 @@ nav a:hover {
 .btn-secondary {
     background: var(--color-gray-300);
     color: var(--color-dark);
+    border: 2px solid var(--color-gray-300);
 }
 
 .btn-secondary:hover:not(:disabled) {
     background: #bdc3c9;
+    border-color: #bdc3c9;
+    color: var(--color-dark);
     box-shadow: var(--shadow-md);
 }
 
 .btn-success {
     background: var(--color-success);
     color: var(--color-white);
+    border: 2px solid var(--color-success);
 }
 
 .btn-success:hover:not(:disabled) {
     background: #157347;
+    border-color: #157347;
+    color: var(--color-white);
     box-shadow: var(--shadow-md);
 }
 
 .btn-danger {
     background: var(--color-danger);
     color: var(--color-white);
+    border: 2px solid var(--color-danger);
 }
 
 .btn-danger:hover:not(:disabled) {
     background: #bb2d3b;
+    border-color: #bb2d3b;
+    color: var(--color-white);
     box-shadow: var(--shadow-md);
 }
 
 .btn-info {
     background: var(--color-info);
     color: var(--color-white);
+    border: 2px solid var(--color-info);
 }
 
 .btn-info:hover:not(:disabled) {
     background: #0bb5d4;
+    border-color: #0bb5d4;
+    color: var(--color-white);
     box-shadow: var(--shadow-md);
 }
 

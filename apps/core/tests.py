@@ -17,7 +17,12 @@ from .models import (
     NoConformity,
     CAPAAction,
     QualityObjective,
+    InternalAudit,
+    AuditQuestion,
+    AuditAnswer,
+    AuditFinding,
 )
+from .forms import CAPAActionForm
 from .services import log_audit_event
 
 
@@ -965,6 +970,293 @@ class CAPAActionViewTests(TestCase):
         assert last_event.action == "core.capa_action.created"
         assert last_event.actor == user
 
+    def test_capa_action_create_from_finding_area_of_concern(self):
+        """Test crear CAPAAction desde hallazgo tipo AREA_OF_CONCERN."""
+        user = self.User.objects.create_user(username="capa_admin_finding", password="test123")
+        user.groups.add(self.admin_group)
+
+        audit = InternalAudit.objects.create(
+            organization=self.organization,
+            title="Test Audit",
+            audit_type=InternalAudit.AuditType.INTERNAL,
+            audit_date=date.today(),
+        )
+        finding = AuditFinding.objects.create(
+            audit=audit,
+            finding_type=AuditFinding.FindingType.AREA_OF_CONCERN,
+            description="Test area of concern",
+        )
+
+        self.client.force_login(user)
+
+        response = self.client.post(
+            reverse("core:audit_finding_action_new", args=[finding.pk]),
+            {
+                "title": "Test Action from Finding",
+                "action_type": CAPAAction.ActionType.CORRECTIVE,
+                "status": CAPAAction.Status.OPEN,
+            },
+        )
+
+        assert response.status_code == 302, f"Expected 302, got {response.status_code}. Response content:\n{response.content if response.status_code != 302 else 'redirect'}"
+        capa = CAPAAction.objects.filter(title="Test Action from Finding").first()
+        assert capa is not None, "CAPA action was not created"
+        assert capa.finding == finding
+        assert capa.no_conformity is None
+
+        assert capa.organization == self.organization
+
+    def test_capa_action_create_from_finding_improvement_opportunity(self):
+        """Test crear CAPAAction desde hallazgo tipo IMPROVEMENT_OPPORTUNITY."""
+        user = self.User.objects.create_user(username="capa_admin_finding2", password="test123")
+        user.groups.add(self.admin_group)
+
+        audit = InternalAudit.objects.create(
+            organization=self.organization,
+            title="Test Audit 2",
+            audit_type=InternalAudit.AuditType.INTERNAL,
+            audit_date=date.today(),
+        )
+        finding = AuditFinding.objects.create(
+            audit=audit,
+            finding_type=AuditFinding.FindingType.IMPROVEMENT_OPPORTUNITY,
+            description="Test improvement opportunity",
+        )
+
+        self.client.force_login(user)
+
+        response = self.client.post(
+            reverse("core:audit_finding_action_new", args=[finding.pk]),
+            {
+                "title": "Test Improvement Action",
+                "action_type": CAPAAction.ActionType.PREVENTIVE,
+                "status": CAPAAction.Status.OPEN,
+            },
+        )
+
+        assert response.status_code == 302
+        capa = CAPAAction.objects.filter(title="Test Improvement Action").first()
+        assert capa is not None
+        assert capa.finding == finding
+        assert capa.no_conformity is None
+
+    def test_capa_action_create_from_finding_rejects_nonconformity(self):
+        """Test que no se puede crear CAPAAction desde hallazgo NONCONFORMITY."""
+        user = self.User.objects.create_user(username="capa_admin_nc_reject", password="test123")
+        user.groups.add(self.admin_group)
+
+        audit = InternalAudit.objects.create(
+            organization=self.organization,
+            title="Test Audit NC",
+            audit_type=InternalAudit.AuditType.INTERNAL,
+            audit_date=date.today(),
+        )
+        finding = AuditFinding.objects.create(
+            audit=audit,
+            finding_type=AuditFinding.FindingType.NONCONFORMITY,
+            description="Test nonconformity",
+        )
+
+        self.client.force_login(user)
+
+        response = self.client.post(
+            reverse("core:audit_finding_action_new", args=[finding.pk]),
+            {
+                "title": "Test Rejected Action",
+                "action_type": CAPAAction.ActionType.CORRECTIVE,
+                "status": CAPAAction.Status.OPEN,
+            },
+        )
+
+        assert response.status_code == 302
+        assert not CAPAAction.objects.filter(title="Test Rejected Action").exists()
+
+    def test_capa_action_create_from_finding_permission_denied(self):
+        """Test que usuarios sin permisos NO pueden crear CAPAAction desde hallazgo."""
+        user = self.User.objects.create_user(username="capa_reader_finding", password="test123")
+        user.groups.add(self.lectura_group)
+
+        audit = InternalAudit.objects.create(
+            organization=self.organization,
+            title="Test Audit Denied",
+            audit_type=InternalAudit.AuditType.INTERNAL,
+            audit_date=date.today(),
+        )
+        finding = AuditFinding.objects.create(
+            audit=audit,
+            finding_type=AuditFinding.FindingType.AREA_OF_CONCERN,
+            description="Test area of concern",
+        )
+
+        self.client.force_login(user)
+
+        response = self.client.post(
+            reverse("core:audit_finding_action_new", args=[finding.pk]),
+            {
+                "title": "Test Denied Action",
+                "action_type": CAPAAction.ActionType.CORRECTIVE,
+                "status": CAPAAction.Status.OPEN,
+            },
+        )
+
+        assert response.status_code == 302
+        assert not CAPAAction.objects.filter(title="Test Denied Action").exists()
+
+    def test_capa_action_create_from_finding_creates_audit_event(self):
+        """Test que crear CAPAAction desde hallazgo genera AuditEvent correcto."""
+        user = self.User.objects.create_user(username="capa_admin_event", password="test123")
+        user.groups.add(self.admin_group)
+
+        audit = InternalAudit.objects.create(
+            organization=self.organization,
+            title="Test Audit Event",
+            audit_type=InternalAudit.AuditType.INTERNAL,
+            audit_date=date.today(),
+        )
+        finding = AuditFinding.objects.create(
+            audit=audit,
+            finding_type=AuditFinding.FindingType.AREA_OF_CONCERN,
+            description="Test area of concern",
+        )
+
+        self.client.force_login(user)
+        initial_audit_count = AuditEvent.objects.count()
+
+        response = self.client.post(
+            reverse("core:audit_finding_action_new", args=[finding.pk]),
+            {
+                "title": "Test Action Event",
+                "action_type": CAPAAction.ActionType.CORRECTIVE,
+                "status": CAPAAction.Status.OPEN,
+            },
+        )
+
+        assert response.status_code == 302
+        assert AuditEvent.objects.count() == initial_audit_count + 1
+
+        last_event = AuditEvent.objects.latest("timestamp")
+        assert last_event.action == "core.capa_action.created_from_finding"
+        assert last_event.actor == user
+        assert last_event.metadata.get("finding_id") == finding.id
+        assert last_event.metadata.get("audit_id") == audit.id
+        assert last_event.metadata.get("finding_type") == AuditFinding.FindingType.AREA_OF_CONCERN
+
+    def test_capa_effectiveness_validation_result_without_date(self):
+        """Test que form validation falla si se asigna resultado de eficacia sin fecha."""
+        self.organization = Organization.objects.create(name="Test Org Effectiveness")
+        nc = NoConformity.objects.create(
+            organization=self.organization,
+            code="NC-TEST-EFF",
+            title="Test NC",
+            description="Test",
+            origin=NoConformity.Origin.INTERNAL,
+            severity=NoConformity.Severity.MINOR,
+            detected_at=timezone.now().date(),
+        )
+
+        form_data = {
+            "title": "Test Action Effectiveness",
+            "description": "Test",
+            "action_type": CAPAAction.ActionType.CORRECTIVE,
+            "status": CAPAAction.Status.DONE,
+            "effectiveness_result": CAPAAction.EffectivenessResult.EFFECTIVE,
+            # effectiveness_date is empty (intentional)
+        }
+
+        form = CAPAActionForm(data=form_data)
+        assert not form.is_valid()
+        assert "effectiveness_date" in str(form.errors) or "completitud" in str(form.errors).lower() or "Si asignas" in str(form.errors)
+
+    def test_capa_effectiveness_validation_both_set(self):
+        """Test que form es valido cuando se asignan fecha y resultado de eficacia."""
+        self.organization = Organization.objects.create(name="Test Org Effectiveness 2")
+        nc = NoConformity.objects.create(
+            organization=self.organization,
+            code="NC-TEST-EFF-2",
+            title="Test NC",
+            description="Test",
+            origin=NoConformity.Origin.INTERNAL,
+            severity=NoConformity.Severity.MINOR,
+            detected_at=timezone.now().date(),
+        )
+
+        form_data = {
+            "title": "Test Action Effectiveness",
+            "description": "Test",
+            "action_type": CAPAAction.ActionType.CORRECTIVE,
+            "status": CAPAAction.Status.DONE,
+            "effectiveness_result": CAPAAction.EffectivenessResult.EFFECTIVE,
+            "effectiveness_date": "2025-02-16",
+        }
+
+        form = CAPAActionForm(data=form_data)
+        assert form.is_valid(), f"Form should be valid but has errors: {form.errors}"
+
+    def test_capa_effectiveness_validation_both_empty(self):
+        """Test que form es valido cuando ambos campos de eficacia estan vacios."""
+        self.organization = Organization.objects.create(name="Test Org Effectiveness 3")
+        nc = NoConformity.objects.create(
+            organization=self.organization,
+            code="NC-TEST-EFF-3",
+            title="Test NC",
+            description="Test",
+            origin=NoConformity.Origin.INTERNAL,
+            severity=NoConformity.Severity.MINOR,
+            detected_at=timezone.now().date(),
+        )
+
+        form_data = {
+            "title": "Test Action Effectiveness",
+            "description": "Test",
+            "action_type": CAPAAction.ActionType.CORRECTIVE,
+            "status": CAPAAction.Status.OPEN,
+            # Both effectiveness fields are empty
+        }
+
+        form = CAPAActionForm(data=form_data)
+        assert form.is_valid(), f"Form should be valid but has errors: {form.errors}"
+
+    def test_capa_effectiveness_metadata_in_audit_event(self):
+        """Test que la actualizacion de CAPAAction incluye metadata de eficacia en AuditEvent."""
+        user = self.User.objects.create_user(username="capa_effectiveness_test", password="test123")
+        user.groups.add(self.admin_group)
+
+        self.client.force_login(user)
+
+        # Create CAPA action
+        response = self.client.post(
+            reverse("core:capa_action_create", args=[self.nc.id]),
+            {
+                "title": "Test Action with Effectiveness",
+                "action_type": CAPAAction.ActionType.CORRECTIVE,
+                "status": CAPAAction.Status.DONE,
+            },
+        )
+        assert response.status_code == 302
+
+        capa = CAPAAction.objects.get(title="Test Action with Effectiveness")
+
+        # Edit CAPA to set effectiveness
+        response = self.client.post(
+            reverse("core:capa_action_edit", args=[capa.id]),
+            {
+                "title": "Test Action with Effectiveness",
+                "action_type": CAPAAction.ActionType.CORRECTIVE,
+                "status": CAPAAction.Status.DONE,
+                "effectiveness_result": CAPAAction.EffectivenessResult.EFFECTIVE,
+                "effectiveness_date": "2025-02-16",
+                "effectiveness_notes": "Accion fue efectiva y el problema se resolvio",
+            },
+        )
+        assert response.status_code == 302
+
+        # Verify audit event includes effectiveness metadata
+        last_event = AuditEvent.objects.filter(action="core.capa_action.updated").latest("timestamp")
+        assert last_event.action == "core.capa_action.updated"
+        assert last_event.actor == user
+        assert last_event.metadata.get("effectiveness_result") == CAPAAction.EffectivenessResult.EFFECTIVE
+        assert last_event.metadata.get("effectiveness_date") is not None
+
 
 class RiskOpportunityValidationTests(TestCase):
     """Tests para validaciones de RiskOpportunity."""
@@ -1528,3 +1820,294 @@ class QualityObjectiveViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Objetivo 1")
         self.assertContains(response, "Entregas")
+
+
+class InternalAuditViewsTests(TestCase):
+    """Tests para auditorias internas (AUD-01)."""
+
+    def setUp(self):
+        self.organization = Organization.objects.filter(is_active=True).first() or Organization.objects.first()
+        if not self.organization:
+            self.organization = Organization.objects.create(name="Org Audit", is_active=True)
+        self.process = Process.objects.create(
+            organization=self.organization,
+            code="A-01",
+            name="Proceso Audit",
+            process_type=Process.ProcessType.MISSIONAL,
+            level=Process.Level.PROCESS,
+            is_active=True,
+        )
+        self.admin_group, _ = Group.objects.get_or_create(name="Admin")
+        self.calidad_group, _ = Group.objects.get_or_create(name="Calidad")
+        self.admin_user = User.objects.create_user(username="audit_admin", password="testpass")
+        self.admin_user.groups.add(self.admin_group)
+        self.normal_user = User.objects.create_user(username="audit_user", password="testpass")
+
+    def _create_audit(self):
+        audit = InternalAudit.objects.create(
+            organization=self.organization,
+            site=None,
+            title="Audit 1",
+            audit_date=date.today(),
+            status=InternalAudit.Status.PLANNED,
+        )
+        audit.related_processes.add(self.process)
+        return audit
+
+    def test_create_audit_generates_event(self):
+        self.client.login(username="audit_admin", password="testpass")
+
+        response = self.client.post(
+            reverse("core:audit_new"),
+            data={
+                "title": "Auditoria ISO",
+                "audit_date": date.today().isoformat(),
+                "audit_type": InternalAudit.AuditType.INTERNAL,
+                "status": InternalAudit.Status.PLANNED,
+                "related_processes": [self.process.id],
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(InternalAudit.objects.filter(title="Auditoria ISO").exists())
+        self.assertTrue(
+            AuditEvent.objects.filter(action="core.audit.created", actor=self.admin_user).exists()
+        )
+
+    def test_checklist_submit_creates_answers(self):
+        self.client.login(username="audit_admin", password="testpass")
+
+        audit = self._create_audit()
+        question = AuditQuestion.objects.create(
+            organization=self.organization,
+            process_type=Process.ProcessType.MISSIONAL,
+            text="Se cumple el procedimiento?",
+            is_active=True,
+            ordering=1,
+        )
+        answer = AuditAnswer.objects.create(
+            audit=audit,
+            question=question,
+            result=AuditAnswer.Result.NA,
+        )
+
+        prefix = "answers"
+        response = self.client.post(
+            reverse("core:audit_checklist", args=[audit.pk]),
+            data={
+                f"{prefix}-TOTAL_FORMS": "1",
+                f"{prefix}-INITIAL_FORMS": "1",
+                f"{prefix}-MIN_NUM_FORMS": "0",
+                f"{prefix}-MAX_NUM_FORMS": "1000",
+                f"{prefix}-0-id": str(answer.id),
+                f"{prefix}-0-question": str(question.id),
+                f"{prefix}-0-result": AuditAnswer.Result.OK,
+                f"{prefix}-0-notes": "Ok",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        answer.refresh_from_db()
+        self.assertEqual(answer.result, AuditAnswer.Result.OK)
+        self.assertTrue(
+            AuditEvent.objects.filter(
+                action="core.audit.checklist.submitted",
+                actor=self.admin_user,
+            ).exists()
+        )
+
+    def test_create_finding(self):
+        self.client.login(username="audit_admin", password="testpass")
+
+        audit = self._create_audit()
+        response = self.client.post(
+            reverse("core:audit_finding_new", args=[audit.pk]),
+            data={
+                "related_process": self.process.id,
+                "finding_type": AuditFinding.FindingType.AREA_OF_CONCERN,
+                "description": "Observacion de prueba",
+                "severity": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(AuditFinding.objects.filter(audit=audit).exists())
+        self.assertTrue(
+            AuditEvent.objects.filter(
+                action="core.audit.finding.created",
+                actor=self.admin_user,
+            ).exists()
+        )
+
+    def test_create_nc_from_finding(self):
+        self.client.login(username="audit_admin", password="testpass")
+
+        audit = self._create_audit()
+        finding = AuditFinding.objects.create(
+            audit=audit,
+            related_process=self.process,
+            finding_type=AuditFinding.FindingType.NONCONFORMITY,
+            description="Hallazgo NC",
+            severity=AuditFinding.Severity.MAJOR,
+        )
+
+        response = self.client.get(
+            reverse("core:audit_finding_create_nc", args=[finding.pk])
+        )
+
+        self.assertEqual(response.status_code, 302)
+        finding.refresh_from_db()
+        self.assertIsNotNone(finding.nc)
+        self.assertEqual(finding.nc.origin, NoConformity.Origin.INTERNAL_AUDIT)
+
+    def test_create_nc_from_finding_external_audit(self):
+        """Verifica que NC creado desde hallazgo de auditoria externa tenga origen EXTERNAL_AUDIT."""
+        self.client.login(username="audit_admin", password="testpass")
+
+        # Create audit with EXTERNAL type
+        audit = InternalAudit.objects.create(
+            organization=self.organization,
+            site=None,
+            title="Audit Externa",
+            audit_date=date.today(),
+            audit_type=InternalAudit.AuditType.EXTERNAL,
+            status=InternalAudit.Status.PLANNED,
+        )
+        audit.related_processes.add(self.process)
+
+        finding = AuditFinding.objects.create(
+            audit=audit,
+            related_process=self.process,
+            finding_type=AuditFinding.FindingType.NONCONFORMITY,
+            description="Hallazgo NC Externa",
+            severity=AuditFinding.Severity.MAJOR,
+        )
+
+        response = self.client.get(
+            reverse("core:audit_finding_create_nc", args=[finding.pk])
+        )
+
+        self.assertEqual(response.status_code, 302)
+        finding.refresh_from_db()
+        self.assertIsNotNone(finding.nc)
+        self.assertEqual(finding.nc.origin, NoConformity.Origin.EXTERNAL_AUDIT)
+        self.assertEqual(finding.nc.detected_by, self.admin_user)
+
+    def test_cannot_create_nc_from_non_nonconformity_finding(self):
+        """Verifica que no se puede crear NC desde hallazgo que no sea NONCONFORMITY."""
+        self.client.login(username="audit_admin", password="testpass")
+
+        audit = self._create_audit()
+        finding = AuditFinding.objects.create(
+            audit=audit,
+            related_process=self.process,
+            finding_type=AuditFinding.FindingType.AREA_OF_CONCERN,
+            description="Hallazgo no conformidad",
+            severity=AuditFinding.Severity.MINOR,
+        )
+
+        response = self.client.get(
+            reverse("core:audit_finding_create_nc", args=[finding.pk])
+        )
+
+        self.assertEqual(response.status_code, 302)
+        finding.refresh_from_db()
+        self.assertIsNone(finding.nc)
+
+    def test_non_authorized_cannot_create_audit(self):
+        self.client.login(username="audit_user", password="testpass")
+
+        response = self.client.post(
+            reverse("core:audit_new"),
+            data={
+                "title": "No Autorizado",
+                "audit_date": date.today().isoformat(),
+                "audit_type": InternalAudit.AuditType.INTERNAL,
+                "status": InternalAudit.Status.PLANNED,
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(InternalAudit.objects.filter(title="No Autorizado").exists())
+
+
+class AuditQuestionViewsTests(TestCase):
+    """Tests para el banco de preguntas de auditoria (AUD-02)."""
+
+    def setUp(self):
+        self.organization = Organization.objects.filter(is_active=True).first() or Organization.objects.first()
+        if not self.organization:
+            self.organization = Organization.objects.create(name="Org Audit", is_active=True)
+        self.process = Process.objects.create(
+            organization=self.organization,
+            code="AQ-01",
+            name="Proceso Audit",
+            process_type=Process.ProcessType.MISSIONAL,
+            level=Process.Level.PROCESS,
+            is_active=True,
+        )
+        self.admin_group, _ = Group.objects.get_or_create(name="Admin")
+        self.admin_user = User.objects.create_user(username="aq_admin", password="testpass")
+        self.admin_user.groups.add(self.admin_group)
+        self.normal_user = User.objects.create_user(username="aq_user", password="testpass")
+
+    def test_admin_can_create_and_edit_question(self):
+        self.client.login(username="aq_admin", password="testpass")
+
+        response = self.client.post(
+            reverse("core:audit_question_new"),
+            data={
+                "process_type": Process.ProcessType.MISSIONAL,
+                "text": "Pregunta de prueba",
+                "ordering": 10,
+                "is_active": "on",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        question = AuditQuestion.objects.get(text="Pregunta de prueba")
+
+        response = self.client.post(
+            reverse("core:audit_question_edit", args=[question.pk]),
+            data={
+                "process_type": Process.ProcessType.MISSIONAL,
+                "text": "Pregunta editada",
+                "ordering": 20,
+                "is_active": "on",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        question.refresh_from_db()
+        self.assertEqual(question.text, "Pregunta editada")
+        self.assertEqual(question.ordering, 20)
+
+    def test_non_authorized_cannot_access_list(self):
+        self.client.login(username="aq_user", password="testpass")
+
+        response = self.client.get(reverse("core:audit_question_list"))
+
+        self.assertEqual(response.status_code, 302)
+
+    def test_checklist_shows_active_questions(self):
+        self.client.login(username="aq_admin", password="testpass")
+
+        audit = InternalAudit.objects.create(
+            organization=self.organization,
+            title="Audit Checklist",
+            audit_date=date.today(),
+            status=InternalAudit.Status.PLANNED,
+        )
+        audit.related_processes.add(self.process)
+        AuditQuestion.objects.create(
+            organization=self.organization,
+            process_type=None,
+            text="Pregunta general",
+            is_active=True,
+            ordering=1,
+        )
+
+        response = self.client.get(reverse("core:audit_checklist", args=[audit.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["formset"].total_form_count(), 1)

@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}Preguntas de Auditoria{% endblock %}
+
+{% block extra_css %}
+<style>
+    .questions-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-xl);
+    }
+
+    .questions-header h1 {
+        font-size: var(--font-size-3xl);
+        color: var(--color-primary);
+    }
+
+    .filter-card {
+        background: var(--color-white);
+        border: 2px solid var(--color-primary-light);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-lg);
+        margin-bottom: var(--spacing-xl);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .filter-form {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--spacing-lg);
+        align-items: flex-end;
+    }
+
+    .filter-form label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: var(--spacing-sm);
+        color: var(--color-dark);
+    }
+
+    .filter-form input,
+    .filter-form select {
+        padding: var(--spacing-sm) var(--spacing-md);
+        border: 2px solid var(--color-gray-300);
+        border-radius: var(--border-radius-md);
+        font-size: var(--font-size-sm);
+        transition: var(--transition);
+        background-color: var(--color-white);
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .filter-form input:focus,
+    .filter-form select:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px var(--color-primary-light);
+    }
+
+    .filter-actions {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: flex-end;
+        gap: var(--spacing-sm);
+    }
+
+    .questions-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .questions-table th,
+    .questions-table td {
+        padding: 0.75rem;
+        text-align: left;
+        vertical-align: top;
+    }
+
+    .questions-table thead tr {
+        background: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .questions-table tbody tr {
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .questions-table tbody tr:hover {
+        background-color: var(--color-gray-50);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .badge {
+        padding: 4px 8px;
+        border-radius: var(--border-radius-sm);
+        font-weight: 600;
+        font-size: var(--font-size-xs);
+        text-transform: uppercase;
+        background: var(--color-gray-100);
+        color: var(--color-gray-600);
+    }
+
+    .badge-active {
+        background: var(--color-success-light);
+        color: var(--color-success);
+    }
+
+    .badge-inactive {
+        background: #f8d7da;
+        color: var(--color-danger);
+    }
+
+    .action-links {
+        display: flex;
+        gap: var(--spacing-sm);
+        flex-wrap: wrap;
+    }
+
+    .action-links .btn {
+        padding: 6px 12px;
+        font-size: var(--font-size-xs);
+        border-radius: var(--border-radius-sm);
+        box-shadow: var(--shadow-sm);
+        transition: var(--transition);
+    }
+
+    .action-links .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .empty-state {
+        color: var(--color-gray-600);
+        text-align: center;
+        padding: 3rem;
+    }
+
+    @media (max-width: 1024px) {
+        .filter-form {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 640px) {
+        .filter-form {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="questions-header">
+    <div>
+        <h1>🧠 Preguntas de Auditoria</h1>
+        <div class="text-muted">Organizacion: {{ organization.name }}</div>
+    </div>
+    <a class="btn btn-primary" href="{% url 'core:audit_question_new' %}">+ Nueva pregunta</a>
+</div>
+
+<form method="get" class="filter-card">
+    <div class="filter-form">
+        <div>
+            <label for="search">Texto</label>
+            <input id="search" name="search" type="text" value="{{ selected_search }}" placeholder="Buscar pregunta...">
+        </div>
+        <div>
+            <label for="process_type">Tipo de proceso</label>
+            <select id="process_type" name="process_type">
+                <option value="">Todos</option>
+                {% for value, label in process_types %}
+                <option value="{{ value }}" {% if selected_process_type == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="is_active">Estado</label>
+            <select id="is_active" name="is_active">
+                <option value="">Todos</option>
+                <option value="true" {% if selected_is_active == "true" %}selected{% endif %}>Activa</option>
+                <option value="false" {% if selected_is_active == "false" %}selected{% endif %}>Inactiva</option>
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-primary">Filtrar</button>
+            <a class="btn btn-secondary" href="{% url 'core:audit_question_list' %}">Limpiar</a>
+        </div>
+    </div>
+</form>
+
+{% if questions %}
+<table class="questions-table">
+    <thead>
+        <tr>
+            <th>Pregunta</th>
+            <th>Proceso</th>
+            <th>Orden</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for question in questions %}
+        <tr>
+            <td>{{ question.text }}</td>
+            <td>{% if question.process_type %}{{ question.get_process_type_display }}{% else %}General{% endif %}</td>
+            <td>{{ question.ordering }}</td>
+            <td>
+                {% if question.is_active %}
+                <span class="badge badge-active">Activa</span>
+                {% else %}
+                <span class="badge badge-inactive">Inactiva</span>
+                {% endif %}
+            </td>
+            <td>
+                <div class="action-links">
+                    <a class="btn btn-secondary" href="{% url 'core:audit_question_edit' question.pk %}">Editar</a>
+                    <form method="post" action="{% url 'core:audit_question_toggle' question.pk %}">
+                        {% csrf_token %}
+                        {% if question.is_active %}
+                        <button type="submit" class="btn btn-secondary">Desactivar</button>
+                        {% else %}
+                        <button type="submit" class="btn btn-primary">Activar</button>
+                        {% endif %}
+                    </form>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="empty-state">No hay preguntas registradas.</div>
+{% endif %}
+{% endblock %}

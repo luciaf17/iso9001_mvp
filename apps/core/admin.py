@@ -1,6 +1,20 @@
 from django.contrib import admin
 
-from .models import AuditEvent, Organization, Site, Process, Stakeholder, RiskOpportunity, NoConformity, CAPAAction, QualityObjective
+from .models import (
+    AuditEvent,
+    Organization,
+    Site,
+    Process,
+    Stakeholder,
+    RiskOpportunity,
+    NoConformity,
+    CAPAAction,
+    QualityObjective,
+    InternalAudit,
+    AuditQuestion,
+    AuditAnswer,
+    AuditFinding,
+)
 
 
 @admin.register(AuditEvent)
@@ -241,6 +255,42 @@ class QualityObjectiveAdmin(admin.ModelAdmin):
         "created_at",
         "updated_at",
     )
+
+
+@admin.register(InternalAudit)
+class InternalAuditAdmin(admin.ModelAdmin):
+    list_display = (
+        "title",
+        "audit_date",
+        "status",
+        "auditor",
+        "auditee",
+        "organization",
+    )
+    list_filter = ("status", "organization", "site")
+    search_fields = ("title", "auditee")
+    filter_horizontal = ("related_processes",)
+
+
+@admin.register(AuditQuestion)
+class AuditQuestionAdmin(admin.ModelAdmin):
+    list_display = ("text", "process_type", "ordering", "is_active", "organization")
+    list_filter = ("process_type", "is_active", "organization")
+    search_fields = ("text",)
+
+
+@admin.register(AuditAnswer)
+class AuditAnswerAdmin(admin.ModelAdmin):
+    list_display = ("audit", "question", "result")
+    list_filter = ("result",)
+    search_fields = ("audit__title", "question__text")
+
+
+@admin.register(AuditFinding)
+class AuditFindingAdmin(admin.ModelAdmin):
+    list_display = ("audit", "finding_type", "severity", "related_process", "nc")
+    list_filter = ("finding_type", "severity")
+    search_fields = ("audit__title", "description")
 
     fieldsets = (
         (
