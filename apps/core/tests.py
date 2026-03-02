@@ -22,6 +22,8 @@ from .models import (
     AuditAnswer,
     AuditFinding,
     ManagementReview,
+    QualityIndicator,
+    IndicatorMeasurement,
 )
 from .forms import CAPAActionForm
 from .services import log_audit_event
@@ -2215,3 +2217,189 @@ class ManagementReviewTests(TestCase):
         self.assertEqual(response.context["review"], review)
         self.assertContains(response, "Test attendees")
         self.assertContains(response, "Test summary")
+
+
+class IndicatorTests(TestCase):
+    """Tests para el módulo de indicadores de calidad."""
+
+    def setUp(self):
+        """Configurar datos de prueba."""
+        self.organization = Organization.objects.filter(is_active=True).first() or Organization.objects.first()
+        
+        if not self.organization:
+            self.organization = Organization.objects.create(name="Test Org", is_active=True)
+        
+        self.process = Process.objects.create(
+            organization=self.organization,
+            code="TEST-P1",
+            name="Test Process",
+            process_type=Process.ProcessType.MISSIONAL,
+            level=Process.Level.PROCESS,
+            is_active=True,
+        )
+        
+        self.admin_user = User.objects.create_user(
+            username="admin_ind", password="admin123", is_staff=True, is_superuser=True
+        )
+        admin_group, _ = Group.objects.get_or_create(name="Administradores")
+        self.admin_user.groups.add(admin_group)
+        
+        self.regular_user = User.objects.create_user(
+            username="regular_ind", password="regular123"
+        )
+
+    def test_create_indicator_generates_audit_event(self):
+        """Verifica que crear un indicador genera un AuditEvent."""
+        self.client.login(username="admin_ind", password="admin123")
+        
+        indicator_data = {
+            "name": "Disponibilidad del Servicio",
+            "description": "Porcentaje de tiempo que el servicio está disponible",
+            "frequency": QualityIndicator.Frequency.MONTHLY,
+            "target_value": "99.5",
+            "comparison_type": QualityIndicator.ComparisonType.GREATER_EQUAL,
+            "unit": "%",
+            "is_active": "on",
+        }
+        
+        initial_count = AuditEvent.objects.count()
+        
+        response = self.client.post(reverse("core:indicator_new"), indicator_data)
+        
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(QualityIndicator.objects.count(), 1)
+        
+        self.assertEqual(AuditEvent.objects.count(), initial_count + 1)
+        
+        event = AuditEvent.objects.latest("timestamp")
+        self.assertEqual(event.action, "core.indicator.created")
+        self.assertEqual(event.actor, self.admin_user)
+        self.assertIn("indicator_id", event.metadata)
+
+    def test_add_measurement_evaluates_target_correctly(self):
+        """Verifica que is_within_target evalúa correctamente GREATER_EQUAL."""
+        indicator = QualityIndicator.objects.create(
+            organization=self.organization,
+            name="Test Indicator",
+            frequency=QualityIndicator.Frequency.MONTHLY,
+            target_value=90.0,
+            comparison_type=QualityIndicator.ComparisonType.GREATER_EQUAL,
+        )
+        
+        # Medición que cumple la meta
+        measurement_ok = IndicatorMeasurement.objects.create(
+            indicator=indicator,
+            measurement_date=date.today(),
+            value=95.0,
+        )
+        
+        self.assertTrue(measurement_ok.is_within_target())
+        
+        # Medición que no cumple la meta
+        measurement_fail = IndicatorMeasurement.objects.create(
+            indicator=indicator,
+            measurement_date=date.today() - timedelta(days=1),
+            value=85.0,
+        )
+        
+        self.assertFalse(measurement_fail.is_within_target())
+
+    def test_non_admin_cannot_create_indicator(self):
+        """Verifica que usuarios sin permisos no pueden crear indicadores."""
+        self.client.login(username="regular_ind", password="regular123")
+        
+        indicator_data = {
+            "name": "Test",
+            "frequency": QualityIndicator.Frequency.MONTHLY,
+            "target_value": "90",
+            "comparison_type": QualityIndicator.ComparisonType.GREATER_EQUAL,
+        }
+        
+        response = self.client.post(reverse("core:indicator_new"), indicator_data)
+        
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(QualityIndicator.objects.count(), 0)
+
+    def test_indicator_list_renders(self):
+        """Verifica que la lista de indicadores se renderiza correctamente."""
+        QualityIndicator.objects.create(
+            organization=self.organization,
+            name="Test Indicator",
+            frequency=QualityIndicator.Frequency.MONTHLY,
+            target_value=90.0,
+            comparison_type=QualityIndicator.ComparisonType.GREATER_EQUAL,
+        )
+        
+        self.client.login(username="admin_ind", password="admin123")
+        response = self.client.get(reverse("core:indicator_list"))
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("indicators", response.context)
+        self.assertEqual(len(response.context["indicators"]), 1)
+
+    def test_indicator_ok_status(self):
+        """Verifica que un indicador con medición dentro de meta retorna OK."""
+        indicator = QualityIndicator.objects.create(
+            organization=self.organization,
+            name="Performance Indicator",
+            frequency=QualityIndicator.Frequency.MONTHLY,
+            target_value=90.0,
+            comparison_type=QualityIndicator.ComparisonType.GREATER_EQUAL,
+        )
+        
+        IndicatorMeasurement.objects.create(
+            indicator=indicator,
+            measurement_date=date.today(),
+            value=95.0,
+        )
+        
+        self.assertEqual(indicator.get_status(), "OK")
+
+    def test_indicator_out_of_target(self):
+        """Verifica que un indicador con medición fuera de meta retorna OUT_OF_TARGET."""
+        indicator = QualityIndicator.objects.create(
+            organization=self.organization,
+            name="Performance Indicator",
+            frequency=QualityIndicator.Frequency.MONTHLY,
+            target_value=90.0,
+            comparison_type=QualityIndicator.ComparisonType.GREATER_EQUAL,
+        )
+        
+        IndicatorMeasurement.objects.create(
+            indicator=indicator,
+            measurement_date=date.today(),
+            value=85.0,
+        )
+        
+        self.assertEqual(indicator.get_status(), "OUT_OF_TARGET")
+
+    def test_indicator_overdue(self):
+        """Verifica que un indicador vencido retorna OVERDUE."""
+        indicator = QualityIndicator.objects.create(
+            organization=self.organization,
+            name="Performance Indicator",
+            frequency=QualityIndicator.Frequency.MONTHLY,
+            target_value=90.0,
+            comparison_type=QualityIndicator.ComparisonType.GREATER_EQUAL,
+        )
+        
+        # Medición hace 40 días (más de 31 para MONTHLY)
+        IndicatorMeasurement.objects.create(
+            indicator=indicator,
+            measurement_date=date.today() - timedelta(days=40),
+            value=95.0,
+        )
+        
+        self.assertEqual(indicator.get_status(), "OVERDUE")
+
+    def test_indicator_no_data(self):
+        """Verifica que un indicador sin mediciones retorna NO_DATA."""
+        indicator = QualityIndicator.objects.create(
+            organization=self.organization,
+            name="Performance Indicator",
+            frequency=QualityIndicator.Frequency.MONTHLY,
+            target_value=90.0,
+            comparison_type=QualityIndicator.ComparisonType.GREATER_EQUAL,
+        )
+        
+        self.assertEqual(indicator.get_status(), "NO_DATA")

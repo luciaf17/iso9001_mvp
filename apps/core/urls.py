@@ -39,6 +39,11 @@ from apps.core.views import (
     review_detail,
     review_create,
     review_edit,
+    indicator_list,
+    indicator_detail,
+    indicator_create,
+    indicator_edit,
+    measurement_create,
 )
 
 app_name = "core"
@@ -82,4 +87,9 @@ urlpatterns = [
     path("management-reviews/new/", review_create, name="review_new"),
     path("management-reviews/<int:pk>/", review_detail, name="review_detail"),
     path("management-reviews/<int:pk>/edit/", review_edit, name="review_edit"),
+    path("indicators/", indicator_list, name="indicator_list"),
+    path("indicators/new/", indicator_create, name="indicator_new"),
+    path("indicators/<int:pk>/", indicator_detail, name="indicator_detail"),
+    path("indicators/<int:pk>/edit/", indicator_edit, name="indicator_edit"),
+    path("indicators/<int:indicator_pk>/measurements/new/", measurement_create, name="measurement_new"),
 ]

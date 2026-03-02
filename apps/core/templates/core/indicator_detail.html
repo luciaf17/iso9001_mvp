@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle Indicador - {{ indicator.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-xl);
+    }
+
+    .detail-header a {
+        color: var(--color-gray-600);
+        text-decoration: none;
+        transition: var(--transition);
+    }
+
+    .detail-header a:hover {
+        color: var(--color-primary);
+        text-decoration: underline;
+    }
+
+    .detail-card {
+        background: var(--color-white);
+        border: 2px solid var(--color-primary-light);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-lg);
+        margin-bottom: var(--spacing-xl);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .detail-card h1 {
+        margin-bottom: var(--spacing-lg);
+        color: var(--color-primary);
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-md);
+    }
+
+    .target-badge {
+        padding: 8px 16px;
+        border-radius: var(--border-radius-md);
+        font-weight: 700;
+        font-size: var(--font-size-lg);
+        display: inline-block;
+    }
+
+    .target-badge.within {
+        background: #c8e6c9;
+        color: #2e7d32;
+    }
+
+    .target-badge.outside {
+        background: #ffcdd2;
+        color: #c62828;
+    }
+
+    .status-badge {
+        padding: 8px 16px;
+        border-radius: var(--border-radius-md);
+        font-weight: 700;
+        font-size: var(--font-size-md);
+        display: inline-block;
+    }
+
+    .status-badge.ok {
+        background: #c8e6c9;
+        color: #2e7d32;
+    }
+
+    .status-badge.out-of-target {
+        background: #ffcdd2;
+        color: #c62828;
+    }
+
+    .status-badge.overdue {
+        background: #ffe0b2;
+        color: #e65100;
+    }
+
+    .status-badge.no-data {
+        background: #eceff1;
+        color: #455a64;
+    }
+
+    .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--spacing-lg);
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .detail-item strong {
+        color: var(--color-dark);
+        display: block;
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .detail-item span {
+        color: var(--color-gray-700);
+    }
+
+    .description {
+        margin-top: var(--spacing-lg);
+        padding: var(--spacing-md);
+        background: var(--color-gray-50);
+        border-left: 4px solid var(--color-primary-light);
+        border-radius: var(--border-radius-md);
+        color: var(--color-gray-700);
+        line-height: 1.6;
+    }
+
+    .measurements-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: var(--spacing-lg);
+    }
+
+    .measurements-table thead {
+        background: var(--color-primary-light);
+    }
+
+    .measurements-table th {
+        padding: var(--spacing-md);
+        text-align: left;
+        font-weight: 700;
+        color: var(--color-primary);
+        border-bottom: 2px solid var(--color-primary);
+    }
+
+    .measurements-table td {
+        padding: var(--spacing-md);
+        border-bottom: 1px solid var(--color-gray-200);
+    }
+
+    .measurements-table tbody tr:hover {
+        background: var(--color-gray-50);
+    }
+
+    .measurement-status {
+        padding: 4px 8px;
+        border-radius: var(--border-radius-sm);
+        font-weight: 600;
+        font-size: var(--font-size-xs);
+        text-transform: uppercase;
+        display: inline-block;
+    }
+
+    .measurement-status.ok {
+        background: #c8e6c9;
+        color: #2e7d32;
+    }
+
+    .measurement-status.fail {
+        background: #ffcdd2;
+        color: #c62828;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .section-header h2 {
+        margin: 0;
+        color: var(--color-primary);
+        font-size: var(--font-size-lg);
+    }
+
+    .empty-measurements {
+        text-align: center;
+        padding: var(--spacing-lg);
+        color: var(--color-gray-600);
+        background: var(--color-gray-50);
+        border-radius: var(--border-radius-md);
+    }
+
+    @media (max-width: 1024px) {
+        .detail-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .detail-header {
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .measurements-table {
+            font-size: var(--font-size-sm);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-header">
+    <a href="{% url 'core:indicator_list' %}">← Volver a Indicadores</a>
+    <div>
+        {% if can_edit %}
+        <a href="{% url 'core:indicator_edit' indicator.pk %}" class="btn btn-primary">Editar</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="detail-card">
+    <h1>📊 {{ indicator.name }}</h1>
+
+    <div class="detail-grid">
+        <div class="detail-item">
+            <strong>Meta</strong>
+            <span>
+                {% if indicator.comparison_type == "GREATER_EQUAL" %}
+                    ≥ {{ indicator.target_value }}
+                {% else %}
+                    ≤ {{ indicator.target_value }}
+                {% endif %}
+            </span>
+        </div>
+        <div class="detail-item">
+            <strong>Frecuencia</strong>
+            <span>{{ indicator.get_frequency_display }}</span>
+        </div>
+        <div class="detail-item">
+            <strong>Unidad</strong>
+            <span>{{ indicator.unit|default:"-" }}</span>
+        </div>
+        <div class="detail-item">
+            <strong>Proceso</strong>
+            <span>{% if indicator.related_process %}{{ indicator.related_process }}{% else %}-{% endif %}</span>
+        </div>
+        <div class="detail-item">
+            <strong>Organización</strong>
+            <span>{{ indicator.organization }}</span>
+        </div>
+        <div class="detail-item">
+            <strong>Estado</strong>
+            <span>{% if indicator.is_active %}✓ Activo{% else %}✗ Inactivo{% endif %}</span>
+        </div>
+        <div class="detail-item">
+            <strong>Estado Actual</strong>
+            <div style="margin-top: var(--spacing-sm);">
+                {% with status=indicator.get_status %}
+                {% if status == "OK" %}
+                    <span class="status-badge ok">✓ OK</span>
+                {% elif status == "OUT_OF_TARGET" %}
+                    <span class="status-badge out-of-target">⚠ FUERA DE META</span>
+                {% elif status == "OVERDUE" %}
+                    <span class="status-badge overdue">⏰ VENCIDA</span>
+                {% elif status == "NO_DATA" %}
+                    <span class="status-badge no-data">◯ SIN DATOS</span>
+                {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+
+    {% if indicator.description %}
+    <div class="description">
+        {{ indicator.description }}
+    </div>
+    {% endif %}
+</div>
+
+<div class="detail-card">
+    <div class="section-header">
+        <h2>📈 Mediciones</h2>
+        {% if can_edit %}
+        <a href="{% url 'core:measurement_new' indicator.pk %}" class="btn btn-primary">➕ Agregar Medición</a>
+        {% endif %}
+    </div>
+
+    {% if measurements %}
+        <table class="measurements-table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Valor</th>
+                    <th>Estado</th>
+                    <th>Notas</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for measurement in measurements %}
+                <tr>
+                    <td>{{ measurement.measurement_date|date:"d/m/Y" }}</td>
+                    <td><strong>{{ measurement.value }} {{ indicator.unit }}</strong></td>
+                    <td>
+                        {% if measurement.is_within_target %}
+                            <span class="measurement-status ok">✓ Dentro de Meta</span>
+                        {% else %}
+                            <span class="measurement-status fail">✗ Fuera de Meta</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ measurement.notes|truncatewords:10 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty-measurements">
+            <div style="font-size: 2rem; margin-bottom: var(--spacing-md);">📊</div>
+            No hay mediciones registradas aún.
+            {% if can_edit %}
+            <div style="margin-top: var(--spacing-md);">
+                <a href="{% url 'core:measurement_new' indicator.pk %}" class="btn btn-primary">Registrar Primera Medición</a>
+            </div>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

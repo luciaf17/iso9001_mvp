@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Indicadores de Calidad{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-xl);
+    }
+
+    .page-header h1 {
+        margin: 0;
+        color: var(--color-primary);
+    }
+
+    .indicators-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--color-white);
+        border-radius: var(--border-radius-lg);
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .indicators-table thead {
+        background: var(--color-primary-light);
+    }
+
+    .indicators-table th {
+        padding: var(--spacing-md);
+        text-align: left;
+        font-weight: 700;
+        color: var(--color-primary);
+        border-bottom: 2px solid var(--color-primary);
+    }
+
+    .indicators-table td {
+        padding: var(--spacing-md);
+        border-bottom: 1px solid var(--color-gray-200);
+    }
+
+    .indicators-table tbody tr:hover {
+        background: var(--color-gray-50);
+    }
+
+    .indicator-row {
+        cursor: pointer;
+    }
+
+    .indicator-row:hover {
+        background: var(--color-gray-50);
+    }
+
+    .indicator-name {
+        font-weight: 600;
+        color: var(--color-primary);
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: var(--border-radius-sm);
+        font-size: var(--font-size-xs);
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .badge-monthly { background: #e3f2fd; color: #1976d2; }
+    .badge-quarterly { background: #f3e5f5; color: #7b1fa2; }
+    .badge-yearly { background: #e0f2f1; color: #00796b; }
+
+    .badge-ok { background: #c8e6c9; color: #2e7d32; }
+    .badge-out-of-target { background: #ffcdd2; color: #c62828; }
+    .badge-overdue { background: #ffe0b2; color: #e65100; }
+    .badge-no-data { background: #eceff1; color: #455a64; }
+
+    .empty-state {
+        text-align: center;
+        padding: var(--spacing-xl);
+        background: var(--color-white);
+        border: 2px dashed var(--color-gray-300);
+        border-radius: var(--border-radius-lg);
+    }
+
+    .empty-state-icon {
+        font-size: 4rem;
+        margin-bottom: var(--spacing-md);
+    }
+
+    @media (max-width: 768px) {
+        .indicators-table {
+            font-size: var(--font-size-sm);
+        }
+
+        .indicators-table th,
+        .indicators-table td {
+            padding: var(--spacing-sm);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📊 Indicadores de Calidad</h1>
+    {% if can_edit %}
+    <a href="{% url 'core:indicator_new' %}" class="btn btn-primary">➕ Nuevo Indicador</a>
+    {% endif %}
+</div>
+
+{% if indicators %}
+    <table class="indicators-table">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Meta</th>
+                <th>Frecuencia</th>
+                <th>Unidad</th>
+                <th>Estado</th>
+                <th>Proceso</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for indicator in indicators %}
+            <tr class="indicator-row" onclick="window.location='{% url 'core:indicator_detail' indicator.pk %}'">
+                <td class="indicator-name">{{ indicator.name }}</td>
+                <td>
+                    {% if indicator.comparison_type == "GREATER_EQUAL" %}
+                        ≥ {{ indicator.target_value }}
+                    {% else %}
+                        ≤ {{ indicator.target_value }}
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge badge-{{ indicator.frequency|lower }}">
+                        {{ indicator.get_frequency_display }}
+                    </span>
+                </td>
+                <td>{{ indicator.unit|default:"-" }}</td>
+                <td>
+                    {% with status=indicator.get_status %}
+                    {% if status == "OK" %}
+                        <span class="badge badge-ok" title="Última medición dentro de meta">
+                            ✓ OK
+                        </span>
+                    {% elif status == "OUT_OF_TARGET" %}
+                        <span class="badge badge-out-of-target" title="Última medición fuera de meta">
+                            ⚠ FUERA DE META
+                        </span>
+                    {% elif status == "OVERDUE" %}
+                        <span class="badge badge-overdue" title="No hay mediciones recientes">
+                            ⏰ VENCIDA
+                        </span>
+                    {% elif status == "NO_DATA" %}
+                        <span class="badge badge-no-data" title="Sin mediciones registradas">
+                            ◯ SIN DATOS
+                        </span>
+                    {% endif %}
+                    {% endwith %}
+                </td>
+                <td>{% if indicator.related_process %}{{ indicator.related_process }}{% else %}-{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">📈</div>
+        <h3>No hay indicadores registrados</h3>
+        <p>Los indicadores de calidad son esenciales para monitorear el desempeño del SGC (ISO 9001 9.1)</p>
+        {% if can_edit %}
+        <div style="margin-top: var(--spacing-lg);">
+            <a href="{% url 'core:indicator_new' %}" class="btn btn-primary">Crear primer indicador</a>
+        </div>
+        {% endif %}
+    </div>
+{% endif %}
+{% endblock %}

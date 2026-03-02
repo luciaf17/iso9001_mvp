@@ -16,6 +16,8 @@ from apps.core.models import (
     AuditFinding,
     AuditQuestion,
     ManagementReview,
+    QualityIndicator,
+    IndicatorMeasurement,
 )
 
 
@@ -393,3 +395,45 @@ class ManagementReviewForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["review_date"].input_formats = ["%Y-%m-%d"]
+
+
+class QualityIndicatorForm(forms.ModelForm):
+    """Formulario para crear/editar indicadores de calidad."""
+
+    class Meta:
+        model = QualityIndicator
+        fields = [
+            "name",
+            "description",
+            "related_process",
+            "frequency",
+            "target_value",
+            "comparison_type",
+            "unit",
+            "is_active",
+        ]
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 3}),
+            "target_value": forms.NumberInput(attrs={"step": "0.01"}),
+        }
+
+
+class IndicatorMeasurementForm(forms.ModelForm):
+    """Formulario para registrar mediciones de indicadores."""
+
+    class Meta:
+        model = IndicatorMeasurement
+        fields = [
+            "measurement_date",
+            "value",
+            "notes",
+        ]
+        widgets = {
+            "measurement_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "value": forms.NumberInput(attrs={"step": "0.01"}),
+            "notes": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["measurement_date"].input_formats = ["%Y-%m-%d"]

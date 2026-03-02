@@ -18,6 +18,8 @@ from apps.core.forms import (
 	AuditFindingForm,
 	AuditQuestionForm,
 	ManagementReviewForm,
+	QualityIndicatorForm,
+	IndicatorMeasurementForm,
 )
 from apps.core.models import (
 	Organization,
@@ -34,6 +36,8 @@ from apps.core.models import (
 	AuditAnswer,
 	AuditFinding,
 	ManagementReview,
+	QualityIndicator,
+	IndicatorMeasurement,
 )
 from apps.core.services import log_audit_event
 from apps.core.utils import (
@@ -2151,5 +2155,211 @@ def review_edit(request, pk):
 			"organization": organization,
 			"is_edit": True,
 			"review": review,
+		},
+	)
+
+
+# ==========================================
+# Quality Indicator Views
+# ==========================================
+
+
+@login_required
+def indicator_list(request):
+	"""Lista de indicadores de calidad."""
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	indicators = QualityIndicator.objects.filter(
+		organization=organization,
+		is_active=True
+	).select_related("related_process", "organization").prefetch_related("measurements")
+
+	can_edit = can_edit_audit(request.user)
+
+	return render(
+		request,
+		"core/indicator_list.html",
+		{
+			"indicators": indicators,
+			"organization": organization,
+			"can_edit": can_edit,
+		},
+	)
+
+
+@login_required
+def indicator_detail(request, pk):
+	"""Detalle de indicador de calidad."""
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	indicator = get_object_or_404(
+		QualityIndicator,
+		pk=pk,
+		organization=organization,
+	)
+
+	measurements = indicator.measurements.all()[:12]
+	can_edit = can_edit_audit(request.user)
+
+	return render(
+		request,
+		"core/indicator_detail.html",
+		{
+			"indicator": indicator,
+			"measurements": measurements,
+			"organization": organization,
+			"can_edit": can_edit,
+		},
+	)
+
+
+@login_required
+def indicator_create(request):
+	"""Crear nuevo indicador de calidad."""
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	if not can_edit_audit(request.user):
+		messages.error(request, "No tiene permisos para crear indicadores.")
+		return redirect("core:indicator_list")
+
+	if request.method == "POST":
+		form = QualityIndicatorForm(request.POST)
+		if form.is_valid():
+			indicator = form.save(commit=False)
+			indicator.organization = organization
+			indicator.save()
+			log_audit_event(
+				actor=request.user,
+				action="core.indicator.created",
+				instance=indicator,
+				metadata={
+					"indicator_id": indicator.id,
+					"name": indicator.name,
+					"target_value": str(indicator.target_value),
+				},
+				object_type_override="QualityIndicator",
+			)
+			messages.success(request, "Indicador de calidad creado correctamente.")
+			return redirect("core:indicator_detail", pk=indicator.pk)
+	else:
+		form = QualityIndicatorForm()
+
+	return render(
+		request,
+		"core/indicator_form.html",
+		{
+			"form": form,
+			"organization": organization,
+			"is_edit": False,
+		},
+	)
+
+
+@login_required
+def indicator_edit(request, pk):
+	"""Editar indicador de calidad."""
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	indicator = get_object_or_404(
+		QualityIndicator,
+		pk=pk,
+		organization=organization,
+	)
+
+	if not can_edit_audit(request.user):
+		messages.error(request, "No tiene permisos para editar indicadores.")
+		return redirect("core:indicator_detail", pk=indicator.pk)
+
+	if request.method == "POST":
+		form = QualityIndicatorForm(request.POST, instance=indicator)
+		if form.is_valid():
+			indicator = form.save()
+			log_audit_event(
+				actor=request.user,
+				action="core.indicator.updated",
+				instance=indicator,
+				metadata={
+					"indicator_id": indicator.id,
+					"name": indicator.name,
+					"target_value": str(indicator.target_value),
+				},
+				object_type_override="QualityIndicator",
+			)
+			messages.success(request, "Indicador de calidad actualizado correctamente.")
+			return redirect("core:indicator_detail", pk=indicator.pk)
+	else:
+		form = QualityIndicatorForm(instance=indicator)
+
+	return render(
+		request,
+		"core/indicator_form.html",
+		{
+			"form": form,
+			"organization": organization,
+			"is_edit": True,
+			"indicator": indicator,
+		},
+	)
+
+
+@login_required
+def measurement_create(request, indicator_pk):
+	"""Crear nueva medición de indicador."""
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	indicator = get_object_or_404(
+		QualityIndicator,
+		pk=indicator_pk,
+		organization=organization,
+	)
+
+	if not can_edit_audit(request.user):
+		messages.error(request, "No tiene permisos para registrar mediciones.")
+		return redirect("core:indicator_detail", pk=indicator.pk)
+
+	if request.method == "POST":
+		form = IndicatorMeasurementForm(request.POST)
+		if form.is_valid():
+			measurement = form.save(commit=False)
+			measurement.indicator = indicator
+			measurement.save()
+			log_audit_event(
+				actor=request.user,
+				action="core.indicator.measurement.created",
+				instance=measurement,
+				metadata={
+					"indicator_id": indicator.id,
+					"value": str(measurement.value),
+					"measurement_date": str(measurement.measurement_date),
+				},
+				object_type_override="IndicatorMeasurement",
+			)
+			messages.success(request, "Medición registrada correctamente.")
+			return redirect("core:indicator_detail", pk=indicator.pk)
+	else:
+		form = IndicatorMeasurementForm()
+
+	return render(
+		request,
+		"core/measurement_form.html",
+		{
+			"form": form,
+			"indicator": indicator,
+			"organization": organization,
 		},
 	)

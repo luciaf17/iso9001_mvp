@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Registrar Medición - {{ indicator.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 600px;
+        background: var(--color-white);
+        border: 2px solid var(--color-primary-light);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-2xl);
+        box-shadow: var(--shadow-md);
+    }
+
+    .form-container h1 {
+        color: var(--color-primary);
+        margin-bottom: var(--spacing-lg);
+        font-size: var(--font-size-2xl);
+    }
+
+    .indicator-info {
+        background: var(--color-primary-light);
+        border-left: 4px solid var(--color-primary);
+        padding: var(--spacing-md);
+        border-radius: var(--border-radius-md);
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .indicator-info .info-label {
+        font-weight: 600;
+        color: var(--color-primary);
+        font-size: var(--font-size-sm);
+    }
+
+    .indicator-info .info-value {
+        color: var(--color-dark);
+        font-size: var(--font-size-lg);
+        display: block;
+    }
+
+    .form-group {
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: var(--spacing-sm);
+        color: var(--color-dark);
+    }
+
+    .form-group label .required {
+        color: var(--color-danger);
+    }
+
+    .form-group input,
+    .form-group textarea {
+        width: 100%;
+        padding: var(--spacing-sm) var(--spacing-md);
+        border: 2px solid var(--color-gray-300);
+        border-radius: var(--border-radius-md);
+        font-size: var(--font-size-sm);
+        transition: var(--transition);
+        box-sizing: border-box;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px var(--color-primary-light);
+    }
+
+    .form-group textarea {
+        min-height: 90px;
+        resize: vertical;
+    }
+
+    .error-list {
+        color: var(--color-danger);
+        font-size: var(--font-size-sm);
+        margin-top: var(--spacing-xs);
+        list-style: none;
+        padding: 0;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: var(--spacing-md);
+        margin-top: var(--spacing-2xl);
+        padding-top: var(--spacing-lg);
+        border-top: 2px solid var(--color-gray-200);
+    }
+
+    .help-text {
+        font-size: var(--font-size-xs);
+        color: var(--color-gray-600);
+        margin-top: var(--spacing-xs);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h1>📊 Registrar Medición</h1>
+
+    <div class="indicator-info">
+        <div style="display: grid; gap: var(--spacing-md);">
+            <div>
+                <div class="info-label">Indicador</div>
+                <div class="info-value">{{ indicator.name }}</div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--spacing-md);">
+                <div>
+                    <div class="info-label">Meta</div>
+                    <div class="info-value">
+                        {% if indicator.comparison_type == "GREATER_EQUAL" %}
+                            ≥ {{ indicator.target_value }}
+                        {% else %}
+                            ≤ {{ indicator.target_value }}
+                        {% endif %}
+                    </div>
+                </div>
+                <div>
+                    <div class="info-label">Unidad</div>
+                    <div class="info-value">{{ indicator.unit|default:"-" }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="{{ form.measurement_date.id_for_label }}">
+                {{ form.measurement_date.label }} <span class="required">*</span>
+            </label>
+            {{ form.measurement_date }}
+            {% if form.measurement_date.errors %}
+            <ul class="error-list">
+                {% for error in form.measurement_date.errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.value.id_for_label }}">
+                {{ form.value.label }} <span class="required">*</span>
+            </label>
+            {{ form.value }}
+            <p class="help-text">Ingresa el valor medido. Se evaluará automáticamente contra la meta.</p>
+            {% if form.value.errors %}
+            <ul class="error-list">
+                {% for error in form.value.errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.notes.id_for_label }}">
+                {{ form.notes.label }}
+            </label>
+            {{ form.notes }}
+            <p class="help-text">Notas adicionales sobre la medición (opcional)</p>
+            {% if form.notes.errors %}
+            <ul class="error-list">
+                {% for error in form.notes.errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">💾 Registrar Medición</button>
+            <a href="{% url 'core:indicator_detail' indicator.pk %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+
+        {% if form.non_field_errors %}
+        <ul class="error-list" style="margin-top: var(--spacing-lg);">
+            {% for error in form.non_field_errors %}
+            <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </form>
+</div>
+{% endblock %}

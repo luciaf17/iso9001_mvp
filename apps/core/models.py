@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from datetime import date, timedelta
 
 
 class Organization(models.Model):
@@ -1477,3 +1478,163 @@ class ManagementReview(models.Model):
 
     def __str__(self):
         return f"Revision {self.review_date} - {self.organization}"
+
+
+class QualityIndicator(models.Model):
+    """Indicadores de desempeño del SGC (ISO 9001 9.1)."""
+
+    class Frequency(models.TextChoices):
+        MONTHLY = "MONTHLY", "Mensual"
+        QUARTERLY = "QUARTERLY", "Trimestral"
+        YEARLY = "YEARLY", "Anual"
+
+    class ComparisonType(models.TextChoices):
+        GREATER_EQUAL = "GREATER_EQUAL", "Mayor o igual a"
+        LESS_EQUAL = "LESS_EQUAL", "Menor o igual a"
+
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.PROTECT,
+        related_name="quality_indicators",
+        verbose_name="Organización",
+    )
+    related_process = models.ForeignKey(
+        Process,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="quality_indicators",
+        verbose_name="Proceso relacionado",
+    )
+    name = models.CharField(
+        max_length=200,
+        verbose_name="Nombre",
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name="Descripción",
+    )
+    frequency = models.CharField(
+        max_length=20,
+        choices=Frequency.choices,
+        verbose_name="Frecuencia de medición",
+    )
+    target_value = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Valor meta",
+    )
+    comparison_type = models.CharField(
+        max_length=20,
+        choices=ComparisonType.choices,
+        verbose_name="Tipo de comparación",
+    )
+    unit = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name="Unidad",
+        help_text="Por ejemplo: %, puntos, días, etc.",
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Activo",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Creado el",
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Actualizado el",
+    )
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name = "Indicador de Calidad"
+        verbose_name_plural = "Indicadores de Calidad"
+
+    def __str__(self):
+        return f"{self.name} ({self.organization})"
+
+    def get_last_measurement(self):
+        """Devuelve la última medición registrada."""
+        return self.measurements.first()
+
+    def get_last_n_measurements(self, n=12):
+        """Devuelve las últimas n mediciones."""
+        return self.measurements.all()[:n]
+
+    def get_status(self):
+        """
+        Calcula estado automático del indicador:
+        - NO_DATA: No hay mediciones registradas
+        - OVERDUE: No hay mediciones recientes según frecuencia
+        - OUT_OF_TARGET: Última medición fuera de meta
+        - OK: Última medición dentro de meta
+        """
+        last_measurement = self.get_last_measurement()
+        
+        # No hay mediciones
+        if not last_measurement:
+            return "NO_DATA"
+        
+        # Calcular diferencia de días
+        days_since_measurement = (date.today() - last_measurement.measurement_date).days
+        
+        # Verificar si está vencido según frecuencia
+        frequency_limits = {
+            self.Frequency.MONTHLY: 31,
+            self.Frequency.QUARTERLY: 93,
+            self.Frequency.YEARLY: 366,
+        }
+        
+        max_days = frequency_limits.get(self.frequency, 31)
+        if days_since_measurement > max_days:
+            return "OVERDUE"
+        
+        # Verificar si cumple la meta
+        if not last_measurement.is_within_target():
+            return "OUT_OF_TARGET"
+        
+        return "OK"
+
+
+class IndicatorMeasurement(models.Model):
+    """Medición de un indicador de calidad."""
+
+    indicator = models.ForeignKey(
+        QualityIndicator,
+        on_delete=models.CASCADE,
+        related_name="measurements",
+        verbose_name="Indicador",
+    )
+    measurement_date = models.DateField(
+        verbose_name="Fecha de medición",
+    )
+    value = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Valor medido",
+    )
+    notes = models.TextField(
+        blank=True,
+        verbose_name="Notas",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Creado el",
+    )
+
+    class Meta:
+        ordering = ["-measurement_date"]
+        verbose_name = "Medición de Indicador"
+        verbose_name_plural = "Mediciones de Indicador"
+
+    def __str__(self):
+        return f"{self.indicator.name} - {self.measurement_date}"
+
+    def is_within_target(self):
+        """Verifica si la medición cumple con la meta."""
+        if self.indicator.comparison_type == QualityIndicator.ComparisonType.GREATER_EQUAL:
+            return self.value >= self.indicator.target_value
+        return self.value <= self.indicator.target_value
