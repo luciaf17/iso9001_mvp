@@ -1830,3 +1830,241 @@ class NonconformingOutput(models.Model):
             self.closed_at = timezone.now().date()
 
         super().save(*args, **kwargs)
+
+
+class Supplier(models.Model):
+    """Proveedor (ISO 9001 8.4)."""
+
+    class Category(models.TextChoices):
+        RAW_MATERIAL = "RAW_MATERIAL", "Materia Prima"
+        SERVICE = "SERVICE", "Servicio"
+        OUTSOURCED_PROCESS = "OUTSOURCED_PROCESS", "Proceso Tercerizado"
+        OTHER = "OTHER", "Otro"
+
+    class Status(models.TextChoices):
+        APPROVED = "APPROVED", "Aprobado"
+        CONDITIONAL = "CONDITIONAL", "Aprobado Condicionalmente"
+        NOT_APPROVED = "NOT_APPROVED", "No Aprobado"
+        PENDING = "PENDING", "Pendiente"
+
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.PROTECT,
+        related_name="suppliers",
+        verbose_name="Organización",
+    )
+    site = models.ForeignKey(
+        Site,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="suppliers",
+        verbose_name="Sede",
+    )
+    related_process = models.ForeignKey(
+        Process,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="suppliers",
+        verbose_name="Proceso Relacionado",
+    )
+    name = models.CharField(
+        max_length=200,
+        verbose_name="Nombre del Proveedor",
+    )
+    cuit = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name="CUIT",
+    )
+    category = models.CharField(
+        max_length=30,
+        choices=Category.choices,
+        verbose_name="Categoría",
+    )
+    contact_name = models.CharField(
+        max_length=120,
+        blank=True,
+        verbose_name="Nombre de Contacto",
+    )
+    contact_email = models.EmailField(
+        blank=True,
+        verbose_name="Email de Contacto",
+    )
+    contact_phone = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name="Teléfono de Contacto",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        verbose_name="Estado",
+    )
+    last_evaluation_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Última Evaluación",
+        editable=False,
+    )
+    next_evaluation_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Próxima Evaluación",
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Activo",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Creado el",
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Actualizado el",
+    )
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name = "Proveedor"
+        verbose_name_plural = "Proveedores"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "name"],
+                name="unique_supplier_per_org",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.get_category_display()})"
+
+    @property
+    def is_evaluation_overdue(self):
+        """Verifica si la evaluación está vencida."""
+        if not self.next_evaluation_date:
+            return False
+        return self.next_evaluation_date < date.today()
+
+
+class SupplierEvaluation(models.Model):
+    """Evaluación de Proveedor (ISO 9001 8.4)."""
+
+    class Decision(models.TextChoices):
+        APPROVED = "APPROVED", "Aprobado"
+        CONDITIONAL = "CONDITIONAL", "Aprobado Condicionalmente"
+        NOT_APPROVED = "NOT_APPROVED", "No Aprobado"
+
+    supplier = models.ForeignKey(
+        Supplier,
+        on_delete=models.CASCADE,
+        related_name="evaluations",
+        verbose_name="Proveedor",
+    )
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.PROTECT,
+        related_name="supplier_evaluations",
+        verbose_name="Organización",
+    )
+    evaluation_date = models.DateField(
+        verbose_name="Fecha de Evaluación",
+    )
+    evaluator = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="supplier_evaluations",
+        verbose_name="Evaluador",
+    )
+    quality_score = models.PositiveSmallIntegerField(
+        verbose_name="Puntuación Calidad (1-5)",
+        help_text="Calidad de productos/servicios (1=Muy malo, 5=Excelente)",
+    )
+    delivery_score = models.PositiveSmallIntegerField(
+        verbose_name="Puntuación Entrega (1-5)",
+        help_text="Cumplimiento de plazos de entrega (1=Muy malo, 5=Excelente)",
+    )
+    price_score = models.PositiveSmallIntegerField(
+        verbose_name="Puntuación Precio (1-5)",
+        help_text="Relación precio-calidad (1=Muy caro, 5=Muy competitivo)",
+    )
+    overall_score = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        verbose_name="Puntuación General",
+        editable=False,
+    )
+    decision = models.CharField(
+        max_length=20,
+        choices=Decision.choices,
+        verbose_name="Decisión",
+    )
+    notes = models.TextField(
+        blank=True,
+        verbose_name="Notas",
+    )
+    evidence_file = models.FileField(
+        upload_to="supplier_evaluations/",
+        null=True,
+        blank=True,
+        verbose_name="Archivo de Evidencia",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Creado el",
+    )
+
+    class Meta:
+        ordering = ["-evaluation_date"]
+        verbose_name = "Evaluación de Proveedor"
+        verbose_name_plural = "Evaluaciones de Proveedor"
+
+    def __str__(self):
+        return f"{self.supplier.name} - {self.evaluation_date}"
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if not (1 <= self.quality_score <= 5):
+            raise ValidationError({"quality_score": "La puntuación debe ser entre 1 y 5."})
+        if not (1 <= self.delivery_score <= 5):
+            raise ValidationError({"delivery_score": "La puntuación debe ser entre 1 y 5."})
+        if not (1 <= self.price_score <= 5):
+            raise ValidationError({"price_score": "La puntuación debe ser entre 1 y 5."})
+
+    def save(self, *args, **kwargs):
+        from django.utils import timezone
+        from datetime import timedelta
+
+        # Auto-completar organización desde supplier
+        if not self.organization:
+            self.organization = self.supplier.organization
+
+        # Calcular overall_score
+        self.overall_score = round(
+            (self.quality_score + self.delivery_score + self.price_score) / 3,
+            2
+        )
+
+        # Actualizar supplier status y fechas
+        self.supplier.status = self.decision
+        self.supplier.last_evaluation_date = self.evaluation_date
+
+        # Setear próxima evaluación si está vacía
+        if not self.supplier.next_evaluation_date:
+            if self.decision == self.Decision.APPROVED:
+                months = 12
+            elif self.decision == self.Decision.CONDITIONAL:
+                months = 6
+            else:  # NOT_APPROVED
+                months = 3
+            
+            next_date = self.evaluation_date + timedelta(days=30 * months)
+            self.supplier.next_evaluation_date = next_date
+
+        self.supplier.save()
+        super().save(*args, **kwargs)

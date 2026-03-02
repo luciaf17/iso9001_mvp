@@ -19,6 +19,8 @@ from apps.core.models import (
     QualityIndicator,
     IndicatorMeasurement,
     NonconformingOutput,
+    Supplier,
+    SupplierEvaluation,
 )
 
 
@@ -470,3 +472,59 @@ class NonconformingOutputForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["detected_at"].input_formats = ["%Y-%m-%d"]
+
+
+class SupplierForm(forms.ModelForm):
+    class Meta:
+        model = Supplier
+        fields = [
+            "site",
+            "related_process",
+            "name",
+            "cuit",
+            "category",
+            "contact_name",
+            "contact_email",
+            "contact_phone",
+            "next_evaluation_date",
+            "is_active",
+        ]
+        widgets = {
+            "next_evaluation_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "name": forms.TextInput(attrs={"placeholder": "Nombre del Proveedor"}),
+            "contact_name": forms.TextInput(attrs={"placeholder": "Ej: Juan Pérez"}),
+            "contact_email": forms.EmailInput(attrs={"placeholder": "correo@proveedor.com"}),
+            "contact_phone": forms.TextInput(attrs={"placeholder": "+54 9 11 1234-5678"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["next_evaluation_date"].input_formats = ["%Y-%m-%d"]
+
+
+class SupplierEvaluationForm(forms.ModelForm):
+    class Meta:
+        model = SupplierEvaluation
+        fields = [
+            "evaluation_date",
+            "quality_score",
+            "delivery_score",
+            "price_score",
+            "decision",
+            "notes",
+            "evidence_file",
+        ]
+        widgets = {
+            "evaluation_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "quality_score": forms.NumberInput(attrs={"min": "1", "max": "5", "type": "number"}),
+            "delivery_score": forms.NumberInput(attrs={"min": "1", "max": "5", "type": "number"}),
+            "price_score": forms.NumberInput(attrs={"min": "1", "max": "5", "type": "number"}),
+            "notes": forms.Textarea(attrs={"rows": 4, "placeholder": "Observaciones de la evaluación"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["evaluation_date"].input_formats = ["%Y-%m-%d"]
+        self.fields["quality_score"].help_text = "1=Muy malo, 5=Excelente"
+        self.fields["delivery_score"].help_text = "1=Muy malo, 5=Excelente"
+        self.fields["price_score"].help_text = "1=Muy caro, 5=Muy competitivo"

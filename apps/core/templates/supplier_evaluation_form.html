@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>{{ title }}</h1>
+            <p class="text-muted">Registre la evaluación del proveedor</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+
+            <div class="card-body">
+                <!-- Información del Proveedor -->
+                <div class="alert alert-info mb-4">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Proveedor:</strong> {{ supplier.name }}
+                    {% if supplier.category %}
+                    <br><strong>Categoría:</strong> {{ supplier.get_category_display }}
+                    {% endif %}
+                </div>
+
+                <!-- Sección 1: Fecha -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            {{ form.evaluation_date.label_tag }}
+                            <input type="date" class="form-control {% if form.evaluation_date.errors %}is-invalid{% endif %}" 
+                                   name="evaluation_date" value="{% if form.evaluation_date.value %}{{ form.evaluation_date.value|date:'Y-m-d' }}{% endif %}" required>
+                            {% if form.evaluation_date.errors %}
+                            <div class="invalid-feedback">{{ form.evaluation_date.errors|first }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 2: Puntuaciones -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <h5 class="border-bottom pb-2 mb-3">Puntuaciones (1-5)</h5>
+                        <small class="text-muted d-block mb-3">1 = Muy malo | 2 = Malo | 3 = Regular | 4 = Bueno | 5 = Excelente</small>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            {{ form.quality_score.label_tag }}
+                            <div class="input-group">
+                                <input type="number" class="form-control {% if form.quality_score.errors %}is-invalid{% endif %}" 
+                                       name="quality_score" min="1" max="5" value="{{ form.quality_score.value|default:'' }}" required>
+                                <span class="input-group-text">/5</span>
+                            </div>
+                            <small class="text-muted">Calidad de productos/servicios</small>
+                            {% if form.quality_score.errors %}
+                            <div class="invalid-feedback d-block">{{ form.quality_score.errors|first }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            {{ form.delivery_score.label_tag }}
+                            <div class="input-group">
+                                <input type="number" class="form-control {% if form.delivery_score.errors %}is-invalid{% endif %}" 
+                                       name="delivery_score" min="1" max="5" value="{{ form.delivery_score.value|default:'' }}" required>
+                                <span class="input-group-text">/5</span>
+                            </div>
+                            <small class="text-muted">Cumplimiento de plazos</small>
+                            {% if form.delivery_score.errors %}
+                            <div class="invalid-feedback d-block">{{ form.delivery_score.errors|first }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            {{ form.price_score.label_tag }}
+                            <div class="input-group">
+                                <input type="number" class="form-control {% if form.price_score.errors %}is-invalid{% endif %}" 
+                                       name="price_score" min="1" max="5" value="{{ form.price_score.value|default:'' }}" required>
+                                <span class="input-group-text">/5</span>
+                            </div>
+                            <small class="text-muted">Relación precio-calidad</small>
+                            {% if form.price_score.errors %}
+                            <div class="invalid-feedback d-block">{{ form.price_score.errors|first }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 3: Decisión -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <h5 class="border-bottom pb-2 mb-3">Decisión</h5>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            {{ form.decision.label_tag }}
+                            <select class="form-select {% if form.decision.errors %}is-invalid{% endif %}" 
+                                    name="decision" required>
+                                <option value="">-- Seleccionar --</option>
+                                {% for value, label in form.decision.field.choices %}
+                                    {% if value %}
+                                    <option value="{{ value }}" {% if form.decision.value == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted d-block mt-2">
+                                <i class="bi bi-info-circle"></i>
+                                Aprobado = próxima evaluación en 12 meses
+                                <br>Condicional = próxima evaluación en 6 meses
+                                <br>No Aprobado = próxima evaluación en 3 meses
+                            </small>
+                            {% if form.decision.errors %}
+                            <div class="invalid-feedback">{{ form.decision.errors|first }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 4: Notas y Evidencia -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <h5 class="border-bottom pb-2 mb-3">Observaciones y Evidencia</h5>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="mb-3">
+                            {{ form.notes.label_tag }}
+                            <textarea class="form-control" name="notes" rows="4" 
+                                      placeholder="Observaciones de la evaluación...">{{ form.notes.value|default:'' }}</textarea>
+                            <small class="text-muted">Opcional: detalle hallazgos, acciones correctivas, etc.</small>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="mb-3">
+                            {{ form.evidence_file.label_tag }}
+                            <input type="file" class="form-control" name="evidence_file">
+                            <small class="text-muted">Opcional: informe de evaluación, fotos, etc.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-footer bg-light">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check"></i> Registrar Evaluación
+                </button>
+                <a href="{% url 'core:supplier_detail' supplier.pk %}" class="btn btn-outline-secondary">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Validar puntuaciones en tiempo real
+    document.querySelectorAll('input[type="number"]').forEach(input => {
+        input.addEventListener('change', function() {
+            const value = parseInt(this.value);
+            if (value < 1 || value > 5) {
+                this.value = '';
+                alert('La puntuación debe ser entre 1 y 5');
+            }
+        });
+    });
+</script>
+{% endblock %}

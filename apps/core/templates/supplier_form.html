@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>{{ title }}</h1>
+        </div>
+    </div>
+
+    <div class="card">
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="card-body">
+                <!-- Sección 1: Información General -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <h5 class="border-bottom pb-2 mb-3">Información General</h5>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            {{ form.name.label_tag }}
+                            <input type="text" class="form-control {% if form.name.errors %}is-invalid{% endif %}" 
+                                   name="name" value="{{ form.name.value|default:'' }}" placeholder="Nombre del Proveedor" required>
+                            {% if form.name.errors %}
+                            <div class="invalid-feedback">{{ form.name.errors|first }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            {{ form.cuit.label_tag }}
+                            <input type="text" class="form-control {% if form.cuit.errors %}is-invalid{% endif %}" 
+                                   name="cuit" value="{{ form.cuit.value|default:'' }}" placeholder="Ej: 20-12345678-5">
+                            {% if form.cuit.errors %}
+                            <div class="invalid-feedback">{{ form.cuit.errors|first }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 2: Categoría y Proceso -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            {{ form.category.label_tag }}
+                            <select class="form-select {% if form.category.errors %}is-invalid{% endif %}" 
+                                    name="category" required>
+                                <option value="">-- Seleccionar --</option>
+                                {% for value, label in form.category.field.choices %}
+                                    {% if value %}
+                                    <option value="{{ value }}" {% if form.category.value == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                            {% if form.category.errors %}
+                            <div class="invalid-feedback">{{ form.category.errors|first }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            {{ form.related_process.label_tag }}
+                            <select class="form-select" name="related_process">
+                                <option value="">-- Ninguno --</option>
+                                {% for process in form.related_process.field.queryset %}
+                                <option value="{{ process.id }}" {% if form.related_process.value == process.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ process.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 3: Información de Contacto -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <h5 class="border-bottom pb-2 mb-3">Información de Contacto</h5>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            {{ form.contact_name.label_tag }}
+                            <input type="text" class="form-control" name="contact_name" 
+                                   value="{{ form.contact_name.value|default:'' }}" placeholder="Nombre del Contacto">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            {{ form.contact_email.label_tag }}
+                            <input type="email" class="form-control" name="contact_email" 
+                                   value="{{ form.contact_email.value|default:'' }}" placeholder="correo@proveedor.com">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            {{ form.contact_phone.label_tag }}
+                            <input type="tel" class="form-control" name="contact_phone" 
+                                   value="{{ form.contact_phone.value|default:'' }}" placeholder="+54 9 ...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 4: Evaluaciones -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <h5 class="border-bottom pb-2 mb-3">Próxima Evaluación</h5>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            {{ form.next_evaluation_date.label_tag }}
+                            <input type="date" class="form-control" name="next_evaluation_date" 
+                                   value="{% if form.next_evaluation_date.value %}{{ form.next_evaluation_date.value|date:'Y-m-d' }}{% endif %}">
+                            <small class="text-muted">Se actualiza automáticamente al crear evaluaciones</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            {{ form.is_active.label_tag }}
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                                       {% if form.is_active.value %}checked{% endif %}>
+                                <label class="form-check-label" for="is_active">Proveedor activo</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sede -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            {{ form.site.label_tag }}
+                            <select class="form-select" name="site">
+                                <option value="">-- Ninguna --</option>
+                                {% for site in form.site.field.queryset %}
+                                <option value="{{ site.id }}" {% if form.site.value == site.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ site.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-footer bg-light">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check"></i> Guardar
+                </button>
+                <a href="{% if supplier %}{% url 'core:supplier_detail' supplier.pk %}{% else %}{% url 'core:supplier_list' %}{% endif %}" 
+                   class="btn btn-outline-secondary">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

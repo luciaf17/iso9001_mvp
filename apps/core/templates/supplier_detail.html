@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ supplier.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-xl);
+    }
+
+    .detail-header h1 {
+        margin: 0;
+        color: var(--color-primary);
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: var(--spacing-lg);
+        margin-bottom: var(--spacing-xl);
+    }
+
+    .info-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(220px, 1fr));
+        gap: var(--spacing-md) var(--spacing-lg);
+    }
+
+    .info-item strong {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--color-gray-700);
+    }
+
+    .evaluation-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .evaluation-table thead {
+        background: var(--color-primary-light);
+    }
+
+    .evaluation-table th,
+    .evaluation-table td {
+        padding: var(--spacing-sm) var(--spacing-md);
+        border-bottom: 1px solid var(--color-gray-200);
+        text-align: left;
+    }
+
+    .evaluation-table th {
+        color: var(--color-primary);
+        white-space: nowrap;
+    }
+
+    .evaluation-table tbody tr:hover {
+        background: var(--color-gray-50);
+    }
+
+    .status-alert {
+        margin: var(--spacing-md) 0 0;
+        padding: var(--spacing-sm) var(--spacing-md);
+        border-radius: var(--border-radius-md);
+        font-size: var(--font-size-sm);
+    }
+
+    .status-alert.overdue {
+        background: #f8d7da;
+        color: var(--color-danger);
+    }
+
+    .status-alert.upcoming {
+        background: var(--color-info-light);
+        color: #055160;
+    }
+
+    .footer-actions {
+        margin-top: var(--spacing-lg);
+    }
+
+    @media (max-width: 1024px) {
+        .summary-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .detail-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .info-list {
+            grid-template-columns: 1fr;
+        }
+
+        .evaluation-table {
+            font-size: var(--font-size-sm);
+        }
+
+        .evaluation-table th,
+        .evaluation-table td {
+            padding: var(--spacing-xs) var(--spacing-sm);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div>
+    <div class="detail-header">
+        <div>
+            <h1>{{ supplier.name }}</h1>
+            <p class="text-muted">{{ supplier.get_category_display }}</p>
+        </div>
+        {% if can_edit %}
+        <a href="{% url 'core:supplier_edit' supplier.pk %}" class="btn btn-secondary">✏️ Editar</a>
+        {% endif %}
+    </div>
+
+    <div class="summary-grid">
+        <div class="card">
+            <div class="card-header">
+                <h3>Información General</h3>
+            </div>
+            <div class="card-body">
+                <div class="info-list">
+                    <div class="info-item">
+                        <strong>Nombre</strong>
+                        <span>{{ supplier.name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <strong>Estado</strong>
+                        {% if not supplier.is_active %}
+                        <span class="badge badge-danger">INACTIVO</span>
+                        {% elif supplier.status == "PENDING" %}
+                        <span class="badge badge-warning">PENDIENTE</span>
+                        {% else %}
+                        <span class="badge badge-success">ACTIVO</span>
+                        {% endif %}
+                    </div>
+                    {% if supplier.cuit %}
+                    <div class="info-item">
+                        <strong>CUIT</strong>
+                        <span>{{ supplier.cuit }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="info-item">
+                        <strong>Categoría</strong>
+                        <span>{{ supplier.get_category_display }}</span>
+                    </div>
+                    {% if supplier.related_process %}
+                    <div class="info-item">
+                        <strong>Proceso</strong>
+                        <span>{{ supplier.related_process.name }}</span>
+                    </div>
+                    {% else %}
+                    <div class="info-item">
+                        <strong>Proceso</strong>
+                        <span>-</span>
+                    </div>
+                    {% endif %}
+                    {% if supplier.next_evaluation_date %}
+                    <div class="info-item">
+                        <strong>Próxima evaluación</strong>
+                        <span>{{ supplier.next_evaluation_date|date:"d/m/Y" }}</span>
+                    </div>
+                    {% else %}
+                    <div class="info-item">
+                        <strong>Próxima evaluación</strong>
+                        <span>-</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3>Contacto</h3>
+            </div>
+            <div class="card-body">
+                <div class="info-list" style="grid-template-columns: 1fr;">
+                    {% if supplier.contact_name %}
+                    <div class="info-item"><strong>Contacto</strong><span>{{ supplier.contact_name }}</span></div>
+                    {% endif %}
+                    {% if supplier.contact_email %}
+                    <div class="info-item"><strong>Email</strong><span><a href="mailto:{{ supplier.contact_email }}">{{ supplier.contact_email }}</a></span></div>
+                    {% endif %}
+                    {% if supplier.contact_phone %}
+                    <div class="info-item"><strong>Teléfono</strong><span>{{ supplier.contact_phone }}</span></div>
+                    {% endif %}
+                    <div class="info-item"><strong>Activo</strong>
+                        {% if supplier.is_active %}
+                        <span class="badge badge-success">Sí</span>
+                        {% else %}
+                        <span class="badge badge-danger">No</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;gap:var(--spacing-md);">
+            <h3 style="margin:0;">Evaluaciones</h3>
+            {% if can_edit %}
+            <a href="{% url 'core:supplier_evaluation_new' supplier.pk %}" class="btn btn-sm btn-primary">➕ Nueva Evaluación</a>
+            {% endif %}
+        </div>
+
+        <!-- Próxima evaluación -->
+        {% if supplier.next_evaluation_date %}
+        <div class="status-alert {% if is_overdue %}overdue{% else %}upcoming{% endif %}">
+            {% if is_overdue %}
+            <strong>Evaluación vencida:</strong> Fecha objetivo {{ supplier.next_evaluation_date|date:"d/m/Y" }}
+            {% else %}
+            <strong>Próxima evaluación:</strong> {{ supplier.next_evaluation_date|date:"d/m/Y" }}
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Tabla de evaluaciones -->
+        <div style="overflow-x:auto;">
+            <table class="evaluation-table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Calidad</th>
+                        <th>Entrega</th>
+                        <th>Precio</th>
+                        <th>Promedio</th>
+                        <th>Decisión</th>
+                        <th>Evaluador</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for eval in evaluations %}
+                    <tr>
+                        <td><small>{{ eval.evaluation_date|date:"d/m/Y" }}</small></td>
+                        <td><small>{{ eval.quality_score }}/5</small></td>
+                        <td><small>{{ eval.delivery_score }}/5</small></td>
+                        <td><small>{{ eval.price_score }}/5</small></td>
+                        <td><strong>{{ eval.overall_score }}</strong></td>
+                        <td>
+                            {% if eval.decision == "APPROVED" %}
+                            <span class="badge badge-success">Aprobado</span>
+                            {% elif eval.decision == "CONDITIONAL" %}
+                            <span class="badge badge-warning">Condicional</span>
+                            {% else %}
+                            <span class="badge badge-danger">No Aprobado</span>
+                            {% endif %}
+                        </td>
+                        <td><small>{{ eval.evaluator.get_full_name|default:eval.evaluator.username }}</small></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-3">
+                            <small>Sin evaluaciones registradas</small>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Volver -->
+    <div class="footer-actions">
+        <a href="{% url 'core:supplier_list' %}" class="btn btn-secondary">← Volver</a>
+    </div>
+</div>
+{% endblock %}

@@ -69,3 +69,14 @@ def can_edit_nonconforming_output(user):
         return True
 
     return user.groups.filter(name__in=["Admin", "Calidad"]).exists()
+
+
+def can_edit_supplier(user):
+    """Check if user can create/edit suppliers (ISO 8.4)."""
+    if user is None:
+        return False
+
+    if getattr(user, "is_superuser", False):
+        return True
+
+    return user.groups.filter(name__in=["Admin", "Calidad"]).exists()

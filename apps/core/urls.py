@@ -49,6 +49,11 @@ from apps.core.views import (
     nonconforming_output_create,
     nonconforming_output_edit,
     nonconforming_output_create_nc,
+    supplier_list,
+    supplier_detail,
+    supplier_create,
+    supplier_edit,
+    supplier_evaluation_create,
 )
 
 app_name = "core"
@@ -104,4 +109,11 @@ urlpatterns = [
     path("pnc/<int:pk>/", nonconforming_output_detail, name="nonconforming_output_detail"),
     path("pnc/<int:pk>/edit/", nonconforming_output_edit, name="nonconforming_output_edit"),
     path("pnc/<int:pk>/create-nc/", nonconforming_output_create_nc, name="nonconforming_output_create_nc"),
+    
+    # Supplier (ISO 8.4)
+    path("suppliers/", supplier_list, name="supplier_list"),
+    path("suppliers/new/", supplier_create, name="supplier_new"),
+    path("suppliers/<int:pk>/", supplier_detail, name="supplier_detail"),
+    path("suppliers/<int:pk>/edit/", supplier_edit, name="supplier_edit"),
+    path("suppliers/<int:supplier_pk>/evaluations/new/", supplier_evaluation_create, name="supplier_evaluation_new"),
 ]

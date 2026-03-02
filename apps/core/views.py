@@ -22,6 +22,8 @@ from apps.core.forms import (
 	QualityIndicatorForm,
 	IndicatorMeasurementForm,
 	NonconformingOutputForm,
+	SupplierForm,
+	SupplierEvaluationForm,
 )
 from apps.core.models import (
 	Organization,
@@ -41,6 +43,8 @@ from apps.core.models import (
 	QualityIndicator,
 	IndicatorMeasurement,
 	NonconformingOutput,
+	Supplier,
+	SupplierEvaluation,
 )
 from apps.core.services import log_audit_event
 from apps.core.utils import (
@@ -51,6 +55,7 @@ from apps.core.utils import (
 	can_edit_objective,
 	can_edit_audit,
 	can_edit_nonconforming_output,
+	can_edit_supplier,
 )
 from apps.docs.models import Document
 
@@ -2569,3 +2574,194 @@ def nonconforming_output_create_nc(request, pk):
 	
 	messages.success(request, f"No Conformidad {nc.code} creada y vinculada a {output.code}.")
 	return redirect("core:nonconforming_output_detail", pk=output.pk)
+
+
+# --- SUPPLIER (ISO 8.4) ---
+
+@login_required
+def supplier_list(request):
+	"""List suppliers with filtering."""
+	organization = Organization.objects.filter(is_active=True).first() or Organization.objects.first()
+	
+	suppliers = Supplier.objects.filter(organization=organization).select_related(
+		"site", "related_process"
+	)
+	
+	# Filtros
+	status_filter = request.GET.get("status", "")
+	category_filter = request.GET.get("category", "")
+	process_filter = request.GET.get("process", "")
+	
+	if status_filter:
+		suppliers = suppliers.filter(status=status_filter)
+	if category_filter:
+		suppliers = suppliers.filter(category=category_filter)
+	if process_filter:
+		suppliers = suppliers.filter(related_process__id=process_filter)
+	
+	# Agregar dato de evaluación vencida
+	suppliers_with_status = []
+	for supplier in suppliers:
+		suppliers_with_status.append({
+			"supplier": supplier,
+			"is_overdue": supplier.is_evaluation_overdue,
+		})
+	
+	context = {
+		"organization": organization,
+		"suppliers_with_status": suppliers_with_status,
+		"can_edit": can_edit_supplier(request.user),
+		"status_choices": Supplier.Status.choices,
+		"category_choices": Supplier.Category.choices,
+		"processes": Process.objects.filter(organization=organization),
+		"selected_status": status_filter,
+		"selected_category": category_filter,
+		"selected_process": process_filter,
+	}
+	return render(request, "supplier_list.html", context)
+
+
+@login_required
+def supplier_detail(request, pk):
+	"""Show supplier details and evaluations."""
+	organization = Organization.objects.filter(is_active=True).first() or Organization.objects.first()
+	
+	supplier = get_object_or_404(Supplier, pk=pk, organization=organization)
+	
+	# Últimas 5 evaluaciones
+	evaluations = supplier.evaluations.all()[:5]
+	
+	context = {
+		"organization": organization,
+		"supplier": supplier,
+		"evaluations": evaluations,
+		"is_overdue": supplier.is_evaluation_overdue,
+		"can_edit": can_edit_supplier(request.user),
+	}
+	return render(request, "supplier_detail.html", context)
+
+
+@login_required
+def supplier_create(request):
+	"""Create new supplier."""
+	organization = Organization.objects.filter(is_active=True).first() or Organization.objects.first()
+	
+	if not can_edit_supplier(request.user):
+		raise PermissionDenied
+	
+	if request.method == "POST":
+		form = SupplierForm(request.POST)
+		if form.is_valid():
+			supplier = form.save(commit=False)
+			supplier.organization = organization
+			supplier.save()
+			
+			log_audit_event(
+				actor=request.user,
+				action="core.supplier.created",
+				instance=supplier,
+				metadata={
+					"supplier_id": supplier.id,
+					"name": supplier.name,
+					"category": supplier.category,
+				},
+				object_type_override="Supplier",
+			)
+			
+			messages.success(request, f"Proveedor {supplier.name} creado exitosamente.")
+			return redirect("core:supplier_detail", pk=supplier.pk)
+	else:
+		form = SupplierForm()
+	
+	context = {
+		"organization": organization,
+		"form": form,
+		"title": "Crear Proveedor",
+	}
+	return render(request, "supplier_form.html", context)
+
+
+@login_required
+def supplier_edit(request, pk):
+	"""Edit supplier."""
+	organization = Organization.objects.filter(is_active=True).first() or Organization.objects.first()
+	
+	supplier = get_object_or_404(Supplier, pk=pk, organization=organization)
+	
+	if not can_edit_supplier(request.user):
+		raise PermissionDenied
+	
+	if request.method == "POST":
+		form = SupplierForm(request.POST, instance=supplier)
+		if form.is_valid():
+			supplier = form.save()
+			
+			log_audit_event(
+				actor=request.user,
+				action="core.supplier.updated",
+				instance=supplier,
+				metadata={
+					"supplier_id": supplier.id,
+					"status": supplier.status,
+				},
+				object_type_override="Supplier",
+			)
+			
+			messages.success(request, f"Proveedor {supplier.name} actualizado.")
+			return redirect("core:supplier_detail", pk=supplier.pk)
+	else:
+		form = SupplierForm(instance=supplier)
+	
+	context = {
+		"organization": organization,
+		"form": form,
+		"title": f"Editar: {supplier.name}",
+		"supplier": supplier,
+	}
+	return render(request, "supplier_form.html", context)
+
+
+@login_required
+def supplier_evaluation_create(request, supplier_pk):
+	"""Create evaluation for supplier."""
+	organization = Organization.objects.filter(is_active=True).first() or Organization.objects.first()
+	
+	supplier = get_object_or_404(Supplier, pk=supplier_pk, organization=organization)
+	
+	if not can_edit_supplier(request.user):
+		raise PermissionDenied
+	
+	if request.method == "POST":
+		form = SupplierEvaluationForm(request.POST, request.FILES)
+		if form.is_valid():
+			evaluation = form.save(commit=False)
+			evaluation.supplier = supplier
+			evaluation.organization = organization
+			evaluation.evaluator = request.user
+			evaluation.save()
+			
+			log_audit_event(
+				actor=request.user,
+				action="core.supplier.evaluation.created",
+				instance=evaluation,
+				metadata={
+					"supplier_id": supplier.id,
+					"evaluation_date": str(evaluation.evaluation_date),
+					"overall_score": str(evaluation.overall_score),
+					"decision": evaluation.decision,
+				},
+				object_type_override="SupplierEvaluation",
+			)
+			
+			messages.success(request, f"Evaluación de {supplier.name} registrada. Puntuación: {evaluation.overall_score}")
+			return redirect("core:supplier_detail", pk=supplier.pk)
+	else:
+		form = SupplierEvaluationForm()
+	
+	context = {
+		"organization": organization,
+		"form": form,
+		"supplier": supplier,
+		"title": f"Evaluar: {supplier.name}",
+	}
+	return render(request, "supplier_evaluation_form.html", context)

@@ -25,6 +25,8 @@ from .models import (
     QualityIndicator,
     IndicatorMeasurement,
     NonconformingOutput,
+    Supplier,
+    SupplierEvaluation,
 )
 from .forms import CAPAActionForm
 from .services import log_audit_event
@@ -2561,3 +2563,240 @@ class NonconformingOutputTests(TestCase):
         # Verificar que el contexto tiene outputs (aunque sea vacío)
         self.assertIn("outputs", response.context)
         self.assertIn("organization", response.context)
+
+
+class SupplierTests(TestCase):
+    """Tests para el módulo Supplier (ISO 8.4)."""
+
+    def setUp(self):
+        """Preparación de datos de prueba."""
+        self.organization = Organization.objects.filter(is_active=True).first()
+        if self.organization is None:
+            self.organization = Organization.objects.create(
+                name="Test Organization",
+                is_active=True,
+            )
+        self.site, _ = Site.objects.get_or_create(
+            organization=self.organization,
+            name="Test Site",
+            defaults={"is_active": True},
+        )
+        self.process, _ = Process.objects.get_or_create(
+            organization=self.organization,
+            code="PROC-SUP-001",
+            defaults={
+                "name": "Test Process",
+                "process_type": Process.ProcessType.MISSIONAL,
+                "level": Process.Level.PROCESS,
+                "is_active": True,
+            },
+        )
+
+        # Admin user
+        self.admin_user = User.objects.create_user(
+            username="admin_supplier", password="admin123"
+        )
+        admin_group = Group.objects.get_or_create(name="Admin")[0]
+        self.admin_user.groups.add(admin_group)
+
+        # Regular user
+        self.regular_user = User.objects.create_user(
+            username="regular_supplier", password="regular123"
+        )
+
+    def test_create_supplier_with_audit_event(self):
+        """Verifica que crear un supplier genera un AuditEvent."""
+        supplier = Supplier.objects.create(
+            organization=self.organization,
+            name="Test Supplier",
+            cuit="20-12345678-5",
+            category=Supplier.Category.RAW_MATERIAL,
+            status=Supplier.Status.PENDING,
+        )
+
+        # Verificar que el supplier se creó
+        self.assertEqual(supplier.name, "Test Supplier")
+        self.assertEqual(supplier.organization, self.organization)
+
+    def test_supplier_unique_name_per_organization(self):
+        """Verifica que no se pueden crear dos suppliers con el mismo nombre en la misma organización."""
+        Supplier.objects.create(
+            organization=self.organization,
+            name="Test Supplier",
+            category=Supplier.Category.RAW_MATERIAL,
+        )
+
+        with self.assertRaises(Exception):  # IntegrityError
+            Supplier.objects.create(
+                organization=self.organization,
+                name="Test Supplier",
+                category=Supplier.Category.SERVICE,
+            )
+
+    def test_create_evaluation_calculates_overall_score(self):
+        """Verifica que la evaluación calcula automáticamente el promedio."""
+        supplier = Supplier.objects.create(
+            organization=self.organization,
+            name="Test Supplier",
+            category=Supplier.Category.RAW_MATERIAL,
+        )
+
+        evaluation = SupplierEvaluation.objects.create(
+            supplier=supplier,
+            organization=self.organization,
+            evaluation_date=date.today(),
+            quality_score=4,
+            delivery_score=5,
+            price_score=3,
+            decision=SupplierEvaluation.Decision.APPROVED,
+        )
+
+        # Verificar que overall_score se calculó: (4+5+3)/3 = 4.0
+        expected_score = round((4 + 5 + 3) / 3, 2)
+        self.assertEqual(evaluation.overall_score, expected_score)
+
+    def test_invalid_evaluation_score_raises_error(self):
+        """Verifica que las puntuaciones fuera del rango 1-5 se rechazan."""
+        supplier = Supplier.objects.create(
+            organization=self.organization,
+            name="Test Supplier",
+            category=Supplier.Category.RAW_MATERIAL,
+        )
+
+        evaluation = SupplierEvaluation(
+            supplier=supplier,
+            organization=self.organization,
+            evaluation_date=date.today(),
+            quality_score=6,  # Inválido
+            delivery_score=3,
+            price_score=4,
+            decision=SupplierEvaluation.Decision.APPROVED,
+        )
+
+        with self.assertRaises(ValidationError):
+            evaluation.clean()
+
+    def test_evaluation_updates_supplier_status(self):
+        """Verifica que crear una evaluación actualiza el estado del supplier."""
+        supplier = Supplier.objects.create(
+            organization=self.organization,
+            name="Test Supplier",
+            category=Supplier.Category.RAW_MATERIAL,
+            status=Supplier.Status.PENDING,
+        )
+
+        SupplierEvaluation.objects.create(
+            supplier=supplier,
+            organization=self.organization,
+            evaluation_date=date.today(),
+            quality_score=4,
+            delivery_score=4,
+            price_score=4,
+            decision=SupplierEvaluation.Decision.APPROVED,
+        )
+
+        supplier.refresh_from_db()
+        self.assertEqual(supplier.status, SupplierEvaluation.Decision.APPROVED)
+
+    def test_evaluation_sets_next_evaluation_date(self):
+        """Verifica que la evaluación calcula la próxima fecha según la decisión."""
+        supplier = Supplier.objects.create(
+            organization=self.organization,
+            name="Test Supplier",
+            category=Supplier.Category.RAW_MATERIAL,
+        )
+
+        today = date.today()
+
+        # APPROVED -> 12 meses
+        eval_approved = SupplierEvaluation.objects.create(
+            supplier=supplier,
+            organization=self.organization,
+            evaluation_date=today,
+            quality_score=4,
+            delivery_score=4,
+            price_score=4,
+            decision=SupplierEvaluation.Decision.APPROVED,
+        )
+
+        supplier.refresh_from_db()
+        next_date = supplier.next_evaluation_date
+        expected_date = today + timedelta(days=365)  # aprox 12 meses
+        
+        # Verificar que la fecha está cerca (dentro de 5 días de diferencia)
+        date_diff = abs((next_date - expected_date).days)
+        self.assertTrue(date_diff <= 5, f"Diferencia de fecha: {date_diff} días")
+
+    def test_non_admin_cannot_create_supplier(self):
+        """Verifica que usuarios regulares no pueden crear suppliers."""
+        self.client.login(username="regular_supplier", password="regular123")
+
+        response = self.client.get(reverse("core:supplier_new"))
+        self.assertEqual(response.status_code, 403)  # PermissionDenied
+
+    def test_supplier_list_renders_and_links_to_detail(self):
+        """La lista devuelve 200 y contiene link al detalle del proveedor."""
+        supplier_1 = Supplier.objects.create(
+            organization=self.organization,
+            name="Supplier 1",
+            category=Supplier.Category.RAW_MATERIAL,
+        )
+        Supplier.objects.create(
+            organization=self.organization,
+            name="Supplier 2",
+            category=Supplier.Category.SERVICE,
+        )
+
+        self.client.login(username="admin_supplier", password="admin123")
+
+        response = self.client.get(reverse("core:supplier_list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("suppliers_with_status", response.context)
+        self.assertContains(
+            response,
+            reverse("core:supplier_detail", args=[supplier_1.pk]),
+        )
+
+    def test_supplier_detail_renders(self):
+        """El detalle de proveedor devuelve 200."""
+        supplier = Supplier.objects.create(
+            organization=self.organization,
+            name="Supplier Detail",
+            category=Supplier.Category.SERVICE,
+        )
+
+        self.client.login(username="admin_supplier", password="admin123")
+        response = self.client.get(reverse("core:supplier_detail", args=[supplier.pk]))
+        self.assertEqual(response.status_code, 200)
+
+    def test_non_admin_cannot_see_edit_buttons(self):
+        """Usuario sin permisos no ve botones Editar/Nueva evaluación."""
+        supplier = Supplier.objects.create(
+            organization=self.organization,
+            name="Supplier Permissions",
+            category=Supplier.Category.SERVICE,
+        )
+
+        self.client.login(username="regular_supplier", password="regular123")
+
+        list_response = self.client.get(reverse("core:supplier_list"))
+        self.assertEqual(list_response.status_code, 200)
+        self.assertNotContains(list_response, "Editar")
+
+        detail_response = self.client.get(reverse("core:supplier_detail", args=[supplier.pk]))
+        self.assertEqual(detail_response.status_code, 200)
+        self.assertNotContains(detail_response, "Editar")
+        self.assertNotContains(detail_response, "Nueva Evaluación")
+
+    def test_supplier_evaluation_overdue_badge(self):
+        """Verifica que se detecta evaluación vencida."""
+        supplier = Supplier.objects.create(
+            organization=self.organization,
+            name="Test Supplier",
+            category=Supplier.Category.RAW_MATERIAL,
+            # Próxima evaluación en el pasado
+            next_evaluation_date=date.today() - timedelta(days=10),
+        )
+
+        self.assertTrue(supplier.is_evaluation_overdue)

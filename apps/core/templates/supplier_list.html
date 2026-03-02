@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Proveedores{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-xl);
+    }
+
+    .page-header h1 {
+        margin: 0;
+        color: var(--color-primary);
+    }
+
+    .filters-card {
+        background: var(--color-white);
+        border: 1px solid var(--color-gray-300);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-lg);
+        margin-bottom: var(--spacing-xl);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .filters-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: var(--spacing-md);
+        align-items: end;
+    }
+
+    .suppliers-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--color-white);
+        border-radius: var(--border-radius-lg);
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .suppliers-table thead {
+        background: var(--color-primary-light);
+    }
+
+    .suppliers-table th {
+        padding: var(--spacing-md);
+        text-align: left;
+        font-weight: 700;
+        color: var(--color-primary);
+        border-bottom: 2px solid var(--color-primary);
+        white-space: nowrap;
+    }
+
+    .suppliers-table td {
+        padding: var(--spacing-md);
+        border-bottom: 1px solid var(--color-gray-200);
+        vertical-align: middle;
+    }
+
+    .suppliers-table tbody tr:hover {
+        background: var(--color-gray-50);
+    }
+
+    .supplier-name {
+        font-weight: 700;
+        color: var(--color-primary);
+    }
+
+    .actions {
+        display: flex;
+        gap: var(--spacing-sm);
+        flex-wrap: wrap;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: var(--spacing-2xl) var(--spacing-lg);
+        background: var(--color-white);
+        border: 2px dashed var(--color-gray-300);
+        border-radius: var(--border-radius-lg);
+    }
+
+    @media (max-width: 900px) {
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .suppliers-table {
+            font-size: var(--font-size-sm);
+        }
+
+        .suppliers-table th,
+        .suppliers-table td {
+            padding: var(--spacing-sm);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>📋 Proveedores</h1>
+        <p class="text-muted">Gestión de proveedores (ISO 8.4)</p>
+    </div>
+    {% if can_edit %}
+    <a href="{% url 'core:supplier_new' %}" class="btn btn-primary">➕ Nuevo Proveedor</a>
+    {% endif %}
+</div>
+
+<div class="filters-card">
+    <form method="get" class="filters-grid">
+        <div class="form-group">
+            <label for="status-filter" class="form-label">Estado</label>
+            <select class="form-select" id="status-filter" name="status">
+                <option value="">Todos</option>
+                {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if value == selected_status %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="category-filter" class="form-label">Categoría</label>
+            <select class="form-select" id="category-filter" name="category">
+                <option value="">Todas</option>
+                {% for value, label in category_choices %}
+                <option value="{{ value }}" {% if value == selected_category %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="process-filter" class="form-label">Proceso</label>
+            <select class="form-select" id="process-filter" name="process">
+                <option value="">Todos</option>
+                {% for process in processes %}
+                <option value="{{ process.id }}" {% if process.id|stringformat:"s" == selected_process %}selected{% endif %}>{{ process.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <button type="submit" class="btn btn-secondary">Filtrar</button>
+        </div>
+    </form>
+</div>
+
+{% if suppliers_with_status %}
+    <table class="suppliers-table">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Categoría</th>
+                <th>Estado</th>
+                <th>Próxima Evaluación</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in suppliers_with_status %}
+            <tr>
+                <td>
+                    <a href="{% url 'core:supplier_detail' item.supplier.pk %}" class="supplier-name">
+                        {{ item.supplier.name }}
+                    </a>
+                    {% if item.supplier.cuit %}
+                    <br><small class="text-muted">{{ item.supplier.cuit }}</small>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge badge-primary">{{ item.supplier.get_category_display }}</span>
+                </td>
+                <td>
+                    {% if not item.supplier.is_active %}
+                    <span class="badge badge-danger">INACTIVO</span>
+                    {% elif item.supplier.status == "PENDING" %}
+                    <span class="badge badge-warning">PENDIENTE</span>
+                    {% else %}
+                    <span class="badge badge-success">ACTIVO</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if item.supplier.next_evaluation_date %}
+                        {% if item.is_overdue %}
+                        <span class="badge badge-danger">{{ item.supplier.next_evaluation_date|date:"d/m/Y" }}</span>
+                        {% else %}
+                        {{ item.supplier.next_evaluation_date|date:"d/m/Y" }}
+                        {% endif %}
+                    {% else %}
+                    <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="actions">
+                        <a href="{% url 'core:supplier_detail' item.supplier.pk %}" class="btn btn-sm btn-info">Ver</a>
+                        {% if can_edit %}
+                        <a href="{% url 'core:supplier_edit' item.supplier.pk %}" class="btn btn-sm btn-secondary">Editar</a>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <div class="empty-state">
+        <h3>No hay proveedores registrados.</h3>
+        <p class="text-muted">Crea el primer proveedor para comenzar la evaluación y seguimiento.</p>
+        {% if can_edit %}
+        <a href="{% url 'core:supplier_new' %}" class="btn btn-primary">Crear proveedor</a>
+        {% endif %}
+    </div>
+{% endif %}
+
+<script>
+    // Filtros con combo
+    document.querySelectorAll('select').forEach(select => {
+        select.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+</script>
+{% endblock %}
