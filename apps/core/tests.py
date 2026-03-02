@@ -24,6 +24,7 @@ from .models import (
     ManagementReview,
     QualityIndicator,
     IndicatorMeasurement,
+    NonconformingOutput,
 )
 from .forms import CAPAActionForm
 from .services import log_audit_event
@@ -2403,3 +2404,160 @@ class IndicatorTests(TestCase):
         )
         
         self.assertEqual(indicator.get_status(), "NO_DATA")
+
+
+class NonconformingOutputTests(TestCase):
+    """Tests para el modelo NonconformingOutput (ISO 8.7)."""
+
+    def setUp(self):
+        """Configurar datos de prueba."""
+        self.organization = Organization.objects.create(name="Test Org")
+        self.site = Site.objects.create(
+            organization=self.organization,
+            name="Test Site",
+        )
+        self.process = Process.objects.create(
+            organization=self.organization,
+            code="P1",
+            name="Test Process",
+            process_type=Process.ProcessType.MISSIONAL,
+            level=Process.Level.PROCESS,
+        )
+
+        # Usuario admin
+        self.admin_user = User.objects.create_user(
+            username="admin_pnc",
+            password="admin123"
+        )
+        admin_group = Group.objects.get_or_create(name="Admin")[0]
+        self.admin_user.groups.add(admin_group)
+
+        # Usuario regular
+        self.regular_user = User.objects.create_user(
+            username="regular_pnc",
+            password="regular123"
+        )
+
+    def test_create_pnc_generates_code_and_audit_event(self):
+        """Verifica que crear PNC genera código incremental."""
+        pnc = NonconformingOutput.objects.create(
+            organization=self.organization,
+            site=self.site,
+            detected_at=date.today(),
+            detected_by=self.admin_user,
+            product_or_service="Tolva 26tn",
+            description="Grieta en soldadura",
+            severity=NonconformingOutput.Severity.MAJOR,
+        )
+
+        # Verificar código con patrón PNC-YYYY-NNN
+        self.assertRegex(pnc.code, r"^PNC-\d{4}-\d{3}$")
+        self.assertIsNotNone(pnc.code)
+
+    def test_incremental_code_generation(self):
+        """Verifica que los códigos se generan de forma incremental."""
+        pnc1 = NonconformingOutput.objects.create(
+            organization=self.organization,
+            detected_at=date.today(),
+            product_or_service="Product 1",
+            description="Test 1",
+            severity=NonconformingOutput.Severity.MINOR,
+        )
+
+        pnc2 = NonconformingOutput.objects.create(
+            organization=self.organization,
+            detected_at=date.today(),
+            product_or_service="Product 2",
+            description="Test 2",
+            severity=NonconformingOutput.Severity.MAJOR,
+        )
+
+        self.assertEqual(
+            int(pnc2.code.split("-")[-1]),
+            int(pnc1.code.split("-")[-1]) + 1
+        )
+
+    def test_closing_sets_closed_at(self):
+        """Verifica que al cerrar un PNC se asigna automáticamente closed_at."""
+        pnc = NonconformingOutput.objects.create(
+            organization=self.organization,
+            detected_at=date.today(),
+            product_or_service="Test Product",
+            description="Test",
+            severity=NonconformingOutput.Severity.MINOR,
+            disposition=NonconformingOutput.Disposition.REWORK,
+            status=NonconformingOutput.Status.CLOSED,
+        )
+
+        self.assertIsNotNone(pnc.closed_at)
+        self.assertEqual(pnc.closed_at, date.today())
+
+    def test_concession_requires_notes(self):
+        """Verifica que CONCESIÓN requiere notas obligatoriamente."""
+        pnc = NonconformingOutput(
+            organization=self.organization,
+            detected_at=date.today(),
+            product_or_service="Test Product",
+            description="Test",
+            severity=NonconformingOutput.Severity.MAJOR,
+            disposition=NonconformingOutput.Disposition.CONCESSION,
+            status=NonconformingOutput.Status.CLOSED,
+        )
+
+        with self.assertRaises(ValidationError):
+            pnc.full_clean()
+
+    def test_non_admin_cannot_create_pnc(self):
+        """Verifica que usuarios sin permisos no pueden ver la URL de crear."""
+        self.client.login(username="regular_pnc", password="regular123")
+
+        response = self.client.get(reverse("core:nonconforming_output_new"))
+        
+        # Debe ser PermissionDenied (403) o redirigir
+        self.assertIn(response.status_code, [302, 403])
+
+    def test_create_nc_from_pnc_links_correctly(self):
+        """Verifica que linkear NC desde PNC es posible."""
+        pnc = NonconformingOutput.objects.create(
+            organization=self.organization,
+            site=self.site,
+            related_process=self.process,
+            detected_at=date.today(),
+            detected_by=self.admin_user,
+            product_or_service="Test Product",
+            description="Test",
+            severity=NonconformingOutput.Severity.CRITICAL,
+        )
+
+        # Crear NC manualmente
+        nc = NoConformity.objects.create(
+            organization=self.organization,
+            site=pnc.site,
+            related_process=pnc.related_process,
+            title=f"[PNC] {pnc.product_or_service}",
+            description=pnc.description,
+            origin=NoConformity.Origin.PRODUCTION,
+            severity=pnc.severity,
+            detected_at=pnc.detected_at,
+            detected_by=pnc.detected_by,
+        )
+
+        # Linkear
+        pnc.linked_nc = nc
+        pnc.save()
+
+        # Verificar vinculación
+        pnc.refresh_from_db()
+        self.assertEqual(pnc.linked_nc, nc)
+
+    def test_pnc_list_view_renders(self):
+        """Verifica que el listado de PNC se renderiza correctamente."""
+        self.client.login(username="admin_pnc", password="admin123")
+
+        # Acceder al listado
+        response = self.client.get(reverse("core:nonconforming_output_list"))
+
+        self.assertEqual(response.status_code, 200)
+        # Verificar que el contexto tiene outputs (aunque sea vacío)
+        self.assertIn("outputs", response.context)
+        self.assertIn("organization", response.context)

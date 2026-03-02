@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-xl);
+    }
+
+    .form-header a {
+        color: var(--color-gray-600);
+        text-decoration: none;
+        transition: var(--transition);
+    }
+
+    .form-header a:hover {
+        color: var(--color-primary);
+    }
+
+    .form-card {
+        background: var(--color-white);
+        border: 2px solid var(--color-primary-light);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-lg);
+        box-shadow: var(--shadow-sm);
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .form-card h1 {
+        color: var(--color-primary);
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .form-section {
+        margin-bottom: var(--spacing-xl);
+    }
+
+    .form-section h2 {
+        font-size: var(--font-size-lg);
+        color: var(--color-primary);
+        border-bottom: 2px solid var(--color-primary-light);
+        padding-bottom: var(--spacing-sm);
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: var(--spacing-lg);
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-group label {
+        font-weight: 600;
+        color: var(--color-dark);
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .form-group label .required {
+        color: #c62828;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        padding: var(--spacing-md);
+        border: 1px solid var(--color-gray-300);
+        border-radius: var(--border-radius-md);
+        font-family: inherit;
+        font-size: inherit;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+    }
+
+    .form-group textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .form-buttons {
+        display: flex;
+        gap: var(--spacing-md);
+        margin-top: var(--spacing-xl);
+        padding-top: var(--spacing-lg);
+        border-top: 1px solid var(--color-gray-200);
+    }
+
+    .form-buttons button,
+    .form-buttons a {
+        padding: var(--spacing-md) var(--spacing-lg);
+        border-radius: var(--border-radius-md);
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        border: none;
+        transition: var(--transition);
+    }
+
+    .btn-cancel {
+        background: var(--color-gray-200);
+        color: var(--color-dark);
+    }
+
+    .btn-cancel:hover {
+        background: var(--color-gray-300);
+    }
+
+    .errorlist {
+        color: #c62828;
+        list-style: none;
+        padding: 0;
+        margin-bottom: var(--spacing-md);
+        font-size: var(--font-size-sm);
+    }
+
+    .errorlist li {
+        padding: var(--spacing-sm);
+        background: #ffebee;
+        border-left: 3px solid #c62828;
+        margin-bottom: var(--spacing-xs);
+    }
+
+    @media (max-width: 768px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .form-buttons {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-header">
+    <h1>{{ title }}</h1>
+    <a href="{% url 'core:nonconforming_output_list' %}">← Volver</a>
+</div>
+
+<div class="form-card">
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div style="color: #c62828; margin-bottom: var(--spacing-lg);">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
+        <div class="form-section">
+            <h2>Identificación</h2>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.detected_at.id_for_label }}">
+                        Fecha de Detección
+                        <span class="required">*</span>
+                    </label>
+                    {{ form.detected_at }}
+                    {% if form.detected_at.errors %}
+                    <div style="color: #c62828; font-size: var(--font-size-sm); margin-top: 4px;">
+                        {{ form.detected_at.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.detected_by.id_for_label }}">Detectado por</label>
+                    {{ form.detected_by }}
+                    {% if form.detected_by.errors %}
+                    <div style="color: #c62828; font-size: var(--font-size-sm); margin-top: 4px;">
+                        {{ form.detected_by.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.site.id_for_label }}">Sede</label>
+                    {{ form.site }}
+                    {% if form.site.errors %}
+                    <div style="color: #c62828; font-size: var(--font-size-sm); margin-top: 4px;">
+                        {{ form.site.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.related_process.id_for_label }}">Proceso Relacionado</label>
+                    {{ form.related_process }}
+                    {% if form.related_process.errors %}
+                    <div style="color: #c62828; font-size: var(--font-size-sm); margin-top: 4px;">
+                        {{ form.related_process.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>Producto/Servicio No Conforme</h2>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.product_or_service.id_for_label }}">
+                        Producto/Servicio
+                        <span class="required">*</span>
+                    </label>
+                    {{ form.product_or_service }}
+                    {% if form.product_or_service.errors %}
+                    <div style="color: #c62828; font-size: var(--font-size-sm); margin-top: 4px;">
+                        {{ form.product_or_service.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.quantity.id_for_label }}">Cantidad</label>
+                    {{ form.quantity }}
+                    {% if form.quantity.errors %}
+                    <div style="color: #c62828; font-size: var(--font-size-sm); margin-top: 4px;">
+                        {{ form.quantity.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.description.id_for_label }}">
+                    Descripción del No Cumplimiento
+                    <span class="required">*</span>
+                </label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                <div style="color: #c62828; font-size: var(--font-size-sm); margin-top: 4px;">
+                    {{ form.description.errors }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>Severidad y Disposición</h2>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.severity.id_for_label }}">
+                        Severidad
+                        <span class="required">*</span>
+                    </label>
+                    {{ form.severity }}
+                    {% if form.severity.errors %}
+                    <div style="color: #c62828; font-size: var(--font-size-sm); margin-top: 4px;">
+                        {{ form.severity.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.disposition.id_for_label }}">Disposición</label>
+                    {{ form.disposition }}
+                    {% if form.disposition.errors %}
+                    <div style="color: #c62828; font-size: var(--font-size-sm); margin-top: 4px;">
+                        {{ form.disposition.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.disposition_notes.id_for_label }}">
+                    Notas sobre Disposición
+                    <small style="color: var(--color-gray-600); font-weight: 400;">
+                        (obligatorio para CONCESIÓN)
+                    </small>
+                </label>
+                {{ form.disposition_notes }}
+                {% if form.disposition_notes.errors %}
+                <div style="color: #c62828; font-size: var(--font-size-sm); margin-top: 4px;">
+                    {{ form.disposition_notes.errors }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>Gestión y Evidencia</h2>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.responsible.id_for_label }}">Responsable del Tratamiento</label>
+                    {{ form.responsible }}
+                    {% if form.responsible.errors %}
+                    <div style="color: #c62828; font-size: var(--font-size-sm); margin-top: 4px;">
+                        {{ form.responsible.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.status.id_for_label }}">
+                        Estado
+                        <span class="required">*</span>
+                    </label>
+                    {{ form.status }}
+                    {% if form.status.errors %}
+                    <div style="color: #c62828; font-size: var(--font-size-sm); margin-top: 4px;">
+                        {{ form.status.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.evidence_file.id_for_label }}">Archivo de Evidencia</label>
+                {{ form.evidence_file }}
+                {% if form.evidence_file.errors %}
+                <div style="color: #c62828; font-size: var(--font-size-sm); margin-top: 4px;">
+                    {{ form.evidence_file.errors }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-buttons">
+            <button type="submit" class="btn btn-primary">💾 Guardar</button>
+            <a href="{% url 'core:nonconforming_output_list' %}" class="btn btn-cancel">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

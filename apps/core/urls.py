@@ -44,6 +44,11 @@ from apps.core.views import (
     indicator_create,
     indicator_edit,
     measurement_create,
+    nonconforming_output_list,
+    nonconforming_output_detail,
+    nonconforming_output_create,
+    nonconforming_output_edit,
+    nonconforming_output_create_nc,
 )
 
 app_name = "core"
@@ -92,4 +97,11 @@ urlpatterns = [
     path("indicators/<int:pk>/", indicator_detail, name="indicator_detail"),
     path("indicators/<int:pk>/edit/", indicator_edit, name="indicator_edit"),
     path("indicators/<int:indicator_pk>/measurements/new/", measurement_create, name="measurement_new"),
+    
+    # NonconformingOutput (ISO 8.7)
+    path("pnc/", nonconforming_output_list, name="nonconforming_output_list"),
+    path("pnc/new/", nonconforming_output_create, name="nonconforming_output_new"),
+    path("pnc/<int:pk>/", nonconforming_output_detail, name="nonconforming_output_detail"),
+    path("pnc/<int:pk>/edit/", nonconforming_output_edit, name="nonconforming_output_edit"),
+    path("pnc/<int:pk>/create-nc/", nonconforming_output_create_nc, name="nonconforming_output_create_nc"),
 ]

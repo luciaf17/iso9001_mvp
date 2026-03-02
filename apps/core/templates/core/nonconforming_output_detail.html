@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle PNC - {{ output.code }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-xl);
+    }
+
+    .detail-header a {
+        color: var(--color-gray-600);
+        text-decoration: none;
+        transition: var(--transition);
+    }
+
+    .detail-header a:hover {
+        color: var(--color-primary);
+        text-decoration: underline;
+    }
+
+    .detail-card {
+        background: var(--color-white);
+        border: 2px solid var(--color-primary-light);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-lg);
+        margin-bottom: var(--spacing-xl);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .detail-card h1 {
+        margin-bottom: var(--spacing-lg);
+        color: var(--color-primary);
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-md);
+    }
+
+    .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--spacing-lg);
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .detail-item strong {
+        color: var(--color-dark);
+        display: block;
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .detail-item span {
+        color: var(--color-gray-700);
+    }
+
+    .description {
+        margin-top: var(--spacing-lg);
+        padding: var(--spacing-md);
+        background: var(--color-gray-50);
+        border-left: 4px solid var(--color-primary-light);
+        border-radius: var(--border-radius-md);
+        color: var(--color-gray-700);
+        line-height: 1.6;
+        white-space: pre-wrap;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: var(--border-radius-sm);
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: var(--font-size-sm);
+    }
+
+    .badge-open { background: #e3f2fd; color: #1976d2; }
+    .badge-in-treatment { background: #fff3e0; color: #e65100; }
+    .badge-closed { background: #c8e6c9; color: #2e7d32; }
+
+    .badge-minor { background: #f3e5f5; color: #7b1fa2; }
+    .badge-major { background: #ffe0b2; color: #e65100; }
+    .badge-critical { background: #ffcdd2; color: #c62828; }
+
+    .action-buttons {
+        display: flex;
+        gap: var(--spacing-md);
+        margin-top: var(--spacing-lg);
+        flex-wrap: wrap;
+    }
+
+    .btn-secondary {
+        background: var(--color-gray-200);
+        color: var(--color-dark);
+    }
+
+    .btn-secondary:hover {
+        background: var(--color-gray-300);
+    }
+
+    .evidence-section {
+        margin-top: var(--spacing-lg);
+        padding: var(--spacing-md);
+        background: var(--color-gray-50);
+        border-radius: var(--border-radius-md);
+    }
+
+    .nc-link {
+        margin-top: var(--spacing-lg);
+        padding: var(--spacing-md);
+        background: #e8f5e9;
+        border-left: 4px solid #4caf50;
+        border-radius: var(--border-radius-md);
+    }
+
+    .nc-link a {
+        color: #2e7d32;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .nc-link a:hover {
+        text-decoration: underline;
+    }
+
+    @media (max-width: 1024px) {
+        .detail-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .detail-header {
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+
+        .action-buttons a, .action-buttons button {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-header">
+    <a href="{% url 'core:nonconforming_output_list' %}">← Volver a PNC</a>
+    <div style="display: flex; gap: var(--spacing-md);">
+        {% if can_edit %}
+        <a href="{% url 'core:nonconforming_output_edit' output.pk %}" class="btn btn-primary">Editar</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="detail-card">
+    <h1>🔴 {{ output.code }}</h1>
+
+    <div class="detail-grid">
+        <div class="detail-item">
+            <strong>Producto/Servicio</strong>
+            <span>{{ output.product_or_service }}</span>
+        </div>
+        <div class="detail-item">
+            <strong>Severidad</strong>
+            <span><div class="badge badge-{{ output.severity|lower }}">{{ output.get_severity_display }}</div></span>
+        </div>
+        <div class="detail-item">
+            <strong>Estado</strong>
+            <span><div class="badge badge-{{ output.status|lower|cut:'_' }}">{{ output.get_status_display }}</div></span>
+        </div>
+        <div class="detail-item">
+            <strong>Detección</strong>
+            <span>{{ output.detected_at|date:"d/m/Y" }}</span>
+        </div>
+        <div class="detail-item">
+            <strong>Detectado por</strong>
+            <span>{% if output.detected_by %}{{ output.detected_by.get_full_name|default:output.detected_by.username }}{% else %}-{% endif %}</span>
+        </div>
+        <div class="detail-item">
+            <strong>Sede</strong>
+            <span>{% if output.site %}{{ output.site }}{% else %}-{% endif %}</span>
+        </div>
+        <div class="detail-item">
+            <strong>Proceso</strong>
+            <span>{% if output.related_process %}{{ output.related_process }}{% else %}-{% endif %}</span>
+        </div>
+        <div class="detail-item">
+            <strong>Cantidad</strong>
+            <span>{% if output.quantity %}{{ output.quantity }}{% else %}-{% endif %}</span>
+        </div>
+        <div class="detail-item">
+            <strong>Responsable</strong>
+            <span>{% if output.responsible %}{{ output.responsible.get_full_name|default:output.responsible.username }}{% else %}-{% endif %}</span>
+        </div>
+    </div>
+
+    <h3 style="color: var(--color-primary); margin-bottom: var(--spacing-md);">Descripción del No Cumplimiento</h3>
+    <div class="description">{{ output.description }}</div>
+
+    {% if output.disposition %}
+    <div style="margin-top: var(--spacing-lg);">
+        <h3 style="color: var(--color-primary); margin-bottom: var(--spacing-md);">Disposición</h3>
+        <p><strong>Tipo:</strong> {{ output.get_disposition_display }}</p>
+        {% if output.disposition_notes %}
+        <div class="description">
+            <strong>Notas:</strong>
+            {{ output.disposition_notes }}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if output.closed_at %}
+    <div style="margin-top: var(--spacing-lg); padding: var(--spacing-md); background: #c8e6c9; border-radius: var(--border-radius-md);">
+        <strong>✓ Cerrado el {{ output.closed_at|date:"d/m/Y" }}</strong>
+    </div>
+    {% endif %}
+
+    {% if output.evidence_file %}
+    <div class="evidence-section">
+        <strong>Archivo de Evidencia:</strong>
+        <br>
+        <a href="{{ output.evidence_file.url }}" target="_blank" style="color: var(--color-primary); text-decoration: none;">
+            📎 Descargar {{ output.evidence_file.name|truncatechars:30 }}
+        </a>
+    </div>
+    {% endif %}
+
+    {% if output.linked_nc %}
+    <div class="nc-link">
+        <strong>✓ Vinculado a No Conformidad:</strong>
+        <a href="{% url 'core:nc_detail' output.linked_nc.pk %}">{{ output.linked_nc.code }} - {{ output.linked_nc.title }}</a>
+    </div>
+    {% elif can_edit %}
+    <div class="action-buttons">
+        <a href="{% url 'core:nonconforming_output_create_nc' output.pk %}" class="btn btn-secondary">
+            🔗 Crear & Linkear NC
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

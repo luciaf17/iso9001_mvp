@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LogoutView
+from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q
 from django.shortcuts import redirect, render, get_object_or_404
 
@@ -20,6 +21,7 @@ from apps.core.forms import (
 	ManagementReviewForm,
 	QualityIndicatorForm,
 	IndicatorMeasurementForm,
+	NonconformingOutputForm,
 )
 from apps.core.models import (
 	Organization,
@@ -38,6 +40,7 @@ from apps.core.models import (
 	ManagementReview,
 	QualityIndicator,
 	IndicatorMeasurement,
+	NonconformingOutput,
 )
 from apps.core.services import log_audit_event
 from apps.core.utils import (
@@ -47,6 +50,7 @@ from apps.core.utils import (
 	can_edit_nc,
 	can_edit_objective,
 	can_edit_audit,
+	can_edit_nonconforming_output,
 )
 from apps.docs.models import Document
 
@@ -2363,3 +2367,205 @@ def measurement_create(request, indicator_pk):
 			"organization": organization,
 		},
 	)
+
+
+# ===== NonconformingOutput (ISO 8.7) Views =====
+
+@login_required
+def nonconforming_output_list(request):
+	"""Lista de Productos/Servicios No Conformes."""
+	organization = Organization.objects.filter(is_active=True).first() or Organization.objects.first()
+	outputs = NonconformingOutput.objects.filter(
+		organization=organization,
+		is_active=True,
+	).select_related("site", "related_process", "detected_by", "responsible", "linked_nc")
+
+	# Filtros
+	status = request.GET.get("status")
+	if status:
+		outputs = outputs.filter(status=status)
+
+	severity = request.GET.get("severity")
+	if severity:
+		outputs = outputs.filter(severity=severity)
+
+	disposition = request.GET.get("disposition")
+	if disposition:
+		outputs = outputs.filter(disposition=disposition)
+
+	if request.GET.get("process_id"):
+		outputs = outputs.filter(related_process_id=request.GET.get("process_id"))
+
+	can_edit = can_edit_nonconforming_output(request.user)
+
+	return render(
+		request,
+		"core/nonconforming_output_list.html",
+		{
+			"outputs": outputs,
+			"organization": organization,
+			"can_edit": can_edit,
+			"processes": Process.objects.filter(
+				organization=organization
+			).order_by("name"),
+		},
+	)
+
+
+@login_required
+def nonconforming_output_detail(request, pk):
+	"""Detalle de Producto/Servicio No Conforme."""
+	organization = Organization.objects.filter(is_active=True).first() or Organization.objects.first()
+	output = get_object_or_404(
+		NonconformingOutput,
+		pk=pk,
+		organization=organization,
+	)
+
+	can_edit = can_edit_nonconforming_output(request.user)
+
+	return render(
+		request,
+		"core/nonconforming_output_detail.html",
+		{
+			"output": output,
+			"organization": organization,
+			"can_edit": can_edit,
+		},
+	)
+
+
+@login_required
+def nonconforming_output_create(request):
+	"""Crear Producto/Servicio No Conforme."""
+	if not can_edit_nonconforming_output(request.user):
+		raise PermissionDenied()
+
+	organization = Organization.objects.filter(is_active=True).first() or Organization.objects.first()
+
+	if request.method == "POST":
+		form = NonconformingOutputForm(request.POST, request.FILES)
+		if form.is_valid():
+			output = form.save(commit=False)
+			output.organization = organization
+			output.save()
+		
+			log_audit_event(
+				actor=request.user,
+				action="core.pnc.created",
+				instance=output,
+				metadata={
+					"code": output.code,
+					"product_or_service": output.product_or_service,
+					"severity": output.severity,
+				},
+				object_type_override="NonconformingOutput",
+			)
+			messages.success(request, f"Producto/Servicio No Conforme {output.code} creado.")
+			return redirect("core:nonconforming_output_detail", pk=output.pk)
+	else:
+		form = NonconformingOutputForm()
+
+	return render(
+		request,
+		"core/nonconforming_output_form.html",
+		{
+			"form": form,
+			"organization": organization,
+			"title": "Nuevo Producto/Servicio No Conforme",
+		},
+	)
+
+
+@login_required
+def nonconforming_output_edit(request, pk):
+	"""Editar Producto/Servicio No Conforme."""
+	if not can_edit_nonconforming_output(request.user):
+		raise PermissionDenied()
+
+	organization = Organization.objects.filter(is_active=True).first() or Organization.objects.first()
+	output = get_object_or_404(
+		NonconformingOutput,
+		pk=pk,
+		organization=organization,
+	)
+
+	if request.method == "POST":
+		form = NonconformingOutputForm(request.POST, request.FILES, instance=output)
+		if form.is_valid():
+			output = form.save()
+			
+			log_audit_event(
+				actor=request.user,
+				action="core.pnc.updated",
+				instance=output,
+				metadata={
+					"code": output.code,
+					"status": output.status,
+				},
+				object_type_override="NonconformingOutput",
+			)
+			messages.success(request, "Producto/Servicio No Conforme actualizado.")
+			return redirect("core:nonconforming_output_detail", pk=output.pk)
+	else:
+		form = NonconformingOutputForm(instance=output)
+
+	return render(
+		request,
+		"core/nonconforming_output_form.html",
+		{
+			"form": form,
+			"output": output,
+			"organization": organization,
+			"title": f"Editar {output.code}",
+		},
+	)
+
+
+@login_required
+def nonconforming_output_create_nc(request, pk):
+	"""Crear NC desde PNC y linkear ambos."""
+	if not can_edit_nonconforming_output(request.user):
+		raise PermissionDenied()
+
+	organization = Organization.objects.filter(is_active=True).first() or Organization.objects.first()
+	output = get_object_or_404(
+		NonconformingOutput,
+		pk=pk,
+		organization=organization,
+	)
+
+	if output.linked_nc:
+		messages.warning(request, "Este PNC ya tiene una NC vinculada.")
+		return redirect("core:nonconforming_output_detail", pk=output.pk)
+
+	# Crear NC
+	nc = NoConformity.objects.create(
+		organization=organization,
+		site=output.site,
+		related_process=output.related_process,
+		title=f"[PNC] {output.product_or_service}",
+		description=output.description,
+		origin=NoConformity.Origin.PRODUCTION,
+		severity=output.severity,
+		detected_at=output.detected_at,
+		detected_by=output.detected_by,
+	)
+
+	# Linkear ambos
+	output.linked_nc = nc
+	output.save()
+
+	log_audit_event(
+		actor=request.user,
+		action="core.pnc.nc_created",
+		instance=output,
+		metadata={
+			"pnc_code": output.code,
+			"nc_code": nc.code,
+		},
+		object_type_override="NonconformingOutput",
+	)
+	
+	messages.success(request, f"No Conformidad {nc.code} creada y vinculada a {output.code}.")
+	return redirect("core:nonconforming_output_detail", pk=output.pk)

@@ -1638,3 +1638,195 @@ class IndicatorMeasurement(models.Model):
         if self.indicator.comparison_type == QualityIndicator.ComparisonType.GREATER_EQUAL:
             return self.value >= self.indicator.target_value
         return self.value <= self.indicator.target_value
+
+
+class NonconformingOutput(models.Model):
+    """Producto/Servicio No Conforme (ISO 9001 8.7)."""
+
+    class Severity(models.TextChoices):
+        MINOR = "MINOR", "Menor"
+        MAJOR = "MAJOR", "Mayor"
+        CRITICAL = "CRITICAL", "Crítica"
+
+    class Disposition(models.TextChoices):
+        REWORK = "REWORK", "Retrabajo"
+        REPAIR = "REPAIR", "Reparación"
+        SCRAP = "SCRAP", "Descarte"
+        CONCESSION = "CONCESSION", "Concesión/Aceptación"
+        RETURN = "RETURN", "Devolución"
+        OTHER = "OTHER", "Otro"
+
+    class Status(models.TextChoices):
+        OPEN = "OPEN", "Abierta"
+        IN_TREATMENT = "IN_TREATMENT", "En tratamiento"
+        CLOSED = "CLOSED", "Cerrada"
+
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.PROTECT,
+        related_name="nonconforming_outputs",
+        verbose_name="Organización",
+    )
+    site = models.ForeignKey(
+        Site,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="nonconforming_outputs",
+        verbose_name="Sede",
+    )
+    related_process = models.ForeignKey(
+        Process,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="nonconforming_outputs",
+        verbose_name="Proceso relacionado",
+    )
+    code = models.CharField(
+        max_length=20,
+        unique=True,
+        verbose_name="Código",
+        help_text="PNC-2026-001, PNC-2026-002, etc.",
+        editable=False,
+    )
+    detected_at = models.DateField(
+        verbose_name="Fecha de detección",
+    )
+    detected_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="detected_nonconforming_outputs",
+        verbose_name="Detectado por",
+    )
+    product_or_service = models.CharField(
+        max_length=200,
+        verbose_name="Producto/Servicio",
+        help_text="Ejemplo: Tolva 26tn, Servicio postventa",
+    )
+    description = models.TextField(
+        verbose_name="Descripción del no cumplimiento",
+    )
+    quantity = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Cantidad",
+    )
+    severity = models.CharField(
+        max_length=20,
+        choices=Severity.choices,
+        default=Severity.MAJOR,
+        verbose_name="Severidad",
+    )
+    disposition = models.CharField(
+        max_length=20,
+        choices=Disposition.choices,
+        null=True,
+        blank=True,
+        verbose_name="Disposición",
+        help_text="Acción tomada sobre el producto/servicio no conforme",
+    )
+    disposition_notes = models.TextField(
+        blank=True,
+        verbose_name="Notas sobre disposición",
+        help_text="Detalles y evidencia de la disposición (obligatorio para CONCESSION)",
+    )
+    responsible = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="treated_nonconforming_outputs",
+        verbose_name="Responsable del tratamiento",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.OPEN,
+        verbose_name="Estado",
+    )
+    closed_at = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de cierre",
+    )
+    evidence_file = models.FileField(
+        upload_to="nonconforming_outputs/",
+        null=True,
+        blank=True,
+        verbose_name="Archivo de evidencia",
+    )
+    linked_nc = models.ForeignKey(
+        NoConformity,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="nonconforming_outputs",
+        verbose_name="NC vinculada",
+        help_text="Opcionalmente linkear a NoConformity del sistema",
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Activo",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Creado el",
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Actualizado el",
+    )
+
+    class Meta:
+        ordering = ["-detected_at"]
+        verbose_name = "Producto/Servicio No Conforme"
+        verbose_name_plural = "Productos/Servicios No Conformes"
+
+    def __str__(self):
+        return f"{self.code}: {self.product_or_service}"
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if self.status == self.Status.CLOSED and not self.disposition:
+            raise ValidationError({
+                "disposition": "Debe especificar la disposición antes de cerrar."
+            })
+
+        if self.disposition == self.Disposition.CONCESSION and not self.disposition_notes:
+            raise ValidationError({
+                "disposition_notes": "La disposición CONCESIÓN requiere notas obligatoriamente."
+            })
+
+    def save(self, *args, **kwargs):
+        from django.utils import timezone
+
+        # Auto-generar código
+        if not self.code:
+            year = timezone.now().year
+            last_pnc = NonconformingOutput.objects.filter(
+                organization=self.organization,
+                code__startswith=f"PNC-{year}",
+            ).order_by("-code").first()
+
+            if last_pnc and last_pnc.code:
+                try:
+                    last_num = int(last_pnc.code.split("-")[-1])
+                    new_num = last_num + 1
+                except (ValueError, IndexError):
+                    new_num = 1
+            else:
+                new_num = 1
+
+            self.code = f"PNC-{year}-{new_num:03d}"
+
+        # Auto-setear closed_at al cerrar
+        if self.status == self.Status.CLOSED and not self.closed_at:
+            self.closed_at = timezone.now().date()
+
+        super().save(*args, **kwargs)

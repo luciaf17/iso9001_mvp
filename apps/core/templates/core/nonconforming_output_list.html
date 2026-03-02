@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}Productos/Servicios No Conformes{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-xl);
+    }
+
+    .page-header h1 {
+        margin: 0;
+        color: var(--color-primary);
+    }
+
+    .filters {
+        background: var(--color-white);
+        padding: var(--spacing-lg);
+        border-radius: var(--border-radius-lg);
+        margin-bottom: var(--spacing-xl);
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: var(--spacing-md);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .filters select {
+        padding: var(--spacing-sm);
+        border: 1px solid var(--color-gray-300);
+        border-radius: var(--border-radius-md);
+        font-family: inherit;
+    }
+
+    .pnc-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--color-white);
+        border-radius: var(--border-radius-lg);
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .pnc-table thead {
+        background: var(--color-primary-light);
+    }
+
+    .pnc-table th {
+        padding: var(--spacing-md);
+        text-align: left;
+        font-weight: 700;
+        color: var(--color-primary);
+        border-bottom: 2px solid var(--color-primary);
+    }
+
+    .pnc-table td {
+        padding: var(--spacing-md);
+        border-bottom: 1px solid var(--color-gray-200);
+    }
+
+    .pnc-table tbody tr:hover {
+        background: var(--color-gray-50);
+    }
+
+    .pnc-row {
+        cursor: pointer;
+    }
+
+    .pnc-row:hover {
+        background: var(--color-gray-50);
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: var(--border-radius-sm);
+        font-size: var(--font-size-xs);
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .badge-open { background: #e3f2fd; color: #1976d2; }
+    .badge-in-treatment { background: #fff3e0; color: #e65100; }
+    .badge-closed { background: #c8e6c9; color: #2e7d32; }
+
+    .badge-minor { background: #f3e5f5; color: #7b1fa2; }
+    .badge-major { background: #ffe0b2; color: #e65100; }
+    .badge-critical { background: #ffcdd2; color: #c62828; }
+
+    .empty-state {
+        text-align: center;
+        padding: var(--spacing-xl);
+        background: var(--color-white);
+        border: 2px dashed var(--color-gray-300);
+        border-radius: var(--border-radius-lg);
+    }
+
+    .empty-state-icon {
+        font-size: 4rem;
+        margin-bottom: var(--spacing-md);
+    }
+
+    @media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+
+        .filters {
+            grid-template-columns: 1fr;
+        }
+
+        .pnc-table {
+            font-size: var(--font-size-sm);
+        }
+
+        .pnc-table th,
+        .pnc-table td {
+            padding: var(--spacing-sm);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>🔴 Productos/Servicios No Conformes</h1>
+    {% if can_edit %}
+    <a href="{% url 'core:nonconforming_output_new' %}" class="btn btn-primary">➕ Nuevo PNC</a>
+    {% endif %}
+</div>
+
+<div class="filters">
+    <div>
+        <label for="status-filter">Estado</label>
+        <form method="get" style="display: flex; gap: 4px;">
+            <select name="status" onchange="this.form.submit()">
+                <option value="">Todos</option>
+                <option value="OPEN" {% if request.GET.status == 'OPEN' %}selected{% endif %}>Abierta</option>
+                <option value="IN_TREATMENT" {% if request.GET.status == 'IN_TREATMENT' %}selected{% endif %}>En tratamiento</option>
+                <option value="CLOSED" {% if request.GET.status == 'CLOSED' %}selected{% endif %}>Cerrada</option>
+            </select>
+        </form>
+    </div>
+    <div>
+        <label for="severity-filter">Severidad</label>
+        <form method="get" style="display: flex; gap: 4px;">
+            <select name="severity" onchange="this.form.submit()">
+                <option value="">Todos</option>
+                <option value="MINOR" {% if request.GET.severity == 'MINOR' %}selected{% endif %}>Menor</option>
+                <option value="MAJOR" {% if request.GET.severity == 'MAJOR' %}selected{% endif %}>Mayor</option>
+                <option value="CRITICAL" {% if request.GET.severity == 'CRITICAL' %}selected{% endif %}>Crítica</option>
+            </select>
+        </form>
+    </div>
+    <div>
+        <label for="disposition-filter">Disposición</label>
+        <form method="get" style="display: flex; gap: 4px;">
+            <select name="disposition" onchange="this.form.submit()">
+                <option value="">Todos</option>
+                <option value="REWORK" {% if request.GET.disposition == 'REWORK' %}selected{% endif %}>Retrabajo</option>
+                <option value="REPAIR" {% if request.GET.disposition == 'REPAIR' %}selected{% endif %}>Reparación</option>
+                <option value="SCRAP" {% if request.GET.disposition == 'SCRAP' %}selected{% endif %}>Descarte</option>
+                <option value="CONCESSION" {% if request.GET.disposition == 'CONCESSION' %}selected{% endif %}>Concesión</option>
+                <option value="RETURN" {% if request.GET.disposition == 'RETURN' %}selected{% endif %}>Devolución</option>
+                <option value="OTHER" {% if request.GET.disposition == 'OTHER' %}selected{% endif %}>Otro</option>
+            </select>
+        </form>
+    </div>
+    <div>
+        <label for="process-filter">Proceso</label>
+        <form method="get" style="display: flex; gap: 4px;">
+            <select name="process_id" onchange="this.form.submit()">
+                <option value="">Todos</option>
+                {% for process in processes %}
+                <option value="{{ process.id }}" {% if request.GET.process_id|add:'0' == process.id|add:'0' %}selected{% endif %}>{{ process.name }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+</div>
+
+{% if outputs %}
+    <table class="pnc-table">
+        <thead>
+            <tr>
+                <th>Código</th>
+                <th>Producto/Servicio</th>
+                <th>Severidad</th>
+                <th>Estado</th>
+                <th>Disposición</th>
+                <th>Detectado</th>
+                <th>Proceso</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for output in outputs %}
+            <tr class="pnc-row" onclick="window.location='{% url 'core:nonconforming_output_detail' output.pk %}'">
+                <td><strong>{{ output.code }}</strong></td>
+                <td>{{ output.product_or_service }}</td>
+                <td>
+                    <span class="badge badge-{{ output.severity|lower }}">
+                        {{ output.get_severity_display }}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge badge-{{ output.status|lower|cut:'_' }}">
+                        {{ output.get_status_display }}
+                    </span>
+                </td>
+                <td>
+                    {% if output.disposition %}
+                        {{ output.get_disposition_display }}
+                    {% else %}
+                        <span style="color: var(--color-gray-400);">—</span>
+                    {% endif %}
+                </td>
+                <td>{{ output.detected_at|date:"d/m/Y" }}</td>
+                <td>{% if output.related_process %}{{ output.related_process }}{% else %}-{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">🔴</div>
+        <h3>No hay productos/servicios no conformes</h3>
+        <p>Los PNC son registros de control de productos/servicios no conformes (ISO 9001 8.7)</p>
+        {% if can_edit %}
+        <div style="margin-top: var(--spacing-lg);">
+            <a href="{% url 'core:nonconforming_output_new' %}" class="btn btn-primary">Registrar primer PNC</a>
+        </div>
+        {% endif %}
+    </div>
+{% endif %}
+{% endblock %}

@@ -58,3 +58,14 @@ def can_edit_audit(user):
         return True
 
     return user.groups.filter(name__in=["Admin", "Calidad"]).exists()
+
+
+def can_edit_nonconforming_output(user):
+    """Check if user can create/edit nonconforming outputs (ISO 8.7)."""
+    if user is None:
+        return False
+
+    if getattr(user, "is_superuser", False):
+        return True
+
+    return user.groups.filter(name__in=["Admin", "Calidad"]).exists()

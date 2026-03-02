@@ -18,6 +18,7 @@ from apps.core.models import (
     ManagementReview,
     QualityIndicator,
     IndicatorMeasurement,
+    NonconformingOutput,
 )
 
 
@@ -437,3 +438,35 @@ class IndicatorMeasurementForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["measurement_date"].input_formats = ["%Y-%m-%d"]
+
+
+class NonconformingOutputForm(forms.ModelForm):
+    """Formulario para Producto/Servicio No Conforme (ISO 8.7)."""
+
+    class Meta:
+        model = NonconformingOutput
+        fields = [
+            "detected_at",
+            "detected_by",
+            "site",
+            "related_process",
+            "product_or_service",
+            "description",
+            "quantity",
+            "severity",
+            "disposition",
+            "disposition_notes",
+            "responsible",
+            "status",
+            "evidence_file",
+        ]
+        widgets = {
+            "detected_at": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "description": forms.Textarea(attrs={"rows": 4}),
+            "disposition_notes": forms.Textarea(attrs={"rows": 3}),
+            "quantity": forms.NumberInput(attrs={"step": "0.01"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["detected_at"].input_formats = ["%Y-%m-%d"]
