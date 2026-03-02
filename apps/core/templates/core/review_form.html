@@ -1,0 +1,362 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Editar{% else %}Nueva{% endif %} Revisión por la Dirección{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 900px;
+        background: var(--color-white);
+        border: 2px solid var(--color-primary-light);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-2xl);
+        box-shadow: var(--shadow-md);
+    }
+
+    .form-container h1 {
+        color: var(--color-primary);
+        margin-bottom: var(--spacing-xl);
+        font-size: var(--font-size-2xl);
+    }
+
+    .section-title {
+        color: var(--color-primary);
+        font-size: var(--font-size-lg);
+        margin-top: var(--spacing-2xl);
+        margin-bottom: var(--spacing-lg);
+        padding-bottom: var(--spacing-sm);
+        border-bottom: 2px solid var(--color-primary-light);
+    }
+
+    .section-badge {
+        display: inline-block;
+        background: var(--color-primary-light);
+        color: var(--color-primary);
+        padding: 4px 8px;
+        border-radius: var(--border-radius-sm);
+        font-size: var(--font-size-xs);
+        font-weight: 700;
+        text-transform: uppercase;
+        margin-left: var(--spacing-sm);
+    }
+
+    .form-group {
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: var(--spacing-sm);
+        color: var(--color-dark);
+    }
+
+    .form-group label .required {
+        color: var(--color-danger);
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: var(--spacing-sm) var(--spacing-md);
+        border: 2px solid var(--color-gray-300);
+        border-radius: var(--border-radius-md);
+        font-size: var(--font-size-sm);
+        transition: var(--transition);
+        box-sizing: border-box;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px var(--color-primary-light);
+    }
+
+    .form-group textarea {
+        min-height: 90px;
+        resize: vertical;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-lg);
+    }
+
+    .form-row .form-group {
+        margin-bottom: 0;
+    }
+
+    .error-list {
+        color: var(--color-danger);
+        font-size: var(--font-size-sm);
+        margin-top: var(--spacing-xs);
+        list-style: none;
+        padding: 0;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: var(--spacing-md);
+        margin-top: var(--spacing-2xl);
+        padding-top: var(--spacing-lg);
+        border-top: 2px solid var(--color-gray-200);
+    }
+
+    .help-text {
+        font-size: var(--font-size-xs);
+        color: var(--color-gray-600);
+        margin-top: var(--spacing-xs);
+    }
+
+    @media (max-width: 640px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h1>{% if is_edit %}Editar{% else %}Nueva{% endif %} Revisión por la Dirección</h1>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="{{ form.review_date.id_for_label }}">
+                    {{ form.review_date.label }} <span class="required">*</span>
+                </label>
+                {{ form.review_date }}
+                {% if form.review_date.errors %}
+                <ul class="error-list">
+                    {% for error in form.review_date.errors %}
+                    <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.chairperson.id_for_label }}">
+                    {{ form.chairperson.label }}
+                </label>
+                {{ form.chairperson }}
+                {% if form.chairperson.errors %}
+                <ul class="error-list">
+                    {% for error in form.chairperson.errors %}
+                    <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.attendees.id_for_label }}">
+                {{ form.attendees.label }}
+            </label>
+            {{ form.attendees }}
+            <p class="help-text">{{ form.attendees.help_text }}</p>
+            {% if form.attendees.errors %}
+            <ul class="error-list">
+                {% for error in form.attendees.errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+
+        <h2 class="section-title">📥 Entradas <span class="section-badge">ISO 9.3.2</span></h2>
+
+        <div class="form-group">
+            <label for="{{ form.audit_results_summary.id_for_label }}">
+                {{ form.audit_results_summary.label }}
+            </label>
+            {{ form.audit_results_summary }}
+            <p class="help-text">{{ form.audit_results_summary.help_text }}</p>
+            {% if form.audit_results_summary.errors %}
+            <ul class="error-list">
+                {% for error in form.audit_results_summary.errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.customer_feedback_summary.id_for_label }}">
+                {{ form.customer_feedback_summary.label }}
+            </label>
+            {{ form.customer_feedback_summary }}
+            <p class="help-text">{{ form.customer_feedback_summary.help_text }}</p>
+            {% if form.customer_feedback_summary.errors %}
+            <ul class="error-list">
+                {% for error in form.customer_feedback_summary.errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.process_performance_summary.id_for_label }}">
+                {{ form.process_performance_summary.label }}
+            </label>
+            {{ form.process_performance_summary }}
+            <p class="help-text">{{ form.process_performance_summary.help_text }}</p>
+            {% if form.process_performance_summary.errors %}
+            <ul class="error-list">
+                {% for error in form.process_performance_summary.errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.nonconformities_status_summary.id_for_label }}">
+                {{ form.nonconformities_status_summary.label }}
+            </label>
+            {{ form.nonconformities_status_summary }}
+            <p class="help-text">{{ form.nonconformities_status_summary.help_text }}</p>
+            {% if form.nonconformities_status_summary.errors %}
+            <ul class="error-list">
+                {% for error in form.nonconformities_status_summary.errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.risk_opportunity_status_summary.id_for_label }}">
+                {{ form.risk_opportunity_status_summary.label }}
+            </label>
+            {{ form.risk_opportunity_status_summary }}
+            <p class="help-text">{{ form.risk_opportunity_status_summary.help_text }}</p>
+            {% if form.risk_opportunity_status_summary.errors %}
+            <ul class="error-list">
+                {% for error in form.risk_opportunity_status_summary.errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.supplier_performance_summary.id_for_label }}">
+                {{ form.supplier_performance_summary.label }}
+            </label>
+            {{ form.supplier_performance_summary }}
+            <p class="help-text">{{ form.supplier_performance_summary.help_text }}</p>
+            {% if form.supplier_performance_summary.errors %}
+            <ul class="error-list">
+                {% for error in form.supplier_performance_summary.errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.resource_adequacy_summary.id_for_label }}">
+                {{ form.resource_adequacy_summary.label }}
+            </label>
+            {{ form.resource_adequacy_summary }}
+            <p class="help-text">{{ form.resource_adequacy_summary.help_text }}</p>
+            {% if form.resource_adequacy_summary.errors %}
+            <ul class="error-list">
+                {% for error in form.resource_adequacy_summary.errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+
+        <h2 class="section-title">📤 Salidas <span class="section-badge">ISO 9.3.3</span></h2>
+
+        <div class="form-group">
+            <label for="{{ form.improvement_actions.id_for_label }}">
+                {{ form.improvement_actions.label }}
+            </label>
+            {{ form.improvement_actions }}
+            <p class="help-text">{{ form.improvement_actions.help_text }}</p>
+            {% if form.improvement_actions.errors %}
+            <ul class="error-list">
+                {% for error in form.improvement_actions.errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.changes_to_qms.id_for_label }}">
+                {{ form.changes_to_qms.label }}
+            </label>
+            {{ form.changes_to_qms }}
+            <p class="help-text">{{ form.changes_to_qms.help_text }}</p>
+            {% if form.changes_to_qms.errors %}
+            <ul class="error-list">
+                {% for error in form.changes_to_qms.errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.resource_needs.id_for_label }}">
+                {{ form.resource_needs.label }}
+            </label>
+            {{ form.resource_needs }}
+            <p class="help-text">{{ form.resource_needs.help_text }}</p>
+            {% if form.resource_needs.errors %}
+            <ul class="error-list">
+                {% for error in form.resource_needs.errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+
+        <h2 class="section-title">📄 Evidencia</h2>
+
+        <div class="form-group">
+            <label for="{{ form.meeting_minutes_file.id_for_label }}">
+                {{ form.meeting_minutes_file.label }}
+            </label>
+            {{ form.meeting_minutes_file }}
+            {% if is_edit and review.meeting_minutes_file %}
+            <p class="help-text">Archivo actual: <a href="{{ review.meeting_minutes_file.url }}">{{ review.meeting_minutes_file.name }}</a></p>
+            {% endif %}
+            {% if form.meeting_minutes_file.errors %}
+            <ul class="error-list">
+                {% for error in form.meeting_minutes_file.errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">💾 Guardar</button>
+            <a href="{% if is_edit %}{% url 'core:review_detail' review.pk %}{% else %}{% url 'core:review_list' %}{% endif %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+
+        {% if form.non_field_errors %}
+        <ul class="error-list" style="margin-top: var(--spacing-lg);">
+            {% for error in form.non_field_errors %}
+            <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </form>
+</div>
+{% endblock %}

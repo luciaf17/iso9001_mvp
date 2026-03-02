@@ -35,6 +35,10 @@ from apps.core.views import (
     audit_question_create,
     audit_question_edit,
     audit_question_toggle,
+    review_list,
+    review_detail,
+    review_create,
+    review_edit,
 )
 
 app_name = "core"
@@ -74,4 +78,8 @@ urlpatterns = [
     path("audits/questions/new/", audit_question_create, name="audit_question_new"),
     path("audits/questions/<int:pk>/edit/", audit_question_edit, name="audit_question_edit"),
     path("audits/questions/<int:pk>/toggle/", audit_question_toggle, name="audit_question_toggle"),
+    path("management-reviews/", review_list, name="review_list"),
+    path("management-reviews/new/", review_create, name="review_new"),
+    path("management-reviews/<int:pk>/", review_detail, name="review_detail"),
+    path("management-reviews/<int:pk>/edit/", review_edit, name="review_edit"),
 ]

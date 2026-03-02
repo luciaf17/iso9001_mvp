@@ -1366,3 +1366,114 @@ class QualityObjective(models.Model):
         if self.status != self.Status.CANCELLED:
             self.status = self.calculate_status()
         super().save(*args, **kwargs)
+
+
+class ManagementReview(models.Model):
+    """Revision por la Direccion (ISO 9001 clausula 9.3)."""
+
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.PROTECT,
+        related_name="management_reviews",
+        verbose_name="Organizacion",
+    )
+    review_date = models.DateField(
+        verbose_name="Fecha de revision",
+    )
+    chairperson = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="management_reviews_as_chair",
+        verbose_name="Presidente",
+    )
+    attendees = models.TextField(
+        blank=True,
+        verbose_name="Asistentes",
+        help_text="Lista de asistentes a la reunion",
+    )
+
+    # Entradas (ISO 9.3.2)
+    audit_results_summary = models.TextField(
+        blank=True,
+        verbose_name="Resultados de auditorias",
+        help_text="Resumen de resultados de auditorias internas y externas",
+    )
+    customer_feedback_summary = models.TextField(
+        blank=True,
+        verbose_name="Retroalimentacion del cliente",
+        help_text="Resumen de retroalimentacion de clientes y partes interesadas",
+    )
+    process_performance_summary = models.TextField(
+        blank=True,
+        verbose_name="Desempeno de procesos",
+        help_text="Resumen del desempeno y conformidad de productos/servicios",
+    )
+    nonconformities_status_summary = models.TextField(
+        blank=True,
+        verbose_name="Estado de no conformidades",
+        help_text="Estado de no conformidades y acciones correctivas/preventivas",
+    )
+    risk_opportunity_status_summary = models.TextField(
+        blank=True,
+        verbose_name="Estado de riesgos y oportunidades",
+        help_text="Estado de riesgos y oportunidades identificados",
+    )
+    supplier_performance_summary = models.TextField(
+        blank=True,
+        verbose_name="Desempeno de proveedores",
+        help_text="Resumen del desempeno de proveedores externos",
+    )
+    resource_adequacy_summary = models.TextField(
+        blank=True,
+        verbose_name="Adecuacion de recursos",
+        help_text="Adecuacion de recursos disponibles",
+    )
+
+    # Salidas (ISO 9.3.3)
+    improvement_actions = models.TextField(
+        blank=True,
+        verbose_name="Oportunidades de mejora",
+        help_text="Decisiones y acciones relacionadas con oportunidades de mejora",
+    )
+    changes_to_qms = models.TextField(
+        blank=True,
+        verbose_name="Cambios al SGC",
+        help_text="Cambios necesarios al Sistema de Gestion de Calidad",
+    )
+    resource_needs = models.TextField(
+        blank=True,
+        verbose_name="Necesidades de recursos",
+        help_text="Necesidades de recursos identificadas",
+    )
+
+    # Evidencia
+    meeting_minutes_file = models.FileField(
+        upload_to="management_reviews/",
+        null=True,
+        blank=True,
+        verbose_name="Acta de reunion",
+    )
+
+    # Metadata
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Activo",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Creado el",
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Actualizado el",
+    )
+
+    class Meta:
+        ordering = ["-review_date"]
+        verbose_name = "Revision por la Direccion"
+        verbose_name_plural = "Revisiones por la Direccion"
+
+    def __str__(self):
+        return f"Revision {self.review_date} - {self.organization}"

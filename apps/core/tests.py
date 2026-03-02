@@ -21,6 +21,7 @@ from .models import (
     AuditQuestion,
     AuditAnswer,
     AuditFinding,
+    ManagementReview,
 )
 from .forms import CAPAActionForm
 from .services import log_audit_event
@@ -2111,3 +2112,106 @@ class AuditQuestionViewsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["formset"].total_form_count(), 1)
+
+
+class ManagementReviewTests(TestCase):
+    """Tests para el modelo ManagementReview y vistas relacionadas."""
+
+    def setUp(self):
+        """Configurar datos de prueba."""
+        # Get the organization that the view will retrieve via _get_current_organization()
+        # This is the first active org if one exists, otherwise the first org period
+        self.organization = Organization.objects.filter(is_active=True).first() or Organization.objects.first()
+        
+        # If no orgs exist at all, create one
+        if not self.organization:
+            self.organization = Organization.objects.create(name="Test Org", is_active=True)
+        
+        # Crear usuario con permisos
+        self.admin_user = User.objects.create_user(
+            username="admin", password="admin123", is_staff=True, is_superuser=True
+        )
+        admin_group, _ = Group.objects.get_or_create(name="Administradores")
+        self.admin_user.groups.add(admin_group)
+        
+        # Crear usuario sin permisos
+        self.regular_user = User.objects.create_user(
+            username="regular", password="regular123"
+        )
+
+    def test_create_review_generates_audit_event(self):
+        """Verifica que crear una revisión genera un AuditEvent."""
+        self.client.login(username="admin", password="admin123")
+        
+        review_data = {
+            "review_date": date.today().strftime("%Y-%m-%d"),
+            "chairperson": self.admin_user.pk,
+            "attendees": "Juan Pérez, María García",
+            "audit_results_summary": "Auditoría exitosa",
+            "customer_feedback_summary": "Clientes satisfechos",
+            "improvement_actions": "Mejorar procesos",
+            "changes_to_qms": "Actualizar procedimientos",
+        }
+        
+        initial_count = AuditEvent.objects.count()
+        
+        response = self.client.post(reverse("core:review_new"), review_data)
+        
+        self.assertEqual(response.status_code, 302)  # Redirect after success
+        self.assertEqual(ManagementReview.objects.count(), 1)
+        
+        # Verificar que se creó un AuditEvent
+        self.assertEqual(AuditEvent.objects.count(), initial_count + 1)
+        
+        event = AuditEvent.objects.latest("timestamp")
+        self.assertEqual(event.action, "core.management_review.created")
+        self.assertEqual(event.actor, self.admin_user)
+        self.assertIn("review_date", event.metadata)
+
+    def test_non_admin_cannot_create_review(self):
+        """Verifica que usuarios sin permisos no pueden crear revisiones."""
+        self.client.login(username="regular", password="regular123")
+        
+        review_data = {
+            "review_date": date.today().strftime("%Y-%m-%d"),
+            "attendees": "Test",
+        }
+        
+        response = self.client.post(reverse("core:review_new"), review_data)
+        
+        # Usuario sin permisos es redirigido
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(ManagementReview.objects.count(), 0)
+
+    def test_review_list_renders(self):
+        """Verifica que la lista de revisiones se renderiza correctamente."""
+        ManagementReview.objects.create(
+            organization=self.organization,
+            review_date=date.today(),
+            chairperson=self.admin_user,
+        )
+        
+        self.client.login(username="admin", password="admin123")
+        response = self.client.get(reverse("core:review_list"))
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("reviews", response.context)
+        self.assertEqual(len(response.context["reviews"]), 1)
+
+    def test_review_detail_renders(self):
+        """Verifica que el detalle de revisión se renderiza correctamente."""
+        review = ManagementReview.objects.create(
+            organization=self.organization,
+            review_date=date.today(),
+            chairperson=self.admin_user,
+            attendees="Test attendees",
+            audit_results_summary="Test summary",
+        )
+        
+        self.client.login(username="admin", password="admin123")
+        response = self.client.get(reverse("core:review_detail", args=[review.pk]))
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["review"], review)
+        self.assertContains(response, "Test attendees")
+        self.assertContains(response, "Test summary")

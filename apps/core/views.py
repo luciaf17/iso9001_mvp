@@ -17,6 +17,7 @@ from apps.core.forms import (
 	AuditAnswerFormSet,
 	AuditFindingForm,
 	AuditQuestionForm,
+	ManagementReviewForm,
 )
 from apps.core.models import (
 	Organization,
@@ -32,6 +33,7 @@ from apps.core.models import (
 	AuditQuestion,
 	AuditAnswer,
 	AuditFinding,
+	ManagementReview,
 )
 from apps.core.services import log_audit_event
 from apps.core.utils import (
@@ -2003,3 +2005,151 @@ def audit_finding_create_nc(request, pk):
 
 	messages.success(request, "NC creada correctamente desde el hallazgo.")
 	return redirect("core:nc_detail", pk=nc.pk)
+
+
+# ==========================================
+# Management Review Views
+# ==========================================
+
+
+@login_required
+def review_list(request):
+	"""Lista de revisiones por la direccion."""
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	reviews = ManagementReview.objects.filter(
+		organization=organization
+	).select_related("chairperson", "organization").order_by("-review_date")
+
+	can_edit = can_edit_audit(request.user)
+
+	return render(
+		request,
+		"core/review_list.html",
+		{
+			"reviews": reviews,
+			"organization": organization,
+			"can_edit": can_edit,
+		},
+	)
+
+
+@login_required
+def review_detail(request, pk):
+	"""Detalle de revision por la direccion."""
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	review = get_object_or_404(
+		ManagementReview,
+		pk=pk,
+		organization=organization,
+	)
+
+	can_edit = can_edit_audit(request.user)
+
+	return render(
+		request,
+		"core/review_detail.html",
+		{
+			"review": review,
+			"organization": organization,
+			"can_edit": can_edit,
+		},
+	)
+
+
+@login_required
+def review_create(request):
+	"""Crear nueva revision por la direccion."""
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	if not can_edit_audit(request.user):
+		messages.error(request, "No tiene permisos para crear revisiones por la direccion.")
+		return redirect("core:review_list")
+
+	if request.method == "POST":
+		form = ManagementReviewForm(request.POST, request.FILES)
+		if form.is_valid():
+			review = form.save(commit=False)
+			review.organization = organization
+			review.save()
+			log_audit_event(
+				actor=request.user,
+				action="core.management_review.created",
+				instance=review,
+				metadata={
+					"review_date": str(review.review_date),
+				},
+				object_type_override="ManagementReview",
+			)
+			messages.success(request, "Revision por la direccion creada correctamente.")
+			return redirect("core:review_detail", pk=review.pk)
+	else:
+		form = ManagementReviewForm()
+
+	return render(
+		request,
+		"core/review_form.html",
+		{
+			"form": form,
+			"organization": organization,
+			"is_edit": False,
+		},
+	)
+
+
+@login_required
+def review_edit(request, pk):
+	"""Editar revision por la direccion."""
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	review = get_object_or_404(
+		ManagementReview,
+		pk=pk,
+		organization=organization,
+	)
+
+	if not can_edit_audit(request.user):
+		messages.error(request, "No tiene permisos para editar revisiones por la direccion.")
+		return redirect("core:review_detail", pk=review.pk)
+
+	if request.method == "POST":
+		form = ManagementReviewForm(request.POST, request.FILES, instance=review)
+		if form.is_valid():
+			review = form.save()
+			log_audit_event(
+				actor=request.user,
+				action="core.management_review.updated",
+				instance=review,
+				metadata={
+					"review_date": str(review.review_date),
+				},
+				object_type_override="ManagementReview",
+			)
+			messages.success(request, "Revision por la direccion actualizada correctamente.")
+			return redirect("core:review_detail", pk=review.pk)
+	else:
+		form = ManagementReviewForm(instance=review)
+
+	return render(
+		request,
+		"core/review_form.html",
+		{
+			"form": form,
+			"organization": organization,
+			"is_edit": True,
+			"review": review,
+		},
+	)

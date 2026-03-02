@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle Revisión por la Dirección{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-xl);
+    }
+
+    .detail-header a {
+        color: var(--color-gray-600);
+        text-decoration: none;
+        transition: var(--transition);
+    }
+
+    .detail-header a:hover {
+        color: var(--color-primary);
+        text-decoration: underline;
+    }
+
+    .detail-card {
+        background: var(--color-white);
+        border: 2px solid var(--color-primary-light);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-lg);
+        margin-bottom: var(--spacing-xl);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .detail-card h1 {
+        margin-bottom: var(--spacing-lg);
+        color: var(--color-primary);
+    }
+
+    .detail-card h2 {
+        margin-bottom: var(--spacing-md);
+        color: var(--color-primary);
+        font-size: var(--font-size-lg);
+        border-bottom: 2px solid var(--color-primary-light);
+        padding-bottom: var(--spacing-sm);
+    }
+
+    .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-lg);
+    }
+
+    .detail-item strong {
+        color: var(--color-dark);
+        display: block;
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .detail-item span {
+        color: var(--color-gray-700);
+    }
+
+    .text-section {
+        margin-top: var(--spacing-lg);
+    }
+
+    .text-section strong {
+        color: var(--color-dark);
+        display: block;
+        margin-bottom: var(--spacing-sm);
+        font-weight: 600;
+    }
+
+    .text-content {
+        color: var(--color-gray-700);
+        line-height: 1.6;
+        white-space: pre-wrap;
+        background: var(--color-gray-50);
+        padding: var(--spacing-md);
+        border-radius: var(--border-radius-md);
+        border-left: 4px solid var(--color-primary-light);
+    }
+
+    .section-badge {
+        display: inline-block;
+        background: var(--color-primary-light);
+        color: var(--color-primary);
+        padding: 4px 8px;
+        border-radius: var(--border-radius-sm);
+        font-size: var(--font-size-xs);
+        font-weight: 700;
+        text-transform: uppercase;
+        margin-left: var(--spacing-sm);
+    }
+
+    @media (max-width: 768px) {
+        .detail-header {
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-header">
+    <a href="{% url 'core:review_list' %}">← Volver a Revisiones</a>
+    <div>
+        {% if can_edit %}
+        <a href="{% url 'core:review_edit' review.pk %}" class="btn btn-primary">Editar</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="detail-card">
+    <h1>Revisión por la Dirección - {{ review.review_date|date:"d/m/Y" }}</h1>
+
+    <div class="detail-grid">
+        <div class="detail-item">
+            <strong>Fecha de Revisión</strong>
+            <span>{{ review.review_date|date:"d/m/Y" }}</span>
+        </div>
+        <div class="detail-item">
+            <strong>Presidente</strong>
+            <span>{% if review.chairperson %}{{ review.chairperson.get_username }}{% else %}-{% endif %}</span>
+        </div>
+        <div class="detail-item">
+            <strong>Organización</strong>
+            <span>{{ review.organization }}</span>
+        </div>
+        <div class="detail-item">
+            <strong>Última Actualización</strong>
+            <span>{{ review.updated_at|date:"d/m/Y H:i" }}</span>
+        </div>
+    </div>
+
+    {% if review.attendees %}
+    <div class="text-section">
+        <strong>Asistentes</strong>
+        <div class="text-content">{{ review.attendees }}</div>
+    </div>
+    {% endif %}
+
+    {% if review.meeting_minutes_file %}
+    <div class="text-section">
+        <strong>Acta de Reunión</strong>
+        <div style="margin-top: var(--spacing-sm);">
+            <a href="{{ review.meeting_minutes_file.url }}" class="btn btn-secondary">📥 Descargar Acta</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<div class="detail-card">
+    <h2>📥 Entradas <span class="section-badge">ISO 9.3.2</span></h2>
+
+    {% if review.audit_results_summary %}
+    <div class="text-section">
+        <strong>Resultados de Auditorías</strong>
+        <div class="text-content">{{ review.audit_results_summary }}</div>
+    </div>
+    {% endif %}
+
+    {% if review.customer_feedback_summary %}
+    <div class="text-section">
+        <strong>Retroalimentación del Cliente</strong>
+        <div class="text-content">{{ review.customer_feedback_summary }}</div>
+    </div>
+    {% endif %}
+
+    {% if review.process_performance_summary %}
+    <div class="text-section">
+        <strong>Desempeño de Procesos</strong>
+        <div class="text-content">{{ review.process_performance_summary }}</div>
+    </div>
+    {% endif %}
+
+    {% if review.nonconformities_status_summary %}
+    <div class="text-section">
+        <strong>Estado de No Conformidades</strong>
+        <div class="text-content">{{ review.nonconformities_status_summary }}</div>
+    </div>
+    {% endif %}
+
+    {% if review.risk_opportunity_status_summary %}
+    <div class="text-section">
+        <strong>Estado de Riesgos y Oportunidades</strong>
+        <div class="text-content">{{ review.risk_opportunity_status_summary }}</div>
+    </div>
+    {% endif %}
+
+    {% if review.supplier_performance_summary %}
+    <div class="text-section">
+        <strong>Desempeño de Proveedores</strong>
+        <div class="text-content">{{ review.supplier_performance_summary }}</div>
+    </div>
+    {% endif %}
+
+    {% if review.resource_adequacy_summary %}
+    <div class="text-section">
+        <strong>Adecuación de Recursos</strong>
+        <div class="text-content">{{ review.resource_adequacy_summary }}</div>
+    </div>
+    {% endif %}
+
+    {% if not review.audit_results_summary and not review.customer_feedback_summary and not review.process_performance_summary and not review.nonconformities_status_summary and not review.risk_opportunity_status_summary and not review.supplier_performance_summary and not review.resource_adequacy_summary %}
+    <div style="text-align: center; padding: var(--spacing-lg); color: var(--color-gray-600);">
+        <em>No se han registrado entradas para esta revisión</em>
+    </div>
+    {% endif %}
+</div>
+
+<div class="detail-card">
+    <h2>📤 Salidas <span class="section-badge">ISO 9.3.3</span></h2>
+
+    {% if review.improvement_actions %}
+    <div class="text-section">
+        <strong>Oportunidades de Mejora</strong>
+        <div class="text-content">{{ review.improvement_actions }}</div>
+    </div>
+    {% endif %}
+
+    {% if review.changes_to_qms %}
+    <div class="text-section">
+        <strong>Cambios al Sistema de Gestión de Calidad</strong>
+        <div class="text-content">{{ review.changes_to_qms }}</div>
+    </div>
+    {% endif %}
+
+    {% if review.resource_needs %}
+    <div class="text-section">
+        <strong>Necesidades de Recursos</strong>
+        <div class="text-content">{{ review.resource_needs }}</div>
+    </div>
+    {% endif %}
+
+    {% if not review.improvement_actions and not review.changes_to_qms and not review.resource_needs %}
+    <div style="text-align: center; padding: var(--spacing-lg); color: var(--color-gray-600);">
+        <em>No se han registrado salidas para esta revisión</em>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

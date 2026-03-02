@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Revisiones por la Dirección{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-xl);
+    }
+
+    .page-header h1 {
+        margin: 0;
+        color: var(--color-primary);
+    }
+
+    .review-card {
+        background: var(--color-white);
+        border: 2px solid var(--color-primary-light);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-lg);
+        margin-bottom: var(--spacing-lg);
+        box-shadow: var(--shadow-sm);
+        transition: var(--transition);
+        cursor: pointer;
+    }
+
+    .review-card:hover {
+        box-shadow: var(--shadow-md);
+        border-color: var(--color-primary);
+    }
+
+    .review-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: var(--spacing-md);
+    }
+
+    .review-date {
+        font-size: var(--font-size-lg);
+        font-weight: 700;
+        color: var(--color-primary);
+    }
+
+    .review-meta {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: var(--spacing-md);
+        margin-top: var(--spacing-md);
+        font-size: var(--font-size-sm);
+    }
+
+    .review-meta-item strong {
+        display: block;
+        color: var(--color-dark);
+        margin-bottom: 2px;
+    }
+
+    .review-meta-item span {
+        color: var(--color-gray-600);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: var(--spacing-xl);
+        color: var(--color-gray-600);
+        background: var(--color-white);
+        border: 2px dashed var(--color-gray-300);
+        border-radius: var(--border-radius-lg);
+    }
+
+    .empty-state-icon {
+        font-size: 4rem;
+        margin-bottom: var(--spacing-md);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📊 Revisiones por la Dirección</h1>
+    {% if can_edit %}
+    <a href="{% url 'core:review_new' %}" class="btn btn-primary">➕ Nueva Revisión</a>
+    {% endif %}
+</div>
+
+{% if reviews %}
+    {% for review in reviews %}
+    <div class="review-card" onclick="window.location='{% url 'core:review_detail' review.pk %}'">
+        <div class="review-header">
+            <div class="review-date">Revisión {{ review.review_date|date:"d/m/Y" }}</div>
+        </div>
+
+        <div class="review-meta">
+            <div class="review-meta-item">
+                <strong>Presidente</strong>
+                <span>{% if review.chairperson %}{{ review.chairperson.get_username }}{% else %}-{% endif %}</span>
+            </div>
+            <div class="review-meta-item">
+                <strong>Organización</strong>
+                <span>{{ review.organization }}</span>
+            </div>
+            <div class="review-meta-item">
+                <strong>Actualizado</strong>
+                <span>{{ review.updated_at|date:"d/m/Y H:i" }}</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">📋</div>
+        <h3>No hay revisiones registradas</h3>
+        <p>Las revisiones por la dirección son requeridas por ISO 9001 cláusula 9.3</p>
+        {% if can_edit %}
+        <div style="margin-top: var(--spacing-lg);">
+            <a href="{% url 'core:review_new' %}" class="btn btn-primary">Crear primera revisión</a>
+        </div>
+        {% endif %}
+    </div>
+{% endif %}
+{% endblock %}
