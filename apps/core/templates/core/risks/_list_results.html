@@ -1,0 +1,43 @@
+{% if risks %}
+<table class="risks-table">
+    <thead>
+        <tr>
+            <th>Titulo</th>
+            <th>Tipo</th>
+            <th>Proceso</th>
+            <th>Puntaje</th>
+            <th>Nivel</th>
+            <th>Estado</th>
+            <th>Vencimiento</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for risk in risks %}
+        <tr>
+            <td><strong>{{ risk.title }}</strong></td>
+            <td>{{ risk.get_kind_display }}</td>
+            <td>{% if risk.related_process %}{{ risk.related_process }}{% else %}-{% endif %}</td>
+            <td>{{ risk.score }}</td>
+            <td>
+                <span class="level-badge {% if risk.level == 'LOW' %}level-low{% elif risk.level == 'MEDIUM' %}level-medium{% else %}level-high{% endif %}">
+                    {{ risk.get_level_display }}
+                </span>
+            </td>
+            <td><span class="status-badge">{{ risk.get_status_display }}</span></td>
+            <td>{% if risk.due_date %}{{ risk.due_date|date:"d/m/Y" }}{% else %}-{% endif %}</td>
+            <td>
+                <div class="action-links">
+                    <a class="btn btn-secondary" href="{% url 'core:risk_detail' risk.pk %}">Ver</a>
+                    {% if can_edit %}
+                    <a class="btn btn-primary" href="{% url 'core:risk_edit' risk.pk %}">Editar</a>
+                    {% endif %}
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="empty-state">No hay riesgos u oportunidades registrados.</p>
+{% endif %}

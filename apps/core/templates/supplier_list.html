@@ -115,7 +115,7 @@
 </div>
 
 <div class="filters-card">
-    <form method="get" class="filters-grid">
+    <form method="get" class="filters-grid" hx-get="{% url 'core:supplier_list' %}" hx-target="#results" hx-push-url="true" hx-trigger="change delay:300ms, submit">
         <div class="form-group">
             <label for="status-filter" class="form-label">Estado</label>
             <select class="form-select" id="status-filter" name="status">
@@ -144,84 +144,12 @@
             </select>
         </div>
         <div class="form-group">
-            <button type="submit" class="btn btn-secondary">Filtrar</button>
+            <a class="btn btn-secondary" href="{% url 'core:supplier_list' %}">Limpiar</a>
         </div>
     </form>
 </div>
 
-{% if suppliers_with_status %}
-    <table class="suppliers-table">
-        <thead>
-            <tr>
-                <th>Nombre</th>
-                <th>Categoría</th>
-                <th>Estado</th>
-                <th>Próxima Evaluación</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in suppliers_with_status %}
-            <tr>
-                <td>
-                    <a href="{% url 'core:supplier_detail' item.supplier.pk %}" class="supplier-name">
-                        {{ item.supplier.name }}
-                    </a>
-                    {% if item.supplier.cuit %}
-                    <br><small class="text-muted">{{ item.supplier.cuit }}</small>
-                    {% endif %}
-                </td>
-                <td>
-                    <span class="badge badge-primary">{{ item.supplier.get_category_display }}</span>
-                </td>
-                <td>
-                    {% if not item.supplier.is_active %}
-                    <span class="badge badge-danger">INACTIVO</span>
-                    {% elif item.supplier.status == "PENDING" %}
-                    <span class="badge badge-warning">PENDIENTE</span>
-                    {% else %}
-                    <span class="badge badge-success">ACTIVO</span>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if item.supplier.next_evaluation_date %}
-                        {% if item.is_overdue %}
-                        <span class="badge badge-danger">{{ item.supplier.next_evaluation_date|date:"d/m/Y" }}</span>
-                        {% else %}
-                        {{ item.supplier.next_evaluation_date|date:"d/m/Y" }}
-                        {% endif %}
-                    {% else %}
-                    <span class="text-muted">-</span>
-                    {% endif %}
-                </td>
-                <td>
-                    <div class="actions">
-                        <a href="{% url 'core:supplier_detail' item.supplier.pk %}" class="btn btn-sm btn-info">Ver</a>
-                        {% if can_edit %}
-                        <a href="{% url 'core:supplier_edit' item.supplier.pk %}" class="btn btn-sm btn-secondary">Editar</a>
-                        {% endif %}
-                    </div>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-{% else %}
-    <div class="empty-state">
-        <h3>No hay proveedores registrados.</h3>
-        <p class="text-muted">Crea el primer proveedor para comenzar la evaluación y seguimiento.</p>
-        {% if can_edit %}
-        <a href="{% url 'core:supplier_new' %}" class="btn btn-primary">Crear proveedor</a>
-        {% endif %}
-    </div>
-{% endif %}
-
-<script>
-    // Filtros con combo
-    document.querySelectorAll('select').forEach(select => {
-        select.addEventListener('change', function() {
-            this.form.submit();
-        });
-    });
-</script>
+<div id="results">
+    {% include "core/suppliers/_list_results.html" %}
+</div>
 {% endblock %}

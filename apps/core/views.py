@@ -215,21 +215,27 @@ def stakeholder_list(request):
 
 	can_edit = can_edit_stakeholders(request.user)
 	processes = Process.objects.filter(organization=organization, is_active=True).order_by("code")
+	is_htmx = request.headers.get("HX-Request") == "true"
+
+	context = {
+		"stakeholders": stakeholders,
+		"organization": organization,
+		"can_edit": can_edit,
+		"stakeholder_types": Stakeholder.StakeholderType.choices,
+		"processes": processes,
+		"selected_search": search,
+		"selected_type": stakeholder_type,
+		"selected_process_id": process_id,
+		"selected_is_active": is_active,
+	}
+
+	if is_htmx:
+		return render(request, "core/stakeholders/_list_results.html", context)
 
 	return render(
 		request,
 		"core/stakeholder_list.html",
-		{
-			"stakeholders": stakeholders,
-			"organization": organization,
-			"can_edit": can_edit,
-			"stakeholder_types": Stakeholder.StakeholderType.choices,
-			"processes": processes,
-			"selected_search": search,
-			"selected_type": stakeholder_type,
-			"selected_process_id": process_id,
-			"selected_is_active": is_active,
-		},
+		context,
 	)
 
 
@@ -392,27 +398,33 @@ def risk_list(request):
 	can_edit = can_edit_risks(request.user)
 	processes = Process.objects.filter(organization=organization, is_active=True).order_by("code")
 	stakeholders = Stakeholder.objects.filter(organization=organization).order_by("name")
+	is_htmx = request.headers.get("HX-Request") == "true"
+
+	context = {
+		"risks": risks,
+		"organization": organization,
+		"can_edit": can_edit,
+		"process_types": Process.ProcessType.choices,
+		"processes": processes,
+		"stakeholders": stakeholders,
+		"status_choices": RiskOpportunity.Status.choices,
+		"level_choices": RiskOpportunity.Level.choices,
+		"kind_choices": RiskOpportunity.Kind.choices,
+		"selected_process_type": process_type,
+		"selected_process_id": process_id,
+		"selected_stakeholder_id": stakeholder_id,
+		"selected_status": status,
+		"selected_level": level,
+		"selected_kind": kind,
+	}
+
+	if is_htmx:
+		return render(request, "core/risks/_list_results.html", context)
 
 	return render(
 		request,
 		"core/risks_list.html",
-		{
-			"risks": risks,
-			"organization": organization,
-			"can_edit": can_edit,
-			"process_types": Process.ProcessType.choices,
-			"processes": processes,
-			"stakeholders": stakeholders,
-			"status_choices": RiskOpportunity.Status.choices,
-			"level_choices": RiskOpportunity.Level.choices,
-			"kind_choices": RiskOpportunity.Kind.choices,
-			"selected_process_type": process_type,
-			"selected_process_id": process_id,
-			"selected_stakeholder_id": stakeholder_id,
-			"selected_status": status,
-			"selected_level": level,
-			"selected_kind": kind,
-		},
+		context,
 	)
 
 
@@ -636,30 +648,35 @@ def risk_dashboard(request):
 		f"kind={kind}" if kind else "",
 	]).lstrip("&")
 
+	context = {
+		"organization": organization,
+		"matrix_grid": matrix_grid,
+		"level_summary": level_dict,
+		"kind_summary": kind_dict,
+		"total_risks": total_risks,
+		"can_edit": can_edit,
+		"process_types": Process.ProcessType.choices,
+		"processes": processes,
+		"stakeholders": stakeholders,
+		"status_choices": RiskOpportunity.Status.choices,
+		"level_choices": RiskOpportunity.Level.choices,
+		"kind_choices": RiskOpportunity.Kind.choices,
+		"selected_process_type": process_type,
+		"selected_process_id": process_id,
+		"selected_stakeholder_id": stakeholder_id,
+		"selected_status": status,
+		"selected_level": level,
+		"selected_kind": kind,
+		"query_params": query_params,
+	}
+
+	if request.headers.get("HX-Request") == "true":
+		return render(request, "core/risks/_dashboard_results.html", context)
+
 	return render(
 		request,
 		"core/risks_dashboard.html",
-		{
-			"organization": organization,
-			"matrix_grid": matrix_grid,
-			"level_summary": level_dict,
-			"kind_summary": kind_dict,
-			"total_risks": total_risks,
-			"can_edit": can_edit,
-			"process_types": Process.ProcessType.choices,
-			"processes": processes,
-			"stakeholders": stakeholders,
-			"status_choices": RiskOpportunity.Status.choices,
-			"level_choices": RiskOpportunity.Level.choices,
-			"kind_choices": RiskOpportunity.Kind.choices,
-			"selected_process_type": process_type,
-			"selected_process_id": process_id,
-			"selected_stakeholder_id": stakeholder_id,
-			"selected_status": status,
-			"selected_level": level,
-			"selected_kind": kind,
-			"query_params": query_params,
-		},
+		context,
 	)
 
 def _configure_nc_form(form, organization):
@@ -711,23 +728,29 @@ def nc_list(request):
 
 	can_edit = can_edit_nc(request.user)
 	processes = Process.objects.filter(organization=organization, is_active=True).order_by("code")
+	is_htmx = request.headers.get("HX-Request") == "true"
+
+	context = {
+		"ncs": ncs,
+		"organization": organization,
+		"can_edit": can_edit,
+		"processes": processes,
+		"origin_choices": NoConformity.Origin.choices,
+		"severity_choices": NoConformity.Severity.choices,
+		"status_choices": NoConformity.Status.choices,
+		"selected_origin": origin,
+		"selected_severity": severity,
+		"selected_status": status,
+		"selected_process_id": process_id,
+	}
+
+	if is_htmx:
+		return render(request, "core/nc/_list_results.html", context)
 
 	return render(
 		request,
 		"core/nc_list.html",
-		{
-			"ncs": ncs,
-			"organization": organization,
-			"can_edit": can_edit,
-			"processes": processes,
-			"origin_choices": NoConformity.Origin.choices,
-			"severity_choices": NoConformity.Severity.choices,
-			"status_choices": NoConformity.Status.choices,
-			"selected_origin": origin,
-			"selected_severity": severity,
-			"selected_status": status,
-			"selected_process_id": process_id,
-		},
+		context,
 	)
 
 
@@ -1212,21 +1235,27 @@ def quality_objective_list(request):
 	owners = User.objects.filter(is_active=True).filter(
 		quality_objectives__organization=organization,
 	).distinct()
+	is_htmx = request.headers.get("HX-Request") == "true"
+
+	context = {
+		"objectives": objectives_with_progress,
+		"organization": organization,
+		"can_edit": can_edit,
+		"status_choices": QualityObjective.Status.choices,
+		"processes": processes,
+		"owners": owners,
+		"selected_status": status,
+		"selected_process_id": process_id,
+		"selected_owner_id": owner_id,
+	}
+
+	if is_htmx:
+		return render(request, "core/objectives/_list_results.html", context)
 
 	return render(
 		request,
 		"core/objective_list.html",
-		{
-			"objectives": objectives_with_progress,
-			"organization": organization,
-			"can_edit": can_edit,
-			"status_choices": QualityObjective.Status.choices,
-			"processes": processes,
-			"owners": owners,
-			"selected_status": status,
-			"selected_process_id": process_id,
-			"selected_owner_id": owner_id,
-		},
+		context,
 	)
 
 
@@ -1433,18 +1462,24 @@ def audit_question_list(request):
 		questions = questions.filter(text__icontains=search)
 
 	questions = questions.order_by("ordering", "id")
+	is_htmx = request.headers.get("HX-Request") == "true"
+
+	context = {
+		"questions": questions,
+		"organization": organization,
+		"process_types": Process.ProcessType.choices,
+		"selected_is_active": is_active,
+		"selected_process_type": process_type,
+		"selected_search": search,
+	}
+
+	if is_htmx:
+		return render(request, "core/audit_questions/_list_results.html", context)
 
 	return render(
 		request,
 		"core/audit_question_list.html",
-		{
-			"questions": questions,
-			"organization": organization,
-			"process_types": Process.ProcessType.choices,
-			"selected_is_active": is_active,
-			"selected_process_type": process_type,
-			"selected_search": search,
-		},
+		context,
 	)
 
 
@@ -1616,21 +1651,27 @@ def audit_list(request):
 
 	can_edit = can_edit_audit(request.user)
 	processes = Process.objects.filter(organization=organization, is_active=True).order_by("code")
+	is_htmx = request.headers.get("HX-Request") == "true"
+
+	context = {
+		"audits": audits,
+		"organization": organization,
+		"can_edit": can_edit,
+		"status_choices": InternalAudit.Status.choices,
+		"processes": processes,
+		"selected_status": status,
+		"selected_process_id": process_id,
+		"selected_date_from": date_from,
+		"selected_date_to": date_to,
+	}
+
+	if is_htmx:
+		return render(request, "core/audits/_list_results.html", context)
 
 	return render(
 		request,
 		"core/audit_list.html",
-		{
-			"audits": audits,
-			"organization": organization,
-			"can_edit": can_edit,
-			"status_choices": InternalAudit.Status.choices,
-			"processes": processes,
-			"selected_status": status,
-			"selected_process_id": process_id,
-			"selected_date_from": date_from,
-			"selected_date_to": date_to,
-		},
+		context,
 	)
 
 
@@ -2188,16 +2229,29 @@ def indicator_list(request):
 		is_active=True
 	).select_related("related_process", "organization").prefetch_related("measurements")
 
+	process_id = request.GET.get("process_id", "")
+	if process_id:
+		indicators = indicators.filter(related_process_id=process_id)
+
 	can_edit = can_edit_audit(request.user)
+	processes = Process.objects.filter(organization=organization, is_active=True).order_by("code")
+	is_htmx = request.headers.get("HX-Request") == "true"
+
+	context = {
+		"indicators": indicators,
+		"organization": organization,
+		"can_edit": can_edit,
+		"processes": processes,
+		"selected_process_id": process_id,
+	}
+
+	if is_htmx:
+		return render(request, "core/indicators/_list_results.html", context)
 
 	return render(
 		request,
 		"core/indicator_list.html",
-		{
-			"indicators": indicators,
-			"organization": organization,
-			"can_edit": can_edit,
-		},
+		context,
 	)
 
 
@@ -2404,18 +2458,28 @@ def nonconforming_output_list(request):
 		outputs = outputs.filter(related_process_id=request.GET.get("process_id"))
 
 	can_edit = can_edit_nonconforming_output(request.user)
+	is_htmx = request.headers.get("HX-Request") == "true"
+
+	context = {
+		"outputs": outputs,
+		"organization": organization,
+		"can_edit": can_edit,
+		"processes": Process.objects.filter(
+			organization=organization
+		).order_by("name"),
+		"selected_status": status,
+		"selected_severity": severity,
+		"selected_disposition": disposition,
+		"selected_process_id": request.GET.get("process_id", ""),
+	}
+
+	if is_htmx:
+		return render(request, "core/pnc/_list_results.html", context)
 
 	return render(
 		request,
 		"core/nonconforming_output_list.html",
-		{
-			"outputs": outputs,
-			"organization": organization,
-			"can_edit": can_edit,
-			"processes": Process.objects.filter(
-				organization=organization
-			).order_by("name"),
-		},
+		context,
 	)
 
 
@@ -2620,6 +2684,10 @@ def supplier_list(request):
 		"selected_category": category_filter,
 		"selected_process": process_filter,
 	}
+
+	if request.headers.get("HX-Request") == "true":
+		return render(request, "core/suppliers/_list_results.html", context)
+
 	return render(request, "supplier_list.html", context)
 
 
@@ -2842,7 +2910,7 @@ def dashboard_card_nc(request):
 	"""Card: Non-conformities (NC) - open ones."""
 	organization = _get_current_organization()
 	if not organization:
-		return render(request, "core/dashboard/card_nc.html", {"ncs": [], "count": 0})
+		return render(request, "core/dashboard/_card_nc.html", {"ncs": [], "count": 0})
 	
 	# Get filters from request
 	site_id = request.GET.get("site_id")
@@ -2863,7 +2931,7 @@ def dashboard_card_nc(request):
 	count = ncs.count()
 	ncs = ncs[:5]  # Slice AFTER applying all filters
 	
-	return render(request, "core/dashboard/card_nc.html", {
+	return render(request, "core/dashboard/_card_nc.html", {
 		"ncs": ncs,
 		"count": count,
 	})
@@ -2874,7 +2942,7 @@ def dashboard_card_capa(request):
 	"""Card: CAPA Actions - overdue ones."""
 	organization = _get_current_organization()
 	if not organization:
-		return render(request, "core/dashboard/card_capa.html", {"capas": [], "count": 0})
+		return render(request, "core/dashboard/_card_capa.html", {"capas": [], "count": 0})
 	
 	site_id = request.GET.get("site_id")
 	process_type = request.GET.get("process_type")
@@ -2896,7 +2964,7 @@ def dashboard_card_capa(request):
 	
 	count = len(capas)
 	
-	return render(request, "core/dashboard/card_capa.html", {
+	return render(request, "core/dashboard/_card_capa.html", {
 		"capas": capas,
 		"count": count,
 	})
@@ -2907,7 +2975,7 @@ def dashboard_card_indicadores(request):
 	"""Card: Quality Indicators - out of target or overdue."""
 	organization = _get_current_organization()
 	if not organization:
-		return render(request, "core/dashboard/card_indicadores.html", {"indicators": [], "count": 0})
+		return render(request, "core/dashboard/_card_indicators.html", {"indicators": [], "count": 0})
 	
 	site_id = request.GET.get("site_id")
 	process_type = request.GET.get("process_type")
@@ -2935,7 +3003,7 @@ def dashboard_card_indicadores(request):
 	problematic = sorted(problematic, key=lambda x: x[0].name)[:5]
 	count = len(problematic)
 	
-	return render(request, "core/dashboard/card_indicadores.html", {
+	return render(request, "core/dashboard/_card_indicators.html", {
 		"indicators": problematic,
 		"count": count,
 	})
@@ -2946,7 +3014,7 @@ def dashboard_card_pnc(request):
 	"""Card: Non-conforming Output (PNC) - open ones."""
 	organization = _get_current_organization()
 	if not organization:
-		return render(request, "core/dashboard/card_pnc.html", {"pncs": [], "count": 0})
+		return render(request, "core/dashboard/_card_pnc.html", {"pncs": [], "count": 0})
 	
 	site_id = request.GET.get("site_id")
 	process_type = request.GET.get("process_type")
@@ -2965,7 +3033,7 @@ def dashboard_card_pnc(request):
 	count = pncs.count()
 	pncs = pncs[:5]  # Slice AFTER applying all filters
 	
-	return render(request, "core/dashboard/card_pnc.html", {
+	return render(request, "core/dashboard/_card_pnc.html", {
 		"pncs": pncs,
 		"count": count,
 	})
@@ -2976,7 +3044,7 @@ def dashboard_card_suppliers(request):
 	"""Card: Suppliers with overdue evaluations."""
 	organization = _get_current_organization()
 	if not organization:
-		return render(request, "core/dashboard/card_suppliers.html", {"suppliers": [], "count": 0})
+		return render(request, "core/dashboard/_card_suppliers.html", {"suppliers": [], "count": 0})
 	
 	site_id = request.GET.get("site_id")
 	process_type = request.GET.get("process_type")
@@ -2999,7 +3067,7 @@ def dashboard_card_suppliers(request):
 	count = suppliers.count()
 	suppliers = suppliers[:5]  # Slice AFTER applying all filters
 	
-	return render(request, "core/dashboard/card_suppliers.html", {
+	return render(request, "core/dashboard/_card_suppliers.html", {
 		"suppliers": suppliers,
 		"count": count,
 	})
@@ -3010,7 +3078,7 @@ def dashboard_card_auditorias(request):
 	"""Card: Internal Audits - upcoming in next 30 days."""
 	organization = _get_current_organization()
 	if not organization:
-		return render(request, "core/dashboard/card_auditorias.html", {"audits": [], "count": 0})
+		return render(request, "core/dashboard/_card_audits.html", {"audits": [], "count": 0})
 	
 	site_id = request.GET.get("site_id")
 	process_type = request.GET.get("process_type")
@@ -3036,7 +3104,19 @@ def dashboard_card_auditorias(request):
 	count = audits.count()
 	audits = audits[:5]  # Slice AFTER applying all filters
 	
-	return render(request, "core/dashboard/card_auditorias.html", {
+	return render(request, "core/dashboard/_card_audits.html", {
 		"audits": audits,
 		"count": count,
 	})
+
+
+@login_required
+def dashboard_card_indicators(request):
+	"""Alias endpoint (EN): quality indicators card."""
+	return dashboard_card_indicadores(request)
+
+
+@login_required
+def dashboard_card_audits(request):
+	"""Alias endpoint (EN): audits card."""
+	return dashboard_card_auditorias(request)

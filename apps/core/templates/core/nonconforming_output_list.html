@@ -132,107 +132,49 @@
     {% endif %}
 </div>
 
-<div class="filters">
+<form method="get" class="filters" hx-get="{% url 'core:nonconforming_output_list' %}" hx-target="#results" hx-push-url="true" hx-trigger="change delay:300ms, submit">
     <div>
         <label for="status-filter">Estado</label>
-        <form method="get" style="display: flex; gap: 4px;">
-            <select name="status" onchange="this.form.submit()">
-                <option value="">Todos</option>
-                <option value="OPEN" {% if request.GET.status == 'OPEN' %}selected{% endif %}>Abierta</option>
-                <option value="IN_TREATMENT" {% if request.GET.status == 'IN_TREATMENT' %}selected{% endif %}>En tratamiento</option>
-                <option value="CLOSED" {% if request.GET.status == 'CLOSED' %}selected{% endif %}>Cerrada</option>
-            </select>
-        </form>
+        <select id="status-filter" name="status">
+            <option value="">Todos</option>
+            <option value="OPEN" {% if selected_status == 'OPEN' %}selected{% endif %}>Abierta</option>
+            <option value="IN_TREATMENT" {% if selected_status == 'IN_TREATMENT' %}selected{% endif %}>En tratamiento</option>
+            <option value="CLOSED" {% if selected_status == 'CLOSED' %}selected{% endif %}>Cerrada</option>
+        </select>
     </div>
     <div>
         <label for="severity-filter">Severidad</label>
-        <form method="get" style="display: flex; gap: 4px;">
-            <select name="severity" onchange="this.form.submit()">
-                <option value="">Todos</option>
-                <option value="MINOR" {% if request.GET.severity == 'MINOR' %}selected{% endif %}>Menor</option>
-                <option value="MAJOR" {% if request.GET.severity == 'MAJOR' %}selected{% endif %}>Mayor</option>
-                <option value="CRITICAL" {% if request.GET.severity == 'CRITICAL' %}selected{% endif %}>Crítica</option>
-            </select>
-        </form>
+        <select id="severity-filter" name="severity">
+            <option value="">Todos</option>
+            <option value="MINOR" {% if selected_severity == 'MINOR' %}selected{% endif %}>Menor</option>
+            <option value="MAJOR" {% if selected_severity == 'MAJOR' %}selected{% endif %}>Mayor</option>
+            <option value="CRITICAL" {% if selected_severity == 'CRITICAL' %}selected{% endif %}>Crítica</option>
+        </select>
     </div>
     <div>
         <label for="disposition-filter">Disposición</label>
-        <form method="get" style="display: flex; gap: 4px;">
-            <select name="disposition" onchange="this.form.submit()">
-                <option value="">Todos</option>
-                <option value="REWORK" {% if request.GET.disposition == 'REWORK' %}selected{% endif %}>Retrabajo</option>
-                <option value="REPAIR" {% if request.GET.disposition == 'REPAIR' %}selected{% endif %}>Reparación</option>
-                <option value="SCRAP" {% if request.GET.disposition == 'SCRAP' %}selected{% endif %}>Descarte</option>
-                <option value="CONCESSION" {% if request.GET.disposition == 'CONCESSION' %}selected{% endif %}>Concesión</option>
-                <option value="RETURN" {% if request.GET.disposition == 'RETURN' %}selected{% endif %}>Devolución</option>
-                <option value="OTHER" {% if request.GET.disposition == 'OTHER' %}selected{% endif %}>Otro</option>
-            </select>
-        </form>
+        <select id="disposition-filter" name="disposition">
+            <option value="">Todos</option>
+            <option value="REWORK" {% if selected_disposition == 'REWORK' %}selected{% endif %}>Retrabajo</option>
+            <option value="REPAIR" {% if selected_disposition == 'REPAIR' %}selected{% endif %}>Reparación</option>
+            <option value="SCRAP" {% if selected_disposition == 'SCRAP' %}selected{% endif %}>Descarte</option>
+            <option value="CONCESSION" {% if selected_disposition == 'CONCESSION' %}selected{% endif %}>Concesión</option>
+            <option value="RETURN" {% if selected_disposition == 'RETURN' %}selected{% endif %}>Devolución</option>
+            <option value="OTHER" {% if selected_disposition == 'OTHER' %}selected{% endif %}>Otro</option>
+        </select>
     </div>
     <div>
         <label for="process-filter">Proceso</label>
-        <form method="get" style="display: flex; gap: 4px;">
-            <select name="process_id" onchange="this.form.submit()">
-                <option value="">Todos</option>
-                {% for process in processes %}
-                <option value="{{ process.id }}" {% if request.GET.process_id|add:'0' == process.id|add:'0' %}selected{% endif %}>{{ process.name }}</option>
-                {% endfor %}
-            </select>
-        </form>
-    </div>
-</div>
-
-{% if outputs %}
-    <table class="pnc-table">
-        <thead>
-            <tr>
-                <th>Código</th>
-                <th>Producto/Servicio</th>
-                <th>Severidad</th>
-                <th>Estado</th>
-                <th>Disposición</th>
-                <th>Detectado</th>
-                <th>Proceso</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for output in outputs %}
-            <tr class="pnc-row" onclick="window.location='{% url 'core:nonconforming_output_detail' output.pk %}'">
-                <td><strong>{{ output.code }}</strong></td>
-                <td>{{ output.product_or_service }}</td>
-                <td>
-                    <span class="badge badge-{{ output.severity|lower }}">
-                        {{ output.get_severity_display }}
-                    </span>
-                </td>
-                <td>
-                    <span class="badge badge-{{ output.status|lower|cut:'_' }}">
-                        {{ output.get_status_display }}
-                    </span>
-                </td>
-                <td>
-                    {% if output.disposition %}
-                        {{ output.get_disposition_display }}
-                    {% else %}
-                        <span style="color: var(--color-gray-400);">—</span>
-                    {% endif %}
-                </td>
-                <td>{{ output.detected_at|date:"d/m/Y" }}</td>
-                <td>{% if output.related_process %}{{ output.related_process }}{% else %}-{% endif %}</td>
-            </tr>
+        <select id="process-filter" name="process_id">
+            <option value="">Todos</option>
+            {% for process in processes %}
+            <option value="{{ process.id }}" {% if selected_process_id|add:'0' == process.id|add:'0' %}selected{% endif %}>{{ process.name }}</option>
             {% endfor %}
-        </tbody>
-    </table>
-{% else %}
-    <div class="empty-state">
-        <div class="empty-state-icon">🔴</div>
-        <h3>No hay productos/servicios no conformes</h3>
-        <p>Los PNC son registros de control de productos/servicios no conformes (ISO 9001 8.7)</p>
-        {% if can_edit %}
-        <div style="margin-top: var(--spacing-lg);">
-            <a href="{% url 'core:nonconforming_output_new' %}" class="btn btn-primary">Registrar primer PNC</a>
-        </div>
-        {% endif %}
+        </select>
     </div>
-{% endif %}
+</form>
+
+<div id="results">
+    {% include "core/pnc/_list_results.html" %}
+</div>
 {% endblock %}

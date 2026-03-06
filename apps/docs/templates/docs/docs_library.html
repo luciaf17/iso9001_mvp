@@ -305,7 +305,7 @@
 <!-- Filtros -->
 <div class="filter-card">
     <h3>🔍 Filtros</h3>
-    <form method="get">
+    <form method="get" hx-get="{% url 'docs:docs_library' %}" hx-target="#results" hx-push-url="true" hx-trigger="change delay:300ms, submit">
         <div class="filter-row">
             <!-- Sede -->
             <div class="filter-group">
@@ -348,9 +348,6 @@
         </div>
         
         <div class="filter-buttons">
-            <button type="submit" class="btn btn-primary">
-                🔍 Aplicar Filtros
-            </button>
             <a href="{% url 'docs:docs_library' %}" class="btn btn-secondary">
                 ↺ Limpiar
             </a>
@@ -358,168 +355,7 @@
     </form>
 </div>
 
-<!-- Árbol de Procesos con Documentos -->
-{% if processes %}
-    <div class="processes-tree">
-        {% for process_l1 in processes %}
-            <!-- Proceso Nivel 1 -->
-            <div class="process-level-1">
-                <div class="process-header">
-                    <div class="process-code">{{ process_l1.code }}</div>
-                    <div class="process-name">
-                        <h3>{{ process_l1.name }}</h3>
-                    </div>
-                    <span class="process-type-badge {{ process_l1.process_type|lower }}">
-                        {{ process_l1.get_process_type_display }}
-                    </span>
-                </div>
-                
-                <!-- Documentos del Nivel 1 -->
-                {% if process_l1.active_documents %}
-                    <div style="margin: var(--spacing-md) 0;">
-                        {% for doc in process_l1.active_documents %}
-                            <div class="document-item">
-                                <div class="document-content">
-                                    <div class="document-info">
-                                        <div class="document-title">
-                                            <span class="document-code">[{{ doc.code }}]</span>
-                                            <a href="{% url 'docs:docs_detail' doc.pk %}">
-                                                {{ doc.title }}
-                                            </a>
-                                        </div>
-                                        <div class="document-meta">
-                                            <span>📋 {{ doc.get_doc_type_display }}</span>
-                                            {% if doc.current_version %}
-                                                <span class="version-badge">v{{ doc.current_version.version_number }}</span>
-                                                <span>📅 Vigente desde {{ doc.current_version.effective_date|date:"d/m/Y" }}</span>
-                                            {% else %}
-                                                <span style="color: var(--color-warning-dark); font-weight: 600;">⚠️ Sin versión vigente</span>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                    <div class="document-actions">
-                                        <a href="{% url 'docs:docs_detail' doc.pk %}" class="btn btn-sm btn-info">
-                                            📖 Historial
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="no-docs-message">
-                        ℹ️ sin documentos vigentes
-                    </div>
-                {% endif %}
-                
-                <!-- Subprocesos (Nivel 2) -->
-                {% if process_l1.children.all %}
-                    {% for process_l2 in process_l1.children.all %}
-                        <div class="process-level-2">
-                            <h5>
-                                <span style="color: var(--color-info);">└─</span>
-                                <strong>[{{ process_l2.code }}]</strong> {{ process_l2.name }}
-                                <span class="process-type-badge {{ process_l2.process_type|lower }}">
-                                    {{ process_l2.get_process_type_display }}
-                                </span>
-                            </h5>
-                            
-                            <!-- Documentos del Nivel 2 -->
-                            {% if process_l2.active_documents %}
-                                {% for doc in process_l2.active_documents %}
-                                    <div class="document-item">
-                                        <div class="document-content">
-                                            <div class="document-info">
-                                                <div class="document-title">
-                                                    <span class="document-code">[{{ doc.code }}]</span>
-                                                    <a href="{% url 'docs:docs_detail' doc.pk %}">
-                                                        {{ doc.title }}
-                                                    </a>
-                                                </div>
-                                                <div class="document-meta">
-                                                    <span>📋 {{ doc.get_doc_type_display }}</span>
-                                                    {% if doc.current_version %}
-                                                        <span class="version-badge">v{{ doc.current_version.version_number }}</span>
-                                                        <span>📅 Vigente desde {{ doc.current_version.effective_date|date:"d/m/Y" }}</span>
-                                                    {% else %}
-                                                        <span style="color: var(--color-warning-dark); font-weight: 600;">⚠️ Sin versión vigente</span>
-                                                    {% endif %}
-                                                </div>
-                                            </div>
-                                            <div class="document-actions">
-                                                <a href="{% url 'docs:docs_detail' doc.pk %}" class="btn btn-sm btn-info">
-                                                    📖 Historial
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                            {% else %}
-                                <div class="no-docs-message">
-                                    ℹ️ sin documentos vigentes
-                                </div>
-                            {% endif %}
-                            
-                            <!-- Sectores (Nivel 3) -->
-                            {% if process_l2.children.all %}
-                                {% for process_l3 in process_l2.children.all %}
-                                    <div class="process-level-3">
-                                        <h6>
-                                            <span style="color: var(--color-primary);">└─</span>
-                                            <strong>[{{ process_l3.code }}]</strong> {{ process_l3.name }}
-                                        </h6>
-                                        
-                                        <!-- Documentos del Nivel 3 -->
-                                        {% if process_l3.active_documents %}
-                                            {% for doc in process_l3.active_documents %}
-                                                <div class="document-item">
-                                                    <div class="document-content">
-                                                        <div class="document-info">
-                                                            <div class="document-title">
-                                                                <span class="document-code">[{{ doc.code }}]</span>
-                                                                <a href="{% url 'docs:docs_detail' doc.pk %}">
-                                                                    {{ doc.title }}
-                                                                </a>
-                                                            </div>
-                                                            <div class="document-meta">
-                                                                <span>📋 {{ doc.get_doc_type_display }}</span>
-                                                                {% if doc.current_version %}
-                                                                    <span class="version-badge">v{{ doc.current_version.version_number }}</span>
-                                                                    <span>📅 Vigente desde {{ doc.current_version.effective_date|date:"d/m/Y" }}</span>
-                                                                {% else %}
-                                                                    <span style="color: var(--color-warning-dark); font-weight: 600;">⚠️ Sin versión vigente</span>
-                                                                {% endif %}
-                                                            </div>
-                                                        </div>
-                                                        <div class="document-actions">
-                                                            <a href="{% url 'docs:docs_detail' doc.pk %}" class="btn btn-sm btn-info">
-                                                                📖 Historial
-                                                            </a>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            {% endfor %}
-                                        {% else %}
-                                            <div class="no-docs-message" style="font-size: var(--font-size-xs); padding: var(--spacing-sm);">
-                                                ℹ️ sin documentos vigentes
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                {% endfor %}
-                            {% endif %}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            </div>
-        {% endfor %}
-    </div>
-{% else %}
-    <div class="empty-state">
-        <h3>📭 Sin resultados</h3>
-        <p>No hay procesos que coincidan con los filtros seleccionados.</p>
-        <a href="{% url 'docs:docs_library' %}" class="btn btn-primary" style="margin-top: var(--spacing-md);">
-            ↺ Limpiar filtros
-        </a>
-    </div>
-{% endif %}
+<div id="results">
+    {% include "docs/partials/docs_library_results.html" %}
+</div>
 {% endblock %}

@@ -1,0 +1,67 @@
+{% if indicators %}
+    <table class="indicators-table">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Meta</th>
+                <th>Frecuencia</th>
+                <th>Unidad</th>
+                <th>Estado</th>
+                <th>Proceso</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for indicator in indicators %}
+            <tr class="indicator-row" onclick="window.location='{% url 'core:indicator_detail' indicator.pk %}'">
+                <td class="indicator-name">{{ indicator.name }}</td>
+                <td>
+                    {% if indicator.comparison_type == "GREATER_EQUAL" %}
+                        ≥ {{ indicator.target_value }}
+                    {% else %}
+                        ≤ {{ indicator.target_value }}
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge badge-{{ indicator.frequency|lower }}">
+                        {{ indicator.get_frequency_display }}
+                    </span>
+                </td>
+                <td>{{ indicator.unit|default:"-" }}</td>
+                <td>
+                    {% with status=indicator.get_status %}
+                    {% if status == "OK" %}
+                        <span class="badge badge-ok" title="Última medición dentro de meta">
+                            ✓ OK
+                        </span>
+                    {% elif status == "OUT_OF_TARGET" %}
+                        <span class="badge badge-out-of-target" title="Última medición fuera de meta">
+                            ⚠ FUERA DE META
+                        </span>
+                    {% elif status == "OVERDUE" %}
+                        <span class="badge badge-overdue" title="No hay mediciones recientes">
+                            ⏰ VENCIDA
+                        </span>
+                    {% elif status == "NO_DATA" %}
+                        <span class="badge badge-no-data" title="Sin mediciones registradas">
+                            ◯ SIN DATOS
+                        </span>
+                    {% endif %}
+                    {% endwith %}
+                </td>
+                <td>{% if indicator.related_process %}{{ indicator.related_process }}{% else %}-{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">📈</div>
+        <h3>No hay indicadores registrados</h3>
+        <p>Los indicadores de calidad son esenciales para monitorear el desempeño del SGC (ISO 9001 9.1)</p>
+        {% if can_edit %}
+        <div style="margin-top: var(--spacing-lg);">
+            <a href="{% url 'core:indicator_new' %}" class="btn btn-primary">Crear primer indicador</a>
+        </div>
+        {% endif %}
+    </div>
+{% endif %}

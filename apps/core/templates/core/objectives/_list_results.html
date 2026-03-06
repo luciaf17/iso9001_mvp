@@ -1,0 +1,50 @@
+{% if objectives %}
+<table class="objectives-table">
+    <thead>
+        <tr>
+            <th>Titulo</th>
+            <th>Indicador</th>
+            <th>Meta</th>
+            <th>Actual</th>
+            <th>Avance</th>
+            <th>Estado</th>
+            <th>Vencimiento</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in objectives %}
+        <tr>
+            <td><strong>{{ item.obj.title }}</strong></td>
+            <td>{{ item.obj.indicator }}</td>
+            <td>{{ item.obj.target_value }} {{ item.obj.unit }}</td>
+            <td>{{ item.obj.current_value }} {{ item.obj.unit }}</td>
+            <td>
+                <div class="progress-cell">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ item.progress|floatformat:0 }}%"></div>
+                    </div>
+                    <span style="font-size: var(--font-size-xs); color: var(--color-gray-600);">{{ item.progress|floatformat:1 }}%</span>
+                </div>
+            </td>
+            <td>
+                <span class="status-badge status-{{ item.obj.status|lower }}">
+                    {{ item.obj.get_status_display }}
+                </span>
+            </td>
+            <td>{{ item.obj.due_date|date:"d/m/Y" }}</td>
+            <td>
+                <div class="action-links">
+                    <a class="btn btn-secondary" href="{% url 'core:quality_objective_detail' item.obj.pk %}">Ver</a>
+                    {% if can_edit %}
+                    <a class="btn btn-primary" href="{% url 'core:quality_objective_edit' item.obj.pk %}">Editar</a>
+                    {% endif %}
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="empty-state">📭 No hay objetivos de calidad registrados.</p>
+{% endif %}

@@ -254,3 +254,34 @@ class DocsLibraryViewTests(TestCase):
         process_l2 = process_l1.children.all()[0]
         self.assertEqual(len(process_l2.children.all()), 1)
         self.assertEqual(process_l2.children.all()[0].code, "MISIO.01.01")
+
+    def test_library_with_hx_request_returns_only_partial(self):
+        """HX-Request en biblioteca debe devolver solo bloque parcial."""
+        response = self.client.get(
+            reverse("docs:docs_library"),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "processes-tree")
+        self.assertNotContains(response, "<html")
+
+    def test_document_list_with_hx_request_returns_only_partial(self):
+        """HX-Request en lista de documentos debe devolver solo resultados."""
+        response = self.client.get(
+            reverse("docs:docs_list"),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "doc-list")
+        self.assertNotContains(response, "<html")
+
+    def test_document_list_hx_filter_by_doc_type(self):
+        """Filtros HTMX en documentos no rompen queryset."""
+        response = self.client.get(
+            reverse("docs:docs_list"),
+            {"doc_type": Document.DocType.PROCEDURE},
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "DOC-002")
+        self.assertNotContains(response, "DOC-001")

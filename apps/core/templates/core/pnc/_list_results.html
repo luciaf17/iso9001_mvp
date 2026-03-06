@@ -1,0 +1,53 @@
+{% if outputs %}
+    <table class="pnc-table">
+        <thead>
+            <tr>
+                <th>Código</th>
+                <th>Producto/Servicio</th>
+                <th>Severidad</th>
+                <th>Estado</th>
+                <th>Disposición</th>
+                <th>Detectado</th>
+                <th>Proceso</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for output in outputs %}
+            <tr class="pnc-row" onclick="window.location='{% url 'core:nonconforming_output_detail' output.pk %}'">
+                <td><strong>{{ output.code }}</strong></td>
+                <td>{{ output.product_or_service }}</td>
+                <td>
+                    <span class="badge badge-{{ output.severity|lower }}">
+                        {{ output.get_severity_display }}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge badge-{{ output.status|lower|cut:'_' }}">
+                        {{ output.get_status_display }}
+                    </span>
+                </td>
+                <td>
+                    {% if output.disposition %}
+                        {{ output.get_disposition_display }}
+                    {% else %}
+                        <span style="color: var(--color-gray-400);">—</span>
+                    {% endif %}
+                </td>
+                <td>{{ output.detected_at|date:"d/m/Y" }}</td>
+                <td>{% if output.related_process %}{{ output.related_process }}{% else %}-{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">🔴</div>
+        <h3>No hay productos/servicios no conformes</h3>
+        <p>Los PNC son registros de control de productos/servicios no conformes (ISO 9001 8.7)</p>
+        {% if can_edit %}
+        <div style="margin-top: var(--spacing-lg);">
+            <a href="{% url 'core:nonconforming_output_new' %}" class="btn btn-primary">Registrar primer PNC</a>
+        </div>
+        {% endif %}
+    </div>
+{% endif %}

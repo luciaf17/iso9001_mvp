@@ -42,6 +42,9 @@ def process_map(request):
 		"can_edit": can_edit_processes(request.user),
 	}
 
+	if request.headers.get("HX-Request") == "true":
+		return render(request, "org/partials/process_map_results.html", context)
+
 	return render(request, "org/process_map.html", context)
 
 

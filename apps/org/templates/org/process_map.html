@@ -185,7 +185,7 @@
 </div>
 
 <div class="filter-card">
-    <form method="get" class="filters">
+    <form method="get" class="filters" hx-get="{% url 'org:process_map' %}" hx-target="#results" hx-push-url="true" hx-trigger="change delay:300ms, submit">
         <label>
             🏢 Sede
             <select name="site_id">
@@ -209,90 +209,10 @@
                 {% endfor %}
             </select>
         </label>
-
-        <button type="submit" class="btn btn-primary">🔍 Filtrar</button>
     </form>
 </div>
 
-{% if processes %}
-<ul class="process-tree">
-    {% for process in processes %}
-    <li class="process level-1">
-        <div class="process-line">
-            <span class="code">{{ process.code }}</span> - <span class="name">{{ process.name }}</span>
-            <span class="type">({{ process.get_process_type_display }})</span>
-            {% if can_edit %}
-            <span class="process-actions">
-                <a class="action-link" href="{% url 'org:process_edit' process.id %}">Editar</a>
-                <a class="action-link" href="{% url 'org:process_child_new' process.id %}">+ Subproceso</a>
-                {% if process.is_active %}
-                <form class="action-form" method="post" action="{% url 'org:process_deactivate' process.id %}">
-                    {% csrf_token %}
-                    <button type="submit" class="action-button">Desactivar</button>
-                </form>
-                {% endif %}
-            </span>
-            {% endif %}
-        </div>
-
-        {% if process.children.all %}
-        <ul class="process-tree">
-            {% for child in process.children.all %}
-            <li class="process level-2">
-                <div class="process-line">
-                    <span class="code">{{ child.code }}</span> - <span class="name">{{ child.name }}</span>
-                    {% if can_edit %}
-                    <span class="process-actions">
-                        <a class="action-link" href="{% url 'org:process_edit' child.id %}">Editar</a>
-                        <a class="action-link" href="{% url 'org:process_child_new' child.id %}">+ Sector</a>
-                        {% if child.is_active %}
-                        <form class="action-form" method="post" action="{% url 'org:process_deactivate' child.id %}">
-                            {% csrf_token %}
-                            <button type="submit" class="action-button">Desactivar</button>
-                        </form>
-                        {% endif %}
-                    </span>
-                    {% endif %}
-                </div>
-
-                {% if child.children.all %}
-                <ul class="process-tree">
-                    {% for grandchild in child.children.all %}
-                    {% with code_tag=grandchild.code|extract_tag name_tag=grandchild.name|extract_tag %}
-                    <li class="process level-3">
-                        <div class="process-line">
-                            <span class="code">{{ grandchild.code }}</span> - <span class="name">{{ grandchild.name }}</span>
-                            {% if code_tag or name_tag %}
-                            <span class="tag">
-                                {% if code_tag %}[{{ code_tag }}]{% endif %}
-                                {% if name_tag and code_tag %} [{{ name_tag }}]{% elif name_tag %}[{{ name_tag }}]{% endif %}
-                            </span>
-                            {% endif %}
-                            {% if can_edit %}
-                            <span class="process-actions">
-                                <a class="action-link" href="{% url 'org:process_edit' grandchild.id %}">Editar</a>
-                                {% if grandchild.is_active %}
-                                <form class="action-form" method="post" action="{% url 'org:process_deactivate' grandchild.id %}">
-                                    {% csrf_token %}
-                                    <button type="submit" class="action-button">Desactivar</button>
-                                </form>
-                                {% endif %}
-                            </span>
-                            {% endif %}
-                        </div>
-                    </li>
-                    {% endwith %}
-                    {% endfor %}
-                </ul>
-                {% endif %}
-            </li>
-            {% endfor %}
-        </ul>
-        {% endif %}
-    </li>
-    {% endfor %}
-</ul>
-{% else %}
-<p class="empty">No hay procesos cargados.</p>
-{% endif %}
+<div id="results">
+    {% include "org/partials/process_map_results.html" %}
+</div>
 {% endblock %}

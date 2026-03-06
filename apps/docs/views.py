@@ -66,6 +66,10 @@ def document_list(request):
         'selected_doc_type': doc_type,
         'selected_process_id': process_id,
     }
+
+    if request.headers.get("HX-Request") == "true":
+        return render(request, 'docs/partials/document_list_results.html', context)
+
     return render(request, 'docs/document_list.html', context)
 
 
@@ -322,4 +326,8 @@ def docs_library(request):
         'selected_process_type': process_type,
         'selected_doc_type': doc_type,
     }
+
+    if request.headers.get("HX-Request") == "true":
+        return render(request, 'docs/partials/docs_library_results.html', context)
+
     return render(request, 'docs/docs_library.html', context)

@@ -101,7 +101,6 @@
         </div>
 
         <div class="filter-actions">
-          <button type="submit" class="btn btn-primary">Aplicar</button>
           <a href="{% url 'core:dashboard_home' %}" class="btn btn-secondary">Limpiar</a>
         </div>
       </div>
@@ -111,32 +110,32 @@
   <!-- DASHBOARD CARDS WITH HTMX -->
   <div class="dashboard-grid">
     <!-- NC Card -->
-    <div class="dashboard-card card-nc" id="card-nc" hx-get="{% url 'core:dashboard_card_nc' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" hx-trigger="load" hx-swap="innerHTML">
+    <div class="dashboard-card card-nc" id="card-nc" hx-get="{% url 'core:dashboard_card_nc' %}" hx-include="#filters" hx-trigger="load, change from:#filters delay:300ms" hx-target="this" hx-swap="innerHTML">
       <div class="spinner">Cargando NC...</div>
     </div>
 
     <!-- CAPA Card -->
-    <div class="dashboard-card card-capa" id="card-capa" hx-get="{% url 'core:dashboard_card_capa' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" hx-trigger="load" hx-swap="innerHTML">
+    <div class="dashboard-card card-capa" id="card-capa" hx-get="{% url 'core:dashboard_card_capa' %}" hx-include="#filters" hx-trigger="load, change from:#filters delay:300ms" hx-target="this" hx-swap="innerHTML">
       <div class="spinner">Cargando CAPA...</div>
     </div>
 
     <!-- Indicadores Card -->
-    <div class="dashboard-card card-indicator" id="card-indicadores" hx-get="{% url 'core:dashboard_card_indicadores' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" hx-trigger="load" hx-swap="innerHTML">
+    <div class="dashboard-card card-indicator" id="card-indicadores" hx-get="{% url 'core:dashboard_card_indicators' %}" hx-include="#filters" hx-trigger="load, change from:#filters delay:300ms" hx-target="this" hx-swap="innerHTML">
       <div class="spinner">Cargando Indicadores...</div>
     </div>
 
     <!-- PNC Card -->
-    <div class="dashboard-card card-pnc" id="card-pnc" hx-get="{% url 'core:dashboard_card_pnc' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" hx-trigger="load" hx-swap="innerHTML">
+    <div class="dashboard-card card-pnc" id="card-pnc" hx-get="{% url 'core:dashboard_card_pnc' %}" hx-include="#filters" hx-trigger="load, change from:#filters delay:300ms" hx-target="this" hx-swap="innerHTML">
       <div class="spinner">Cargando PNC...</div>
     </div>
 
     <!-- Suppliers Card -->
-    <div class="dashboard-card card-supplier" id="card-suppliers" hx-get="{% url 'core:dashboard_card_suppliers' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" hx-trigger="load" hx-swap="innerHTML">
+    <div class="dashboard-card card-supplier" id="card-suppliers" hx-get="{% url 'core:dashboard_card_suppliers' %}" hx-include="#filters" hx-trigger="load, change from:#filters delay:300ms" hx-target="this" hx-swap="innerHTML">
       <div class="spinner">Cargando Proveedores...</div>
     </div>
 
     <!-- Auditorias Card -->
-    <div class="dashboard-card card-audit" id="card-auditorias" hx-get="{% url 'core:dashboard_card_auditorias' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" hx-trigger="load" hx-swap="innerHTML">
+    <div class="dashboard-card card-audit" id="card-auditorias" hx-get="{% url 'core:dashboard_card_audits' %}" hx-include="#filters" hx-trigger="load, change from:#filters delay:300ms" hx-target="this" hx-swap="innerHTML">
       <div class="spinner">Cargando Auditorías...</div>
     </div>
   </div>

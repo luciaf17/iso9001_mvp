@@ -1,0 +1,29 @@
+{% if stakeholders %}
+<div class="stakeholder-list">
+    {% for stakeholder in stakeholders %}
+    <div class="stakeholder-card">
+        <div class="stakeholder-card-header">
+            <div>
+                <div class="stakeholder-card-title">
+                    <a href="{% url 'core:stakeholder_detail' stakeholder.pk %}">{{ stakeholder.name }}</a>
+                </div>
+                <div class="stakeholder-meta">
+                    <span>📋 {{ stakeholder.get_stakeholder_type_display }}</span>
+                    <span>🔗 {% if stakeholder.related_process %}{{ stakeholder.related_process }}{% else %}Sin proceso{% endif %}</span>
+                    <span>📅 {% if stakeholder.review_date %}{{ stakeholder.review_date|date:"d/m/Y" }}{% else %}Sin fecha{% endif %}</span>
+                    <span>{% if stakeholder.is_active %}✅ Activo{% else %}⛔ Inactivo{% endif %}</span>
+                </div>
+            </div>
+            <div class="stakeholder-actions">
+                <a class="btn btn-secondary" href="{% url 'core:stakeholder_detail' stakeholder.pk %}">Ver</a>
+                {% if can_edit %}
+                <a class="btn btn-primary" href="{% url 'core:stakeholder_edit' stakeholder.pk %}">Editar</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p class="empty-state">No hay partes interesadas registradas.</p>
+{% endif %}

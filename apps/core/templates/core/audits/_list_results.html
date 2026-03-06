@@ -1,0 +1,43 @@
+{% if audits %}
+<table class="audits-table">
+    <thead>
+        <tr>
+            <th>Titulo</th>
+            <th>Fecha</th>
+            <th>Auditor</th>
+            <th>Procesos</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for audit in audits %}
+        <tr>
+            <td>{{ audit.title }}</td>
+            <td>{{ audit.audit_date|date:"d/m/Y" }}</td>
+            <td>{% if audit.auditor %}{{ audit.auditor.get_username }}{% else %}-{% endif %}</td>
+            <td>
+                {% for process in audit.related_processes.all %}
+                    {{ process }}{% if not forloop.last %}, {% endif %}
+                {% empty %}
+                    -
+                {% endfor %}
+            </td>
+            <td>
+                <span class="status-badge status-{{ audit.status|lower }}">{{ audit.get_status_display }}</span>
+            </td>
+            <td>
+                <div class="action-links">
+                    <a class="btn btn-secondary" href="{% url 'core:audit_detail' audit.pk %}">Ver</a>
+                    {% if can_edit %}
+                    <a class="btn btn-primary" href="{% url 'core:audit_edit' audit.pk %}">Editar</a>
+                    {% endif %}
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="empty-state">No hay auditorias internas registradas.</div>
+{% endif %}

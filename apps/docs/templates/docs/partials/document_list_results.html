@@ -1,0 +1,37 @@
+{% if documents %}
+<div class="doc-list">
+    {% for doc in documents %}
+    <div class="doc-card">
+        <div class="doc-card-header">
+            <div>
+                <div class="doc-card-title">
+                    <a href="{% url 'docs:docs_detail' doc.pk %}">{{ doc.code }} - {{ doc.title }}</a>
+                </div>
+                <div class="doc-meta">
+                    <span>📋 {{ doc.get_doc_type_display }}</span>
+                    <span>📄 Vigente: {% if doc.current_version %}v{{ doc.current_version.version_number }}{% else %}-{% endif %}</span>
+                </div>
+            </div>
+            <div class="doc-actions">
+                <a class="btn btn-secondary" href="{% url 'docs:docs_detail' doc.pk %}">Ver</a>
+                {% if doc.current_version and doc.current_version.file %}
+                <a class="btn btn-primary" href="{{ doc.current_version.file.url }}" download>Descargar vigente</a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="doc-processes">
+            <strong>Procesos:</strong>
+            {% if doc.processes.all %}
+            <span>
+                {% for process in doc.processes.all %}
+                {{ process.code }} - {{ process.name }}{% if not forloop.last %} • {% endif %}
+                {% endfor %}
+            </span>
+            {% else %}-{% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p style="color: #6c757d; text-align: center; padding: 3rem;">No hay documentos que coincidan con los filtros.</p>
+{% endif %}

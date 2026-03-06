@@ -164,7 +164,7 @@
     {% endif %}
 </div>
 
-<form method="get" class="filter-card">
+<form method="get" class="filter-card" hx-get="{% url 'core:stakeholder_list' %}" hx-target="#results" hx-push-url="true" hx-trigger="change delay:300ms, keyup changed delay:300ms from:#search, submit">
     <div class="filter-form">
         <div>
             <label for="search">🔍 Buscar</label>
@@ -197,39 +197,12 @@
             </select>
         </div>
         <div class="filter-actions">
-            <button type="submit" class="btn btn-primary">🔍 Filtrar</button>
             <a class="btn btn-secondary" href="{% url 'core:stakeholder_list' %}">Limpiar</a>
         </div>
     </div>
 </form>
 
-{% if stakeholders %}
-<div class="stakeholder-list">
-    {% for stakeholder in stakeholders %}
-    <div class="stakeholder-card">
-        <div class="stakeholder-card-header">
-            <div>
-                <div class="stakeholder-card-title">
-                    <a href="{% url 'core:stakeholder_detail' stakeholder.pk %}">{{ stakeholder.name }}</a>
-                </div>
-                <div class="stakeholder-meta">
-                    <span>📋 {{ stakeholder.get_stakeholder_type_display }}</span>
-                    <span>🔗 {% if stakeholder.related_process %}{{ stakeholder.related_process }}{% else %}Sin proceso{% endif %}</span>
-                    <span>📅 {% if stakeholder.review_date %}{{ stakeholder.review_date|date:"d/m/Y" }}{% else %}Sin fecha{% endif %}</span>
-                    <span>{% if stakeholder.is_active %}✅ Activo{% else %}⛔ Inactivo{% endif %}</span>
-                </div>
-            </div>
-            <div class="stakeholder-actions">
-                <a class="btn btn-secondary" href="{% url 'core:stakeholder_detail' stakeholder.pk %}">Ver</a>
-                {% if can_edit %}
-                <a class="btn btn-primary" href="{% url 'core:stakeholder_edit' stakeholder.pk %}">Editar</a>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    {% endfor %}
+<div id="results">
+    {% include "core/stakeholders/_list_results.html" %}
 </div>
-{% else %}
-<p class="empty-state">No hay partes interesadas registradas.</p>
-{% endif %}
 {% endblock %}

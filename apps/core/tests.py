@@ -3021,3 +3021,198 @@ class DashboardTests(TestCase):
         self.assertIn("active_suppliers", summary)
         self.assertEqual(summary["total_ncs"], 1)
         self.assertEqual(summary["active_suppliers"], 1)
+
+
+class HtmxProgressiveTests(TestCase):
+    """Tests for progressive HTMX integration on dashboard and list views."""
+
+    def setUp(self):
+        self.organization = Organization.objects.filter(is_active=True).first()
+        if self.organization is None:
+            self.organization = Organization.objects.create(
+                name="HTMX Test Org",
+                is_active=True,
+            )
+        self.user = User.objects.create_user(
+            username="htmx_user",
+            password="htmxpass",
+        )
+
+    def test_dashboard_partial_endpoint_returns_partial_html(self):
+        """Dashboard card endpoint returns partial HTML content."""
+        self.client.login(username="htmx_user", password="htmxpass")
+        response = self.client.get(reverse("core:dashboard_card_nc"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "card-header")
+        self.assertNotContains(response, "<html")
+
+    def test_nc_list_with_hx_request_returns_only_results_partial(self):
+        """NC list should return only results partial for HX-Request."""
+        self.client.login(username="htmx_user", password="htmxpass")
+        response = self.client.get(
+            reverse("core:nc_list"),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "empty-state")
+        self.assertNotContains(response, "<html")
+
+    def test_nc_list_without_hx_request_returns_full_page(self):
+        """NC list should return full page when HX-Request header is absent."""
+        self.client.login(username="htmx_user", password="htmxpass")
+        response = self.client.get(reverse("core:nc_list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "<html")
+        self.assertContains(response, "No Conformidades")
+
+    def test_nc_list_hx_filters_do_not_break_queryset(self):
+        """Filtering via HTMX keeps queryset behavior consistent."""
+        NoConformity.objects.create(
+            organization=self.organization,
+            code="NC-HTMX-001",
+            title="NC Critical",
+            origin=NoConformity.Origin.INTERNAL,
+            severity=NoConformity.Severity.CRITICAL,
+            status=NoConformity.Status.OPEN,
+            detected_at=date.today(),
+        )
+        NoConformity.objects.create(
+            organization=self.organization,
+            code="NC-HTMX-002",
+            title="NC Minor",
+            origin=NoConformity.Origin.INTERNAL,
+            severity=NoConformity.Severity.MINOR,
+            status=NoConformity.Status.OPEN,
+            detected_at=date.today(),
+        )
+
+        self.client.login(username="htmx_user", password="htmxpass")
+        response = self.client.get(
+            reverse("core:nc_list"),
+            {"severity": NoConformity.Severity.CRITICAL},
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "NC-HTMX-001")
+        self.assertNotContains(response, "NC-HTMX-002")
+
+
+class HtmxAdditionalListTests(TestCase):
+    """Additional HTMX tests for other filtered lists."""
+
+    def setUp(self):
+        self.organization = Organization.objects.filter(is_active=True).first()
+        if self.organization is None:
+            self.organization = Organization.objects.create(
+                name="HTMX Extra Org",
+                is_active=True,
+            )
+
+        self.user = User.objects.create_user(
+            username="htmx_extra_user",
+            password="htmxpass",
+        )
+
+        self.site = Site.objects.create(
+            organization=self.organization,
+            name="HTMX Extra Site",
+            is_active=True,
+        )
+
+        self.process = Process.objects.create(
+            organization=self.organization,
+            site=self.site,
+            code="HTMX-PRC",
+            name="Proceso HTMX",
+            process_type=Process.ProcessType.SUPPORT,
+            level=Process.Level.PROCESS,
+            is_active=True,
+        )
+
+        self.stakeholder_a = Stakeholder.objects.create(
+            organization=self.organization,
+            site=self.site,
+            name="Cliente HTMX A",
+            stakeholder_type=Stakeholder.StakeholderType.CUSTOMER,
+            expectations="Respuesta rápida",
+            related_process=self.process,
+            is_active=True,
+        )
+        self.stakeholder_b = Stakeholder.objects.create(
+            organization=self.organization,
+            site=self.site,
+            name="Proveedor HTMX B",
+            stakeholder_type=Stakeholder.StakeholderType.SUPPLIER,
+            expectations="Pagos al día",
+            related_process=self.process,
+            is_active=True,
+        )
+
+        self.risk_a = RiskOpportunity.objects.create(
+            organization=self.organization,
+            site=self.site,
+            related_process=self.process,
+            stakeholder=self.stakeholder_a,
+            title="Riesgo HTMX A",
+            description="Descripción A",
+            kind=RiskOpportunity.Kind.RISK,
+            probability=5,
+            impact=4,
+            status=RiskOpportunity.Status.OPEN,
+            owner=self.user,
+        )
+        self.risk_b = RiskOpportunity.objects.create(
+            organization=self.organization,
+            site=self.site,
+            related_process=self.process,
+            stakeholder=self.stakeholder_b,
+            title="Oportunidad HTMX B",
+            description="Descripción B",
+            kind=RiskOpportunity.Kind.OPPORTUNITY,
+            probability=2,
+            impact=2,
+            status=RiskOpportunity.Status.OPEN,
+            owner=self.user,
+        )
+
+    def test_stakeholder_list_with_hx_request_returns_partial(self):
+        self.client.login(username="htmx_extra_user", password="htmxpass")
+        response = self.client.get(
+            reverse("core:stakeholder_list"),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "stakeholder-list")
+        self.assertNotContains(response, "<html")
+
+    def test_stakeholder_list_hx_filter_keeps_queryset(self):
+        self.client.login(username="htmx_extra_user", password="htmxpass")
+        response = self.client.get(
+            reverse("core:stakeholder_list"),
+            {"stakeholder_type": Stakeholder.StakeholderType.CUSTOMER},
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Cliente HTMX A")
+        self.assertNotContains(response, "Proveedor HTMX B")
+
+    def test_risk_list_with_hx_request_returns_partial(self):
+        self.client.login(username="htmx_extra_user", password="htmxpass")
+        response = self.client.get(
+            reverse("core:risk_list"),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "risks-table")
+        self.assertNotContains(response, "<html")
+
+    def test_risk_list_hx_filter_keeps_queryset(self):
+        self.client.login(username="htmx_extra_user", password="htmxpass")
+        response = self.client.get(
+            reverse("core:risk_list"),
+            {"kind": RiskOpportunity.Kind.RISK},
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Riesgo HTMX A")
+        self.assertNotContains(response, "Oportunidad HTMX B")

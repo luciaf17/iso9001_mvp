@@ -1,0 +1,44 @@
+{% if questions %}
+<table class="questions-table">
+    <thead>
+        <tr>
+            <th>Pregunta</th>
+            <th>Proceso</th>
+            <th>Orden</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for question in questions %}
+        <tr>
+            <td>{{ question.text }}</td>
+            <td>{% if question.process_type %}{{ question.get_process_type_display }}{% else %}General{% endif %}</td>
+            <td>{{ question.ordering }}</td>
+            <td>
+                {% if question.is_active %}
+                <span class="badge badge-active">Activa</span>
+                {% else %}
+                <span class="badge badge-inactive">Inactiva</span>
+                {% endif %}
+            </td>
+            <td>
+                <div class="action-links">
+                    <a class="btn btn-secondary" href="{% url 'core:audit_question_edit' question.pk %}">Editar</a>
+                    <form method="post" action="{% url 'core:audit_question_toggle' question.pk %}">
+                        {% csrf_token %}
+                        {% if question.is_active %}
+                        <button type="submit" class="btn btn-secondary">Desactivar</button>
+                        {% else %}
+                        <button type="submit" class="btn btn-primary">Activar</button>
+                        {% endif %}
+                    </form>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="empty-state">No hay preguntas registradas.</div>
+{% endif %}

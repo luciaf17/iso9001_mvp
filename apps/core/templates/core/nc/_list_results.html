@@ -1,0 +1,45 @@
+{% if ncs %}
+<table class="nc-table">
+    <thead>
+        <tr>
+            <th>Codigo</th>
+            <th>Titulo</th>
+            <th>Origen</th>
+            <th>Severidad</th>
+            <th>Estado</th>
+            <th>Detectado</th>
+            <th>Responsable</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for nc in ncs %}
+        <tr>
+            <td><strong>{{ nc.code|default:"-" }}</strong></td>
+            <td>{{ nc.title }}</td>
+            <td>{{ nc.get_origin_display }}</td>
+            <td>
+                <span class="severity-badge {% if nc.severity == 'MINOR' %}severity-minor{% elif nc.severity == 'MAJOR' %}severity-major{% else %}severity-critical{% endif %}">
+                    {{ nc.get_severity_display }}
+                </span>
+            </td>
+            <td><span class="status-badge">{{ nc.get_status_display }}</span></td>
+            <td>{{ nc.detected_at|date:"d/m/Y" }}</td>
+            <td>{{ nc.owner|default:"-" }}</td>
+            <td>
+                <div class="action-links">
+                    <a href="{% url 'core:nc_detail' nc.pk %}" class="btn btn-secondary">Ver</a>
+                    {% if can_edit %}
+                    <a href="{% url 'core:nc_edit' nc.pk %}" class="btn btn-primary">Editar</a>
+                    {% endif %}
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="empty-state">
+    <p>📭 No se encontraron no conformidades.</p>
+</div>
+{% endif %}

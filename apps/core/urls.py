@@ -58,9 +58,11 @@ from apps.core.views import (
     dashboard_card_nc,
     dashboard_card_capa,
     dashboard_card_indicadores,
+    dashboard_card_indicators,
     dashboard_card_pnc,
     dashboard_card_suppliers,
     dashboard_card_auditorias,
+    dashboard_card_audits,
 )
 
 app_name = "core"
@@ -129,7 +131,9 @@ urlpatterns = [
     path("dashboard/card/nc/", dashboard_card_nc, name="dashboard_card_nc"),
     path("dashboard/card/capa/", dashboard_card_capa, name="dashboard_card_capa"),
     path("dashboard/card/indicadores/", dashboard_card_indicadores, name="dashboard_card_indicadores"),
+    path("dashboard/card/indicators/", dashboard_card_indicators, name="dashboard_card_indicators"),
     path("dashboard/card/pnc/", dashboard_card_pnc, name="dashboard_card_pnc"),
     path("dashboard/card/suppliers/", dashboard_card_suppliers, name="dashboard_card_suppliers"),
     path("dashboard/card/auditorias/", dashboard_card_auditorias, name="dashboard_card_auditorias"),
+    path("dashboard/card/audits/", dashboard_card_audits, name="dashboard_card_audits"),
 ]

@@ -159,7 +159,7 @@
     <a class="btn btn-primary" href="{% url 'core:audit_question_new' %}">+ Nueva pregunta</a>
 </div>
 
-<form method="get" class="filter-card">
+<form method="get" class="filter-card" hx-get="{% url 'core:audit_question_list' %}" hx-target="#results" hx-push-url="true" hx-trigger="change delay:300ms, keyup changed delay:300ms from:#search, submit">
     <div class="filter-form">
         <div>
             <label for="search">Texto</label>
@@ -183,54 +183,12 @@
             </select>
         </div>
         <div class="filter-actions">
-            <button type="submit" class="btn btn-primary">Filtrar</button>
             <a class="btn btn-secondary" href="{% url 'core:audit_question_list' %}">Limpiar</a>
         </div>
     </div>
 </form>
 
-{% if questions %}
-<table class="questions-table">
-    <thead>
-        <tr>
-            <th>Pregunta</th>
-            <th>Proceso</th>
-            <th>Orden</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for question in questions %}
-        <tr>
-            <td>{{ question.text }}</td>
-            <td>{% if question.process_type %}{{ question.get_process_type_display }}{% else %}General{% endif %}</td>
-            <td>{{ question.ordering }}</td>
-            <td>
-                {% if question.is_active %}
-                <span class="badge badge-active">Activa</span>
-                {% else %}
-                <span class="badge badge-inactive">Inactiva</span>
-                {% endif %}
-            </td>
-            <td>
-                <div class="action-links">
-                    <a class="btn btn-secondary" href="{% url 'core:audit_question_edit' question.pk %}">Editar</a>
-                    <form method="post" action="{% url 'core:audit_question_toggle' question.pk %}">
-                        {% csrf_token %}
-                        {% if question.is_active %}
-                        <button type="submit" class="btn btn-secondary">Desactivar</button>
-                        {% else %}
-                        <button type="submit" class="btn btn-primary">Activar</button>
-                        {% endif %}
-                    </form>
-                </div>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% else %}
-<div class="empty-state">No hay preguntas registradas.</div>
-{% endif %}
+<div id="results">
+    {% include "core/audit_questions/_list_results.html" %}
+</div>
 {% endblock %}

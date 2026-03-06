@@ -263,7 +263,7 @@
     </div>
 </div>
 
-<form method="get" class="filter-card">
+<form method="get" class="filter-card" hx-get="{% url 'core:risk_dashboard' %}" hx-target="#dashboard-results" hx-push-url="true" hx-trigger="change delay:300ms, submit">
     <div class="filter-form">
         <div>
             <label for="process_type">🧭 Tipo de proceso</label>
@@ -320,82 +320,12 @@
             </select>
         </div>
         <div class="filter-actions">
-            <button type="submit" class="btn btn-primary">🔍 Filtrar</button>
             <a class="btn btn-secondary" href="{% url 'core:risk_dashboard' %}">Limpiar</a>
         </div>
     </div>
 </form>
 
-<div class="stats-info">
-    <p><strong>Total de registros:</strong> {{ total_risks }} riesgos y oportunidades en los filtros aplicados</p>
-</div>
-
-<div class="matrix-card">
-    <h2>📈 Matriz de Probabilidad vs Impacto (5x5)</h2>
-    <div class="matrix-container">
-        <table class="matrix-table">
-            <thead>
-                <tr>
-                    <th style="width: 80px;">Prob/Imp</th>
-                    {% for i in "12345" %}
-                    <th>{{ i }}</th>
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in matrix_grid %}
-                <tr>
-                    <td>{{ row.0.probability }}</td>
-                    {% for cell in row %}
-                    <td class="matrix-cell {% if cell.count > 0 %}{{ cell.level_class }}{% endif %}">
-                        {% if cell.count > 0 %}
-                            <div class="cell-count">{{ cell.count }}</div>
-                            <div class="cell-coords">({{ cell.probability }},{{ cell.impact }})</div>
-                        {% else %}
-                            <div style="opacity: 0.3;">-</div>
-                        {% endif %}
-                    </td>
-                    {% endfor %}
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<div class="summary-section">
-    <div class="summary-card">
-        <h3>🚦 Resumen por Nivel</h3>
-        <div class="summary-item">
-            <span class="summary-item-label">
-                <span class="badge" style="background: var(--color-success-light); color: var(--color-success);">Bajo</span>
-            </span>
-            <span class="summary-item-count">{{ level_summary.LOW|default:0 }}</span>
-        </div>
-        <div class="summary-item">
-            <span class="summary-item-label">
-                <span class="badge" style="background: #fff3cd; color: #856404;">Medio</span>
-            </span>
-            <span class="summary-item-count">{{ level_summary.MEDIUM|default:0 }}</span>
-        </div>
-        <div class="summary-item">
-            <span class="summary-item-label">
-                <span class="badge" style="background: #f8d7da; color: var(--color-danger);">Alto</span>
-            </span>
-            <span class="summary-item-count">{{ level_summary.HIGH|default:0 }}</span>
-        </div>
-    </div>
-
-    <div class="summary-card">
-        <h3>📋 Resumen por Tipo</h3>
-        <div class="summary-item">
-            <span class="summary-item-label">⚠️ Riesgos</span>
-            <span class="summary-item-count">{{ kind_summary.RISK|default:0 }}</span>
-        </div>
-        <div class="summary-item">
-            <span class="summary-item-label">💡 Oportunidades</span>
-            <span class="summary-item-count">{{ kind_summary.OPPORTUNITY|default:0 }}</span>
-        </div>
-    </div>
+<div id="dashboard-results">
+    {% include "core/risks/_dashboard_results.html" %}
 </div>
 {% endblock %}
