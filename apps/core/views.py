@@ -123,6 +123,7 @@ def context_edit(request):
 		return redirect("home")
 
 	context_obj, _ = OrganizationContext.objects.get_or_create(organization=organization)
+	previous_qms_scope = context_obj.qms_scope if request.method == "POST" else None
 	can_edit = can_edit_context(request.user)
 	if not can_edit:
 		messages.error(request, "No tiene permisos para editar el contexto.")
@@ -148,6 +149,15 @@ def context_edit(request):
 				"site_id": context_obj.site_id,
 			},
 		)
+		if (previous_qms_scope or "") != (context_obj.qms_scope or ""):
+			log_audit_event(
+				actor=request.user,
+				action="core.context.scope_updated",
+				instance=context_obj,
+				metadata={
+					"organization_id": organization.id,
+				},
+			)
 		messages.success(request, "Contexto actualizado correctamente.")
 		return redirect("core:context_detail")
 

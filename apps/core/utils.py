@@ -80,3 +80,14 @@ def can_edit_supplier(user):
         return True
 
     return user.groups.filter(name__in=["Admin", "Calidad"]).exists()
+
+
+def can_edit_competency_training(user):
+    """Check if user can create/edit competency & training records (ISO 7.2)."""
+    if user is None:
+        return False
+
+    if getattr(user, "is_superuser", False):
+        return True
+
+    return user.groups.filter(name__in=["Admin", "Calidad"]).exists()

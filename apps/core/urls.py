@@ -68,10 +68,43 @@ from apps.core.views import (
     dashboard_chart_indicator_status,
     dashboard_chart_pnc_severity,
 )
+from apps.core.competency_views import (
+    employee_list,
+    employee_detail,
+    employee_add_competency,
+    employee_create,
+    employee_edit,
+    competency_list,
+    competency_create,
+    competency_edit,
+    training_list,
+    training_detail,
+    training_create,
+    training_edit,
+    training_attendance_create,
+    dashboard_card_competencies,
+)
 
 app_name = "core"
 
 urlpatterns = [
+    path("employees/", employee_list, name="employee_list"),
+    path("employees/new/", employee_create, name="employee_create"),
+    path("employees/<int:pk>/", employee_detail, name="employee_detail"),
+    path("employees/<int:pk>/add-competency/", employee_add_competency, name="employee_add_competency"),
+    path("employees/<int:pk>/edit/", employee_edit, name="employee_edit"),
+
+    path("competencies/", competency_list, name="competency_list"),
+    path("competencies/new/", competency_create, name="competency_create"),
+    path("competencies/<int:pk>/edit/", competency_edit, name="competency_edit"),
+
+    path("trainings/", training_list, name="training_list"),
+    path("trainings/new/", training_create, name="training_create"),
+    path("trainings/<int:pk>/", training_detail, name="training_detail"),
+    path("trainings/<int:pk>/edit/", training_edit, name="training_edit"),
+
+    path("training-attendance/new/", training_attendance_create, name="training_attendance_create"),
+
     path("context/", context_detail, name="context_detail"),
     path("context/edit/", context_edit, name="context_edit"),
     path("stakeholders/", stakeholder_list, name="stakeholder_list"),
@@ -138,6 +171,7 @@ urlpatterns = [
     path("dashboard/card/indicators/", dashboard_card_indicators, name="dashboard_card_indicators"),
     path("dashboard/card/pnc/", dashboard_card_pnc, name="dashboard_card_pnc"),
     path("dashboard/card/suppliers/", dashboard_card_suppliers, name="dashboard_card_suppliers"),
+    path("dashboard/card/competencies/", dashboard_card_competencies, name="dashboard_card_competencies"),
     path("dashboard/card/auditorias/", dashboard_card_auditorias, name="dashboard_card_auditorias"),
     path("dashboard/card/audits/", dashboard_card_audits, name="dashboard_card_audits"),
     

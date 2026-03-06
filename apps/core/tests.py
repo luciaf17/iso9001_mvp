@@ -10,6 +10,7 @@ from datetime import timedelta, date
 from .models import (
     AuditEvent,
     Organization,
+    OrganizationContext,
     Process,
     Site,
     Stakeholder,
@@ -27,6 +28,11 @@ from .models import (
     NonconformingOutput,
     Supplier,
     SupplierEvaluation,
+    Employee,
+    Competency,
+    EmployeeCompetency,
+    Training,
+    TrainingAttendance,
 )
 from .forms import CAPAActionForm
 from .services import log_audit_event
@@ -3322,3 +3328,288 @@ class HtmxAdditionalListTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Riesgo HTMX A")
         self.assertNotContains(response, "Oportunidad HTMX B")
+
+
+class CompetencyTrainingTests(TestCase):
+    def setUp(self):
+        self.organization = Organization.objects.filter(is_active=True).first()
+        if self.organization is None:
+            self.organization = Organization.objects.create(name="Empresa Competencias", is_active=True)
+        self.admin_group = Group.objects.create(name="Admin")
+        self.admin_user = User.objects.create_user(username="admin_comp", password="testpass")
+        self.admin_user.groups.add(self.admin_group)
+        self.normal_user = User.objects.create_user(username="user_comp", password="testpass")
+
+        self.employee = Employee.objects.create(
+            organization=self.organization,
+            first_name="Ana",
+            last_name="Pérez",
+            position="Operaria",
+            department="Producción",
+            email="ana@example.com",
+            is_active=True,
+        )
+        self.competency = Competency.objects.create(
+            organization=self.organization,
+            name="Lectura de planos",
+            description="Interpretación de planos técnicos",
+            required_for_position="Operaria",
+        )
+        self.training = Training.objects.create(
+            organization=self.organization,
+            title="Capacitación en planos",
+            description="Curso interno",
+            provider="Área de Calidad",
+            training_date=date.today(),
+        )
+
+    def test_employee_create_view(self):
+        self.client.login(username="admin_comp", password="testpass")
+        response = self.client.post(
+            reverse("core:employee_create"),
+            data={
+                "first_name": "Luis",
+                "last_name": "Gómez",
+                "position": "Inspector",
+                "department": "Calidad",
+                "email": "luis@example.com",
+                "is_active": "on",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(Employee.objects.filter(email="luis@example.com").exists())
+        self.assertTrue(AuditEvent.objects.filter(action="core.employee.created").exists())
+
+    def test_training_create_view(self):
+        self.client.login(username="admin_comp", password="testpass")
+        response = self.client.post(
+            reverse("core:training_create"),
+            data={
+                "title": "Inducción ISO",
+                "description": "Inducción anual",
+                "provider": "Consultora X",
+                "training_date": date.today().strftime("%Y-%m-%d"),
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(Training.objects.filter(title="Inducción ISO").exists())
+        self.assertTrue(AuditEvent.objects.filter(action="core.training.created").exists())
+
+    def test_training_attendance_register(self):
+        self.client.login(username="admin_comp", password="testpass")
+        response = self.client.post(
+            reverse("core:training_attendance_create"),
+            data={
+                "training": self.training.id,
+                "employee": self.employee.id,
+                "completion_status": TrainingAttendance.CompletionStatus.COMPLETED,
+                "effectiveness_evaluated": "on",
+                "effectiveness_result": TrainingAttendance.EffectivenessResult.EFFECTIVE,
+                "evaluation_date": date.today().strftime("%Y-%m-%d"),
+                "notes": "Cumple criterios",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(
+            TrainingAttendance.objects.filter(training=self.training, employee=self.employee).exists()
+        )
+        self.assertTrue(AuditEvent.objects.filter(action="core.training.completed").exists())
+        self.assertTrue(AuditEvent.objects.filter(action="core.training.effectiveness_evaluated").exists())
+
+    def test_gap_calculation(self):
+        relation = EmployeeCompetency.objects.create(
+            employee=self.employee,
+            competency=self.competency,
+            level_required=4,
+            level_current=2,
+        )
+        self.assertTrue(relation.is_gap)
+
+        relation.level_current = 4
+        relation.save()
+        relation.refresh_from_db()
+        self.assertFalse(relation.is_gap)
+
+    def test_permissions_non_admin_cannot_create_employee(self):
+        self.client.login(username="user_comp", password="testpass")
+        response = self.client.post(
+            reverse("core:employee_create"),
+            data={
+                "first_name": "No",
+                "last_name": "Permitido",
+                "position": "Operario",
+                "department": "Producción",
+                "email": "nopermitido@example.com",
+                "is_active": "on",
+            },
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(Employee.objects.filter(email="nopermitido@example.com").exists())
+
+    def test_employee_add_competency_get_renders_form(self):
+        self.client.login(username="admin_comp", password="testpass")
+        response = self.client.get(reverse("core:employee_add_competency", args=[self.employee.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Asignar competencia")
+        self.assertContains(response, "name=\"competency\"")
+
+    def test_employee_add_competency_post_valid_creates_relation(self):
+        self.client.login(username="admin_comp", password="testpass")
+        response = self.client.post(
+            reverse("core:employee_add_competency", args=[self.employee.pk]),
+            data={
+                "competency": self.competency.pk,
+                "level_required": 4,
+                "level_current": 2,
+                "last_evaluated": date.today().strftime("%Y-%m-%d"),
+            },
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        relation = EmployeeCompetency.objects.filter(
+            employee=self.employee,
+            competency=self.competency,
+        ).first()
+        self.assertIsNotNone(relation)
+        self.assertTrue(relation.is_gap)
+
+    def test_employee_add_competency_post_invalid_returns_422(self):
+        self.client.login(username="admin_comp", password="testpass")
+        response = self.client.post(
+            reverse("core:employee_add_competency", args=[self.employee.pk]),
+            data={
+                "competency": self.competency.pk,
+                "level_required": 3,
+                "level_current": "",
+                "last_evaluated": date.today().strftime("%Y-%m-%d"),
+            },
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(response["HX-Retarget"], "#competency-modal-content")
+        self.assertContains(response, "Asignar competencia", status_code=422)
+        self.assertFalse(
+            EmployeeCompetency.objects.filter(
+                employee=self.employee,
+                competency=self.competency,
+            ).exists()
+        )
+
+    def test_employee_add_competency_post_registers_audit_event(self):
+        self.client.login(username="admin_comp", password="testpass")
+        self.client.post(
+            reverse("core:employee_add_competency", args=[self.employee.pk]),
+            data={
+                "competency": self.competency.pk,
+                "level_required": 2,
+                "level_current": 2,
+                "last_evaluated": date.today().strftime("%Y-%m-%d"),
+            },
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertTrue(
+            AuditEvent.objects.filter(
+                action="core.employee.competency_assigned",
+                metadata__organization_id=self.organization.id,
+            ).exists()
+        )
+
+
+class ContextScopeTests(TestCase):
+    def setUp(self):
+        self.organization = Organization.objects.filter(is_active=True).first()
+        if self.organization is None:
+            self.organization = Organization.objects.create(name="Empresa Alcance", is_active=True)
+
+        self.admin_group, _ = Group.objects.get_or_create(name="Admin")
+        self.admin_user = User.objects.create_user(username="admin_scope", password="testpass")
+        self.admin_user.groups.add(self.admin_group)
+
+    def test_qms_scope_saved_in_context(self):
+        context_obj = OrganizationContext.objects.create(
+            organization=self.organization,
+            summary="Resumen base",
+            qms_scope="Alcance inicial del SGC",
+        )
+        self.assertEqual(context_obj.qms_scope, "Alcance inicial del SGC")
+
+    def test_qms_scope_rendered_in_context_detail(self):
+        OrganizationContext.objects.update_or_create(
+            organization=self.organization,
+            defaults={
+                "summary": "Resumen",
+                "qms_scope": "Incluye diseño, fabricación y servicio posventa.",
+            },
+        )
+
+        self.client.login(username="admin_scope", password="testpass")
+        response = self.client.get(reverse("core:context_detail"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Alcance del SGC")
+        self.assertContains(response, "Incluye diseño, fabricación y servicio posventa.")
+
+    def test_qms_scope_updated_from_context_edit(self):
+        context_obj, _ = OrganizationContext.objects.update_or_create(
+            organization=self.organization,
+            defaults={
+                "summary": "Resumen",
+                "qms_scope": "Alcance anterior",
+            },
+        )
+
+        self.client.login(username="admin_scope", password="testpass")
+        response = self.client.post(
+            reverse("core:context_edit"),
+            data={
+                "site": "",
+                "owner": "",
+                "review_date": "",
+                "summary": context_obj.summary,
+                "qms_scope": "Nuevo alcance del sistema",
+                "quality_policy_doc": "",
+                "process_map_doc": "",
+                "org_chart_doc": "",
+                "context_analysis_doc": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        context_obj.refresh_from_db()
+        self.assertEqual(context_obj.qms_scope, "Nuevo alcance del sistema")
+
+    def test_scope_update_registers_audit_event(self):
+        OrganizationContext.objects.update_or_create(
+            organization=self.organization,
+            defaults={
+                "summary": "Resumen",
+                "qms_scope": "Alcance anterior",
+            },
+        )
+
+        self.client.login(username="admin_scope", password="testpass")
+        self.client.post(
+            reverse("core:context_edit"),
+            data={
+                "site": "",
+                "owner": "",
+                "review_date": "",
+                "summary": "Resumen",
+                "qms_scope": "Alcance actualizado ISO 4.3",
+                "quality_policy_doc": "",
+                "process_map_doc": "",
+                "org_chart_doc": "",
+                "context_analysis_doc": "",
+            },
+        )
+
+        self.assertTrue(
+            AuditEvent.objects.filter(
+                action="core.context.scope_updated",
+                metadata__organization_id=self.organization.id,
+            ).exists()
+        )

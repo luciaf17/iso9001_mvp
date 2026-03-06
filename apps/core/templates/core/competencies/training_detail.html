@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Capacitación{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <a href="{% url 'core:training_list' %}" class="text-sm text-slate-500 dark:text-slate-400">← Volver a Capacitaciones</a>
+            <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ training.title }}</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400">{{ training.provider }} · {{ training.training_date|date:"d/m/Y" }}</p>
+        </div>
+        {% if can_edit %}
+        <div class="flex gap-2">
+            <a href="{% url 'core:training_attendance_create' %}" class="btn btn-secondary">➕ Asistencia</a>
+            <a href="{% url 'core:training_edit' training.pk %}" class="btn btn-secondary">✏️ Editar</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h3 class="card-title">Detalle</h3></div>
+        <div class="card-body text-sm space-y-2">
+            <p><strong>Descripción:</strong> {{ training.description|default:"-" }}</p>
+            <p><strong>Fecha de vencimiento:</strong> {% if training.expiration_date %}{{ training.expiration_date|date:"d/m/Y" }}{% else %}-{% endif %}</p>
+            <p><strong>Evidencia:</strong>
+                {% if training.evidence_file %}
+                <a href="{{ training.evidence_file.url }}" target="_blank" class="text-blue-600 dark:text-blue-400 underline">Ver archivo</a>
+                {% else %}
+                -
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h3 class="card-title">Asistencia y eficacia</h3></div>
+        <div class="card-body p-0">
+            <div class="table-wrap">
+                <table class="results-table w-full">
+                    <thead>
+                        <tr>
+                            <th>Empleado</th>
+                            <th>Estado</th>
+                            <th>Eficacia evaluada</th>
+                            <th>Resultado</th>
+                            <th>Fecha evaluación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in attendances %}
+                        <tr>
+                            <td>{{ row.employee.first_name }} {{ row.employee.last_name }}</td>
+                            <td>
+                                {% if row.completion_status == "COMPLETED" %}
+                                <span class="badge badge-success">Completada</span>
+                                {% elif row.completion_status == "FAILED" %}
+                                <span class="badge badge-danger">No aprobada</span>
+                                {% else %}
+                                <span class="badge badge-warning">Planificada</span>
+                                {% endif %}
+                            </td>
+                            <td>{% if row.effectiveness_evaluated %}<span class="badge badge-info">Sí</span>{% else %}<span class="badge badge-neutral">No</span>{% endif %}</td>
+                            <td>
+                                {% if row.effectiveness_result == "EFFECTIVE" %}
+                                <span class="badge badge-success">Eficaz</span>
+                                {% elif row.effectiveness_result == "NOT_EFFECTIVE" %}
+                                <span class="badge badge-danger">No eficaz</span>
+                                {% else %}-{% endif %}
+                            </td>
+                            <td>{% if row.evaluation_date %}{{ row.evaluation_date|date:"d/m/Y" }}{% else %}-{% endif %}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-6 text-slate-500 dark:text-slate-400">No hay asistencias registradas para esta capacitación.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Capacitaciones{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100">🎓 Capacitaciones</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Registro y evidencia de formación del personal</p>
+        </div>
+        {% if can_edit %}
+        <div class="flex gap-2">
+            <a href="{% url 'core:training_attendance_create' %}" class="btn btn-secondary">➕ Registrar Asistencia</a>
+            <a href="{% url 'core:training_create' %}" class="btn-primary">➕ Nueva Capacitación</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <form method="get" class="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl p-6 shadow-sm">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            <div>
+                <label class="block text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300 mb-2">Buscar</label>
+                <input type="text" name="search" value="{{ selected_search }}" class="w-full rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-900/50 px-3 py-2" placeholder="Título o descripción">
+            </div>
+            <div>
+                <label class="block text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300 mb-2">Proveedor</label>
+                <input type="text" name="provider" value="{{ selected_provider }}" class="w-full rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-900/50 px-3 py-2" placeholder="Proveedor de capacitación">
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+                <a href="{% url 'core:training_list' %}" class="btn btn-secondary">Limpiar</a>
+            </div>
+        </div>
+    </form>
+
+    {% if trainings %}
+    <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10 shadow-sm">
+        <table class="min-w-full divide-y divide-slate-200 dark:divide-white/10">
+            <thead class="bg-slate-100 dark:bg-slate-800/70">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Título</th>
+                    <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Proveedor</th>
+                    <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Fecha</th>
+                    <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Vencimiento</th>
+                    <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-white/10">
+                {% for training in trainings %}
+                <tr class="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                    <td class="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ training.title }}</td>
+                    <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ training.provider }}</td>
+                    <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ training.training_date|date:"d/m/Y" }}</td>
+                    <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{% if training.expiration_date %}{{ training.expiration_date|date:"d/m/Y" }}{% else %}-{% endif %}</td>
+                    <td class="px-6 py-4 text-sm">
+                        <div class="flex gap-2">
+                            <a class="btn-secondary" href="{% url 'core:training_detail' training.pk %}">Ver</a>
+                            {% if can_edit %}
+                            <a class="btn-primary" href="{% url 'core:training_edit' training.pk %}">Editar</a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="rounded-xl border-2 border-dashed border-slate-300 dark:border-white/10 p-8 text-center">
+        <div class="text-5xl mb-4">🎓</div>
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">No hay capacitaciones registradas</h3>
+        <p class="text-sm text-slate-600 dark:text-slate-400">Registra las capacitaciones impartidas al personal.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

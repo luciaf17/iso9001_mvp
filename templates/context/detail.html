@@ -170,6 +170,15 @@
             {% endif %}
         </div>
 
+        <div class="context-label">📄 Alcance del SGC</div>
+        <div class="context-value">
+            {% if context_obj.qms_scope %}
+            {{ context_obj.qms_scope|linebreaks }}
+            {% else %}
+            <span class="no-assigned">No se ha definido el alcance del sistema.</span>
+            {% endif %}
+        </div>
+
         <div class="context-label">📖 Política de Calidad</div>
         <div class="context-value">
             {% if context_obj.quality_policy_doc %}

@@ -134,6 +134,11 @@
       <div class="spinner">Cargando Proveedores...</div>
     </div>
 
+    <!-- Competencies Card -->
+    <div class="dashboard-card card-indicator" id="card-competencies" hx-get="{% url 'core:dashboard_card_competencies' %}" hx-include="#filters" hx-trigger="load, change from:#filters delay:300ms" hx-target="this" hx-swap="innerHTML">
+      <div class="spinner">Cargando Competencias...</div>
+    </div>
+
     <!-- Auditorias Card -->
     <div class="dashboard-card card-audit" id="card-auditorias" hx-get="{% url 'core:dashboard_card_audits' %}" hx-include="#filters" hx-trigger="load, change from:#filters delay:300ms" hx-target="this" hx-swap="innerHTML">
       <div class="spinner">Cargando Auditorías...</div>
@@ -415,7 +420,7 @@
   /* Dashboard Grid */
   .dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: var(--spacing-md);
   }
 
@@ -707,6 +712,18 @@
     font-style: italic;
   }
 
+  @media (max-width: 1024px) {
+    .charts-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .chart-card {
+      padding: var(--spacing-md);
+    }
+  }
+
 </style>
 
 {% block extra_js %}
@@ -714,17 +731,19 @@
 (function() {
   'use strict';
 
-  // Prevent double initialization if script runs twice
-  if (window._dashboardChartsInitialized) {
-    console.warn('[Charts] Already initialized, skipping...');
+  if (window.__dashboardChartsControllerInitialized) {
     return;
   }
-  window._dashboardChartsInitialized = true;
+  window.__dashboardChartsControllerInitialized = true;
 
-  // Flag to prevent concurrent renders
+  let renderVersion = 0;
   let isRendering = false;
-  let initCount = 0;
-  let hasInitializedOnce = false;
+  const chartInstances = {
+    ncTrendChart: null,
+    capaChart: null,
+    indicatorChart: null,
+    pncChart: null,
+  };
 
   // Get theme
   function isDarkMode() {
@@ -744,47 +763,86 @@
     };
   }
 
-  // Safely destroy chart by canvas ID
-  function safeDestroyChart(canvasId) {
+  function destroyChart(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    const cachedChart = chartInstances[canvasId] || null;
+
     try {
-      const existingChart = Chart.getChart(canvasId);
+      const existingChart = canvas ? Chart.getChart(canvas) : null;
       if (existingChart) {
         existingChart.destroy();
+      } else if (cachedChart) {
+        cachedChart.destroy();
       }
-    } catch (e) {
-      console.warn('Error destroying chart:', canvasId, e);
+      chartInstances[canvasId] = null;
+    } catch (error) {
+      console.warn('Error destroying chart', canvasId, error);
+      chartInstances[canvasId] = null;
     }
   }
 
-  // Destroy all charts before re-rendering
   function destroyAllCharts() {
-    ['ncTrendChart', 'capaChart', 'indicatorChart', 'pncChart'].forEach(id => {
-      safeDestroyChart(id);
-    });
+    Object.keys(chartInstances).forEach(destroyChart);
   }
 
-  // Render NC Trend Chart
-  function renderNCTrendChart() {
-    fetch('{% url "core:dashboard_chart_nc_trend" %}')
+  function safeShowEmpty(canvasId, emptyId) {
+    const canvas = document.getElementById(canvasId);
+    const empty = document.getElementById(emptyId);
+    if (!canvas || !empty) {
+      return;
+    }
+    canvas.style.display = 'none';
+    empty.style.display = 'flex';
+  }
+
+  function safeShowChart(canvasId, emptyId) {
+    const canvas = document.getElementById(canvasId);
+    const empty = document.getElementById(emptyId);
+    if (!canvas || !empty) {
+      return;
+    }
+    canvas.style.display = 'block';
+    empty.style.display = 'none';
+  }
+
+  function createOrReplaceChart(canvasId, emptyId, buildConfig, versionAtStart) {
+    if (versionAtStart !== renderVersion) {
+      return;
+    }
+
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+      return;
+    }
+
+    destroyChart(canvasId);
+    safeShowChart(canvasId, emptyId);
+
+    try {
+      const context = canvas.getContext('2d');
+      chartInstances[canvasId] = new Chart(context, buildConfig());
+    } catch (error) {
+      console.error('Error creating chart', canvasId, error);
+      safeShowEmpty(canvasId, emptyId);
+    }
+  }
+
+  function renderNCTrendChart(versionAtStart) {
+    return fetch('{% url "core:dashboard_chart_nc_trend" %}')
       .then(res => res.json())
       .then(data => {
-        const canvas = document.getElementById('ncTrendChart');
-        const empty = document.getElementById('ncTrendEmpty');
-        
-        if (!data.labels || data.labels.length === 0) {
-          canvas.style.display = 'none';
-          empty.style.display = 'flex';
+        if (versionAtStart !== renderVersion) {
           return;
         }
 
-        canvas.style.display = 'block';
-        empty.style.display = 'none';
+        if (!data.labels || data.labels.length === 0) {
+          safeShowEmpty('ncTrendChart', 'ncTrendEmpty');
+          return;
+        }
 
-        const config = getChartConfig();
-        const ctx = canvas.getContext('2d');
-        
-        try {
-          new Chart(ctx, {
+        createOrReplaceChart('ncTrendChart', 'ncTrendEmpty', () => {
+          const config = getChartConfig();
+          return {
             type: 'bar',
             data: {
               labels: data.labels,
@@ -826,42 +884,31 @@
                 }
               }
             }
-          });
-        } catch (err) {
-          console.error('Error creating NC trend chart:', err);
-          canvas.style.display = 'none';
-          empty.style.display = 'flex';
-        }
+          };
+        }, versionAtStart);
       })
       .catch(err => {
         console.error('Error loading NC trend chart:', err);
-        document.getElementById('ncTrendChart').style.display = 'none';
-        document.getElementById('ncTrendEmpty').style.display = 'flex';
+        safeShowEmpty('ncTrendChart', 'ncTrendEmpty');
       });
   }
 
-  // Render CAPA Status Chart
-  function renderCAPAChart() {
-    fetch('{% url "core:dashboard_chart_capa_status" %}')
+  function renderCAPAChart(versionAtStart) {
+    return fetch('{% url "core:dashboard_chart_capa_status" %}')
       .then(res => res.json())
       .then(data => {
-        const canvas = document.getElementById('capaChart');
-        const empty = document.getElementById('capaEmpty');
-        
-        if (!data.labels || data.labels.length === 0) {
-          canvas.style.display = 'none';
-          empty.style.display = 'flex';
+        if (versionAtStart !== renderVersion) {
           return;
         }
 
-        canvas.style.display = 'block';
-        empty.style.display = 'none';
+        if (!data.labels || data.labels.length === 0) {
+          safeShowEmpty('capaChart', 'capaEmpty');
+          return;
+        }
 
-        const config = getChartConfig();
-        const ctx = canvas.getContext('2d');
-        
-        try {
-          new Chart(ctx, {
+        createOrReplaceChart('capaChart', 'capaEmpty', () => {
+          const config = getChartConfig();
+          return {
             type: 'doughnut',
             data: {
               labels: data.labels,
@@ -889,42 +936,31 @@
                 }
               }
             }
-          });
-        } catch (err) {
-          console.error('Error creating CAPA chart:', err);
-          canvas.style.display = 'none';
-          empty.style.display = 'flex';
-        }
+          };
+        }, versionAtStart);
       })
       .catch(err => {
         console.error('Error loading CAPA chart:', err);
-        document.getElementById('capaChart').style.display = 'none';
-        document.getElementById('capaEmpty').style.display = 'flex';
+        safeShowEmpty('capaChart', 'capaEmpty');
       });
   }
 
-  // Render Indicator Status Chart
-  function renderIndicatorChart() {
-    fetch('{% url "core:dashboard_chart_indicator_status" %}')
+  function renderIndicatorChart(versionAtStart) {
+    return fetch('{% url "core:dashboard_chart_indicator_status" %}')
       .then(res => res.json())
       .then(data => {
-        const canvas = document.getElementById('indicatorChart');
-        const empty = document.getElementById('indicatorEmpty');
-        
-        if (!data.labels || data.labels.length === 0) {
-          canvas.style.display = 'none';
-          empty.style.display = 'flex';
+        if (versionAtStart !== renderVersion) {
           return;
         }
 
-        canvas.style.display = 'block';
-        empty.style.display = 'none';
+        if (!data.labels || data.labels.length === 0) {
+          safeShowEmpty('indicatorChart', 'indicatorEmpty');
+          return;
+        }
 
-        const config = getChartConfig();
-        const ctx = canvas.getContext('2d');
-        
-        try {
-          new Chart(ctx, {
+        createOrReplaceChart('indicatorChart', 'indicatorEmpty', () => {
+          const config = getChartConfig();
+          return {
             type: 'pie',
             data: {
               labels: data.labels,
@@ -952,42 +988,31 @@
                 }
               }
             }
-          });
-        } catch (err) {
-          console.error('Error creating indicator chart:', err);
-          canvas.style.display = 'none';
-          empty.style.display = 'flex';
-        }
+          };
+        }, versionAtStart);
       })
       .catch(err => {
         console.error('Error loading indicator chart:', err);
-        document.getElementById('indicatorChart').style.display = 'none';
-        document.getElementById('indicatorEmpty').style.display = 'flex';
+        safeShowEmpty('indicatorChart', 'indicatorEmpty');
       });
   }
 
-  // Render PNC Severity Chart
-  function renderPNCChart() {
-    fetch('{% url "core:dashboard_chart_pnc_severity" %}')
+  function renderPNCChart(versionAtStart) {
+    return fetch('{% url "core:dashboard_chart_pnc_severity" %}')
       .then(res => res.json())
       .then(data => {
-        const canvas = document.getElementById('pncChart');
-        const empty = document.getElementById('pncEmpty');
-        
-        if (!data.labels || data.labels.length === 0) {
-          canvas.style.display = 'none';
-          empty.style.display = 'flex';
+        if (versionAtStart !== renderVersion) {
           return;
         }
 
-        canvas.style.display = 'block';
-        empty.style.display = 'none';
+        if (!data.labels || data.labels.length === 0) {
+          safeShowEmpty('pncChart', 'pncEmpty');
+          return;
+        }
 
-        const config = getChartConfig();
-        const ctx = canvas.getContext('2d');
-        
-        try {
-          new Chart(ctx, {
+        createOrReplaceChart('pncChart', 'pncEmpty', () => {
+          const config = getChartConfig();
+          return {
             type: 'bar',
             data: {
               labels: data.labels,
@@ -1029,64 +1054,44 @@
                 }
               }
             }
-          });
-        } catch (err) {
-          console.error('Error creating PNC chart:', err);
-          canvas.style.display = 'none';
-          empty.style.display = 'flex';
-        }
+          };
+        }, versionAtStart);
       })
       .catch(err => {
         console.error('Error loading PNC chart:', err);
-        document.getElementById('pncChart').style.display = 'none';
-        document.getElementById('pncEmpty').style.display = 'flex';
+        safeShowEmpty('pncChart', 'pncEmpty');
       });
   }
 
-  // Initialize all charts
   function initCharts() {
     if (isRendering) {
-      console.log('[Charts] Already rendering, skipping...');
       return;
     }
+
     isRendering = true;
-    
-    initCount++;
-    console.log('[Charts] Init #' + initCount + ' - Destroying old charts...');
-    
-    // Destroy all existing charts BEFORE creating new ones
+    renderVersion += 1;
+    const currentVersion = renderVersion;
+
     destroyAllCharts();
-    
-    // Small delay to ensure destruction completes
-    setTimeout(() => {
-      console.log('[Charts] Creating new charts...');
-      // Render all charts
-      renderNCTrendChart();
-      renderCAPAChart();
-      renderIndicatorChart();
-      renderPNCChart();
-      
-      // Reset flag and mark as initialized after render functions are called
-      setTimeout(() => { 
+
+    Promise.all([
+      renderNCTrendChart(currentVersion),
+      renderCAPAChart(currentVersion),
+      renderIndicatorChart(currentVersion),
+      renderPNCChart(currentVersion),
+    ]).finally(() => {
+      if (currentVersion === renderVersion) {
         isRendering = false;
-        hasInitializedOnce = true;
-        console.log('[Charts] Init complete');
-      }, 200);
-    }, 50);
+      }
+    });
   }
 
-  // Re-render charts on theme change (with debounce)
   let themeChangeTimeout = null;
   const observer = new MutationObserver(function(mutations) {
     mutations.forEach(function(mutation) {
       if (mutation.attributeName === 'class') {
-        // Only re-render on theme change after initial render completes
-        if (!hasInitializedOnce) return;
-        
-        // Debounce to avoid multiple rapid renders
         if (themeChangeTimeout) clearTimeout(themeChangeTimeout);
         themeChangeTimeout = setTimeout(() => {
-          console.log('[Charts] Theme changed, re-rendering...');
           initCharts();
         }, 150);
       }
@@ -1098,19 +1103,13 @@
     attributeFilter: ['class']
   });
 
-  // Initial render - use only ONE method
   function doInitialRender() {
-    if (hasInitializedOnce) {
-      console.log('[Charts] Already initialized once, skipping duplicate call');
-      return;
-    }
     initCharts();
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', doInitialRender);
+    document.addEventListener('DOMContentLoaded', doInitialRender, { once: true });
   } else {
-    // DOM already loaded, render immediately
     doInitialRender();
   }
 })();

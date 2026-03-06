@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">{{ title }}</h2>
+        </div>
+        <form method="post" class="card-body space-y-4">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+            <div class="text-sm text-red-600">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="{{ form.training.id_for_label }}">{{ form.training.label }}</label>
+                    {{ form.training }}
+                    {{ form.training.errors }}
+                </div>
+                <div>
+                    <label for="{{ form.employee.id_for_label }}">{{ form.employee.label }}</label>
+                    {{ form.employee }}
+                    {{ form.employee.errors }}
+                </div>
+                <div>
+                    <label for="{{ form.completion_status.id_for_label }}">{{ form.completion_status.label }}</label>
+                    {{ form.completion_status }}
+                    {{ form.completion_status.errors }}
+                </div>
+                <div>
+                    <label for="{{ form.effectiveness_evaluated.id_for_label }}">{{ form.effectiveness_evaluated.label }}</label>
+                    {{ form.effectiveness_evaluated }}
+                    {{ form.effectiveness_evaluated.errors }}
+                </div>
+                <div>
+                    <label for="{{ form.effectiveness_result.id_for_label }}">{{ form.effectiveness_result.label }}</label>
+                    {{ form.effectiveness_result }}
+                    {{ form.effectiveness_result.errors }}
+                </div>
+                <div>
+                    <label for="{{ form.evaluation_date.id_for_label }}">{{ form.evaluation_date.label }}</label>
+                    {{ form.evaluation_date }}
+                    {{ form.evaluation_date.errors }}
+                </div>
+                <div class="md:col-span-2">
+                    <label for="{{ form.notes.id_for_label }}">{{ form.notes.label }}</label>
+                    {{ form.notes }}
+                    {{ form.notes.errors }}
+                </div>
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button type="submit" class="btn btn-primary">Guardar</button>
+                <a href="{% url 'core:training_list' %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

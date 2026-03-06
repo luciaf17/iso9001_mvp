@@ -470,6 +470,10 @@ class OrganizationContext(models.Model):
         blank=True,
         verbose_name="Resumen",
     )
+    qms_scope = models.TextField(
+        verbose_name="Alcance del SGC",
+        blank=True,
+    )
     quality_policy_doc = models.ForeignKey(
         "docs.Document",
         on_delete=models.SET_NULL,
@@ -2068,3 +2072,271 @@ class SupplierEvaluation(models.Model):
 
         self.supplier.save()
         super().save(*args, **kwargs)
+
+
+class Employee(models.Model):
+    """Empleado para gestión de competencias y capacitación (ISO 9001 7.2)."""
+
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.PROTECT,
+        related_name="employees",
+        verbose_name="Organización",
+    )
+    first_name = models.CharField(
+        max_length=100,
+        verbose_name="Nombre",
+    )
+    last_name = models.CharField(
+        max_length=100,
+        verbose_name="Apellido",
+    )
+    position = models.CharField(
+        max_length=150,
+        verbose_name="Puesto",
+    )
+    department = models.CharField(
+        max_length=150,
+        blank=True,
+        verbose_name="Departamento",
+    )
+    email = models.EmailField(
+        verbose_name="Email",
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Activo",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Creado el",
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Actualizado el",
+    )
+
+    class Meta:
+        ordering = ["last_name", "first_name"]
+        verbose_name = "Empleado"
+        verbose_name_plural = "Empleados"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "email"],
+                name="unique_employee_email_per_org",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} - {self.position}"
+
+
+class Competency(models.Model):
+    """Competencia requerida por puesto."""
+
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.PROTECT,
+        related_name="competencies",
+        verbose_name="Organización",
+    )
+    name = models.CharField(
+        max_length=150,
+        verbose_name="Competencia",
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name="Descripción",
+    )
+    required_for_position = models.CharField(
+        max_length=150,
+        verbose_name="Requerida para puesto",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Creado el",
+    )
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name = "Competencia"
+        verbose_name_plural = "Competencias"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "name", "required_for_position"],
+                name="unique_competency_name_position_per_org",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.required_for_position})"
+
+
+class EmployeeCompetency(models.Model):
+    """Relación empleado-competencia con brecha calculada."""
+
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name="employee_competencies",
+        verbose_name="Empleado",
+    )
+    competency = models.ForeignKey(
+        Competency,
+        on_delete=models.CASCADE,
+        related_name="employee_competencies",
+        verbose_name="Competencia",
+    )
+    level_required = models.PositiveSmallIntegerField(
+        default=1,
+        verbose_name="Nivel requerido",
+    )
+    level_current = models.PositiveSmallIntegerField(
+        default=1,
+        verbose_name="Nivel actual",
+    )
+    is_gap = models.BooleanField(
+        default=False,
+        verbose_name="Brecha",
+    )
+    last_evaluated = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Última evaluación",
+    )
+
+    class Meta:
+        ordering = ["competency__name"]
+        verbose_name = "Competencia por Empleado"
+        verbose_name_plural = "Competencias por Empleado"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["employee", "competency"],
+                name="unique_employee_competency",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.employee} - {self.competency}"
+
+    def calculate_gap(self):
+        self.is_gap = self.level_current < self.level_required
+        return self.is_gap
+
+    def save(self, *args, **kwargs):
+        self.calculate_gap()
+        super().save(*args, **kwargs)
+
+
+class Training(models.Model):
+    """Capacitación disponible."""
+
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.PROTECT,
+        related_name="trainings",
+        verbose_name="Organización",
+    )
+    title = models.CharField(
+        max_length=200,
+        verbose_name="Título",
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name="Descripción",
+    )
+    provider = models.CharField(
+        max_length=150,
+        verbose_name="Proveedor",
+    )
+    training_date = models.DateField(
+        verbose_name="Fecha de capacitación",
+    )
+    expiration_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de vencimiento",
+    )
+    evidence_file = models.FileField(
+        upload_to="trainings/",
+        null=True,
+        blank=True,
+        verbose_name="Archivo de evidencia",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Creado el",
+    )
+
+    class Meta:
+        ordering = ["-training_date", "title"]
+        verbose_name = "Capacitación"
+        verbose_name_plural = "Capacitaciones"
+
+    def __str__(self):
+        return f"{self.title} - {self.training_date}"
+
+
+class TrainingAttendance(models.Model):
+    """Registro de asistencia de capacitación por empleado."""
+
+    class CompletionStatus(models.TextChoices):
+        PLANNED = "PLANNED", "Planificada"
+        COMPLETED = "COMPLETED", "Completada"
+        FAILED = "FAILED", "No aprobada"
+
+    class EffectivenessResult(models.TextChoices):
+        EFFECTIVE = "EFFECTIVE", "Eficaz"
+        NOT_EFFECTIVE = "NOT_EFFECTIVE", "No eficaz"
+
+    training = models.ForeignKey(
+        Training,
+        on_delete=models.CASCADE,
+        related_name="attendances",
+        verbose_name="Capacitación",
+    )
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name="training_attendances",
+        verbose_name="Empleado",
+    )
+    completion_status = models.CharField(
+        max_length=20,
+        choices=CompletionStatus.choices,
+        default=CompletionStatus.PLANNED,
+        verbose_name="Estado de finalización",
+    )
+    effectiveness_evaluated = models.BooleanField(
+        default=False,
+        verbose_name="Eficacia evaluada",
+    )
+    effectiveness_result = models.CharField(
+        max_length=20,
+        choices=EffectivenessResult.choices,
+        blank=True,
+        verbose_name="Resultado de eficacia",
+    )
+    evaluation_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de evaluación",
+    )
+    notes = models.TextField(
+        blank=True,
+        verbose_name="Notas",
+    )
+
+    class Meta:
+        ordering = ["-training__training_date", "employee__last_name"]
+        verbose_name = "Asistencia de Capacitación"
+        verbose_name_plural = "Asistencias de Capacitación"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["training", "employee"],
+                name="unique_training_attendance",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.employee} - {self.training}"

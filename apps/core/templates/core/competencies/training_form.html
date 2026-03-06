@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">{{ title }}</h2>
+        </div>
+        <form method="post" enctype="multipart/form-data" class="card-body space-y-4">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+            <div class="text-sm text-red-600">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div>
+                <label for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
+                {{ form.title }}
+                {{ form.title.errors }}
+            </div>
+            <div>
+                <label for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>
+                {{ form.description }}
+                {{ form.description.errors }}
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="{{ form.provider.id_for_label }}">{{ form.provider.label }}</label>
+                    {{ form.provider }}
+                    {{ form.provider.errors }}
+                </div>
+                <div>
+                    <label for="{{ form.training_date.id_for_label }}">{{ form.training_date.label }}</label>
+                    {{ form.training_date }}
+                    {{ form.training_date.errors }}
+                </div>
+                <div>
+                    <label for="{{ form.expiration_date.id_for_label }}">{{ form.expiration_date.label }}</label>
+                    {{ form.expiration_date }}
+                    {{ form.expiration_date.errors }}
+                </div>
+                <div>
+                    <label for="{{ form.evidence_file.id_for_label }}">{{ form.evidence_file.label }}</label>
+                    {{ form.evidence_file }}
+                    {{ form.evidence_file.errors }}
+                </div>
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button type="submit" class="btn btn-primary">Guardar</button>
+                <a href="{% if training %}{% url 'core:training_detail' training.pk %}{% else %}{% url 'core:training_list' %}{% endif %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

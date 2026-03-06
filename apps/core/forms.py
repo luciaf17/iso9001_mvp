@@ -21,6 +21,11 @@ from apps.core.models import (
     NonconformingOutput,
     Supplier,
     SupplierEvaluation,
+    Employee,
+    Competency,
+    EmployeeCompetency,
+    Training,
+    TrainingAttendance,
 )
 
 
@@ -42,6 +47,7 @@ class OrganizationContextForm(forms.ModelForm):
             "owner",
             "review_date",
             "summary",
+            "qms_scope",
             "quality_policy_doc",
             "process_map_doc",
             "org_chart_doc",
@@ -49,6 +55,12 @@ class OrganizationContextForm(forms.ModelForm):
         ]
         widgets = {
             "review_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "qms_scope": forms.Textarea(
+                attrs={
+                    "rows": 5,
+                    "placeholder": "Describa el alcance del Sistema de Gestión de Calidad...",
+                }
+            ),
         }
     
     def __init__(self, *args, **kwargs):
@@ -528,3 +540,112 @@ class SupplierEvaluationForm(forms.ModelForm):
         self.fields["quality_score"].help_text = "1=Muy malo, 5=Excelente"
         self.fields["delivery_score"].help_text = "1=Muy malo, 5=Excelente"
         self.fields["price_score"].help_text = "1=Muy caro, 5=Muy competitivo"
+
+
+class EmployeeForm(forms.ModelForm):
+    class Meta:
+        model = Employee
+        fields = [
+            "first_name",
+            "last_name",
+            "position",
+            "department",
+            "email",
+            "is_active",
+        ]
+
+
+class CompetencyForm(forms.ModelForm):
+    class Meta:
+        model = Competency
+        fields = [
+            "name",
+            "description",
+            "required_for_position",
+        ]
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 3}),
+        }
+
+
+class TrainingForm(forms.ModelForm):
+    class Meta:
+        model = Training
+        fields = [
+            "title",
+            "description",
+            "provider",
+            "training_date",
+            "expiration_date",
+            "evidence_file",
+        ]
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 3}),
+            "training_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "expiration_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["training_date"].input_formats = ["%Y-%m-%d"]
+        self.fields["expiration_date"].input_formats = ["%Y-%m-%d"]
+
+
+class TrainingAttendanceForm(forms.ModelForm):
+    class Meta:
+        model = TrainingAttendance
+        fields = [
+            "training",
+            "employee",
+            "completion_status",
+            "effectiveness_evaluated",
+            "effectiveness_result",
+            "evaluation_date",
+            "notes",
+        ]
+        widgets = {
+            "completion_status": forms.Select(),
+            "effectiveness_result": forms.Select(),
+            "evaluation_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "notes": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["evaluation_date"].input_formats = ["%Y-%m-%d"]
+
+
+class EmployeeCompetencyForm(forms.ModelForm):
+    class Meta:
+        model = EmployeeCompetency
+        fields = [
+            "competency",
+            "level_required",
+            "level_current",
+            "last_evaluated",
+        ]
+        widgets = {
+            "last_evaluated": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+        }
+
+    def __init__(self, *args, **kwargs):
+        employee = kwargs.pop("employee", None)
+        organization = kwargs.pop("organization", None)
+        super().__init__(*args, **kwargs)
+        
+        if organization:
+            # Only show competencies from this organization
+            self.fields["competency"].queryset = Competency.objects.filter(
+                organization=organization
+            )
+        
+        if employee:
+            # Exclude already assigned competencies
+            assigned_competency_ids = EmployeeCompetency.objects.filter(
+                employee=employee
+            ).values_list("competency_id", flat=True)
+            self.fields["competency"].queryset = self.fields["competency"].queryset.exclude(
+                id__in=assigned_competency_ids
+            )
+        
+        self.fields["last_evaluated"].input_formats = ["%Y-%m-%d"]

@@ -1,0 +1,74 @@
+<form 
+    method="post" 
+    action="{% url 'core:employee_add_competency' employee.pk %}"
+    hx-post="{% url 'core:employee_add_competency' employee.pk %}"
+    hx-target="#competency-table"
+    hx-swap="innerHTML"
+    class="space-y-4"
+>
+    {% csrf_token %}
+    
+    <div class="flex items-center justify-between">
+        <h4 class="font-semibold text-slate-900 dark:text-slate-100">Asignar competencia</h4>
+        <button type="button" data-close-competency-modal class="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+            ✕ Cancelar
+        </button>
+    </div>
+
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger">
+        {{ form.non_field_errors }}
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="md:col-span-2">
+            <label for="id_competency" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Competencia *
+            </label>
+            {{ form.competency }}
+            {% if form.competency.errors %}
+            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.competency.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <div>
+            <label for="id_level_required" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Nivel requerido *
+            </label>
+            {{ form.level_required }}
+            {% if form.level_required.errors %}
+            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.level_required.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <div>
+            <label for="id_level_current" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Nivel actual *
+            </label>
+            {{ form.level_current }}
+            {% if form.level_current.errors %}
+            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.level_current.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <div class="md:col-span-2">
+            <label for="id_last_evaluated" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Última evaluación
+            </label>
+            {{ form.last_evaluated }}
+            {% if form.last_evaluated.errors %}
+            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.last_evaluated.errors.0 }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="flex justify-end gap-2 pt-2">
+        <button type="button" data-close-competency-modal class="btn btn-secondary">
+            Cancelar
+        </button>
+        <button type="submit" class="btn btn-primary">
+            Guardar
+        </button>
+    </div>
+</form>

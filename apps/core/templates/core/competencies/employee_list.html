@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Empleados{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100">👥 Empleados</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Gestión de competencias y capacitación (ISO 9001 7.2)</p>
+        </div>
+        {% if can_edit %}
+        <a href="{% url 'core:employee_create' %}" class="btn-primary">➕ Nuevo Empleado</a>
+        {% endif %}
+    </div>
+
+    <form method="get" class="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl p-6 shadow-sm">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div>
+                <label class="block text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300 mb-2">Buscar</label>
+                <input type="text" name="search" value="{{ selected_search }}" class="w-full rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-900/50 px-3 py-2" placeholder="Nombre, puesto o email">
+            </div>
+            <div>
+                <label class="block text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300 mb-2">Departamento</label>
+                <input type="text" name="department" value="{{ selected_department }}" class="w-full rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-900/50 px-3 py-2" placeholder="Ej: Calidad">
+            </div>
+            <div>
+                <label class="block text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300 mb-2">Estado</label>
+                <select name="is_active" class="w-full rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-900/50 px-3 py-2">
+                    <option value="">Todos</option>
+                    <option value="true" {% if selected_is_active == "true" %}selected{% endif %}>Activo</option>
+                    <option value="false" {% if selected_is_active == "false" %}selected{% endif %}>Inactivo</option>
+                </select>
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+                <a href="{% url 'core:employee_list' %}" class="btn btn-secondary">Limpiar</a>
+            </div>
+        </div>
+    </form>
+
+    {% if employees %}
+    <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10 shadow-sm">
+        <table class="min-w-full divide-y divide-slate-200 dark:divide-white/10">
+            <thead class="bg-slate-100 dark:bg-slate-800/70">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Empleado</th>
+                    <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Puesto</th>
+                    <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Departamento</th>
+                    <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Email</th>
+                    <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Estado</th>
+                    <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-white/10">
+                {% for employee in employees %}
+                <tr class="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                    <td class="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ employee.first_name }} {{ employee.last_name }}</td>
+                    <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ employee.position }}</td>
+                    <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ employee.department|default:"-" }}</td>
+                    <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ employee.email }}</td>
+                    <td class="px-6 py-4 text-sm">
+                        {% if employee.is_active %}
+                        <span class="badge-success">Activo</span>
+                        {% else %}
+                        <span class="badge-danger">Inactivo</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-sm">
+                        <div class="flex gap-2">
+                            <a class="btn-secondary" href="{% url 'core:employee_detail' employee.pk %}">Ver</a>
+                            {% if can_edit %}
+                            <a class="btn-primary" href="{% url 'core:employee_edit' employee.pk %}">Editar</a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="rounded-xl border-2 border-dashed border-slate-300 dark:border-white/10 p-8 text-center">
+        <div class="text-5xl mb-4">👥</div>
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">No hay empleados registrados</h3>
+        <p class="text-sm text-slate-600 dark:text-slate-400">Comienza registrando los empleados de la organización.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

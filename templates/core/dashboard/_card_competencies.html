@@ -1,0 +1,21 @@
+<div class="card-header">
+    <h3 class="card-title">🎯 Competencias pendientes</h3>
+    <span class="badge-counter">{{ count }}</span>
+</div>
+<div class="card-body">
+    {% if rows %}
+    <ul class="card-list">
+        {% for row in rows %}
+        <li class="card-list-item">
+            <div class="font-medium">{{ row.employee.first_name }} {{ row.employee.last_name }}</div>
+            <div class="text-sm text-slate-500 dark:text-slate-400">{{ row.competency.name }} · Req: {{ row.level_required }} / Act: {{ row.level_current }}</div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="empty-state">Sin brechas de competencia detectadas.</p>
+    {% endif %}
+</div>
+<div class="card-footer">
+    <a href="{% url 'core:employee_list' %}" class="card-link">Ver empleados →</a>
+</div>
