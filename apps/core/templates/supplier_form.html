@@ -2,6 +2,48 @@
 
 {% block title %}{{ title }}{% endblock %}
 
+{% block extra_css %}
+<style>
+    html.dark .card,
+    [data-theme="dark"] .card {
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(148, 163, 184, 0.25);
+    }
+
+    html.dark .card-body,
+    html.dark .card-footer,
+    [data-theme="dark"] .card-body,
+    [data-theme="dark"] .card-footer {
+        background: transparent;
+        color: #e2e8f0;
+    }
+
+    html.dark .card-footer,
+    [data-theme="dark"] .card-footer {
+        border-top-color: rgba(148, 163, 184, 0.25);
+    }
+
+    html.dark .form-control,
+    html.dark .form-select,
+    [data-theme="dark"] .form-control,
+    [data-theme="dark"] .form-select {
+        background: rgba(15, 23, 42, 0.75);
+        border-color: rgba(148, 163, 184, 0.35);
+        color: #f1f5f9;
+    }
+
+    html.dark .text-slate-500,
+    [data-theme="dark"] .text-slate-500 {
+        color: #94a3b8 !important;
+    }
+
+    html.dark .border-bottom,
+    [data-theme="dark"] .border-bottom {
+        border-bottom-color: rgba(148, 163, 184, 0.25) !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container">
     <div class="row mb-4">
@@ -114,7 +156,7 @@
                             {{ form.next_evaluation_date.label_tag }}
                             <input type="date" class="form-control" name="next_evaluation_date" 
                                    value="{% if form.next_evaluation_date.value %}{{ form.next_evaluation_date.value|date:'Y-m-d' }}{% endif %}">
-                            <small class="text-muted">Se actualiza automáticamente al crear evaluaciones</small>
+                            <small class="text-slate-500 dark:text-slate-400">Se actualiza automáticamente al crear evaluaciones</small>
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -147,12 +189,12 @@
                 </div>
             </div>
 
-            <div class="card-footer bg-light">
+            <div class="card-footer">
                 <button type="submit" class="btn btn-primary">
                     <i class="bi bi-check"></i> Guardar
                 </button>
                 <a href="{% if supplier %}{% url 'core:supplier_detail' supplier.pk %}{% else %}{% url 'core:supplier_list' %}{% endif %}" 
-                   class="btn btn-outline-secondary">
+                   class="btn btn-secondary">
                     Cancelar
                 </a>
             </div>

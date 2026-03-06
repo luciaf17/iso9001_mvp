@@ -113,6 +113,39 @@
             grid-template-columns: 1fr;
         }
     }
+
+    html.dark .detail-card,
+    [data-theme="dark"] .detail-card {
+        background: rgba(15, 23, 42, 0.8);
+        border-color: rgba(148, 163, 184, 0.25);
+    }
+
+    html.dark .detail-item strong,
+    html.dark .detail-item span,
+    html.dark .text-section strong,
+    [data-theme="dark"] .detail-item strong,
+    [data-theme="dark"] .detail-item span,
+    [data-theme="dark"] .text-section strong {
+        color: #e2e8f0;
+    }
+
+    html.dark .text-content,
+    [data-theme="dark"] .text-content {
+        background: rgba(15, 23, 42, 0.55);
+        border-left-color: rgba(96, 165, 250, 0.55);
+        color: #cbd5e1;
+    }
+
+    html.dark .section-badge,
+    [data-theme="dark"] .section-badge {
+        background: rgba(59, 130, 246, 0.2);
+        color: #bfdbfe;
+    }
+
+    html.dark .empty-note,
+    [data-theme="dark"] .empty-note {
+        color: #94a3b8;
+    }
 </style>
 {% endblock %}
 
@@ -121,7 +154,7 @@
     <a href="{% url 'core:review_list' %}">← Volver a Revisiones</a>
     <div>
         {% if can_edit %}
-        <a href="{% url 'core:review_edit' review.pk %}" class="btn btn-primary">Editar</a>
+        <a href="{% url 'core:review_edit' review.pk %}" class="btn-primary">Editar</a>
         {% endif %}
     </div>
 </div>
@@ -159,7 +192,7 @@
     <div class="text-section">
         <strong>Acta de Reunión</strong>
         <div class="download-wrap">
-            <a href="{{ review.meeting_minutes_file.url }}" class="btn btn-secondary">📥 Descargar Acta</a>
+            <a href="{{ review.meeting_minutes_file.url }}" class="btn-secondary">📥 Descargar Acta</a>
         </div>
     </div>
     {% endif %}

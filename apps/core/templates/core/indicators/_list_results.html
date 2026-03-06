@@ -57,7 +57,7 @@
     <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">No hay indicadores registrados</h3>
     <p class="text-slate-600 dark:text-slate-400 mb-6">Los indicadores de calidad son esenciales para monitorear el desempeño del SGC (ISO 9001 9.1)</p>
     {% if can_edit %}
-    <a href="{% url 'core:indicator_new' %}" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-150">Crear primer indicador</a>
+    <a href="{% url 'core:indicator_new' %}" class="btn-primary">Crear primer indicador</a>
     {% endif %}
 </div>
 {% endif %}

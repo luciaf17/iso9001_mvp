@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LogoutView
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q
+from django.http import JsonResponse
 from django.shortcuts import redirect, render, get_object_or_404
 
 from apps.core.forms import (
@@ -3120,3 +3121,135 @@ def dashboard_card_indicators(request):
 def dashboard_card_audits(request):
 	"""Alias endpoint (EN): audits card."""
 	return dashboard_card_auditorias(request)
+
+
+# CHART DATA ENDPOINTS (DASH-03)
+
+@login_required
+def dashboard_chart_nc_trend(request):
+	"""JSON endpoint: NC trend (last 12 months)."""
+	from collections import defaultdict
+	from datetime import datetime
+	
+	organization = _get_current_organization()
+	if not organization:
+		return JsonResponse({"labels": [], "data": []})
+	
+	# Get last 12 months
+	today = date.today()
+	months_data = defaultdict(int)
+	
+	for i in range(11, -1, -1):
+		month_date = today - timedelta(days=30*i)
+		month_key = month_date.strftime("%Y-%m")
+		months_data[month_key] = 0
+	
+	# Get NCs
+	ncs = NoConformity.objects.filter(
+		organization=organization,
+		detected_at__gte=today - timedelta(days=365)
+	)
+	
+	for nc in ncs:
+		if nc.detected_at:
+			month_key = nc.detected_at.strftime("%Y-%m")
+			if month_key in months_data:
+				months_data[month_key] += 1
+	
+	# Prepare response
+	labels = []
+	data = []
+	for month_key in sorted(months_data.keys()):
+		# Format as "Ene 2026"
+		dt = datetime.strptime(month_key, "%Y-%m")
+		month_name = dt.strftime("%b %Y")
+		labels.append(month_name)
+		data.append(months_data[month_key])
+	
+	return JsonResponse({"labels": labels, "data": data})
+
+
+@login_required
+def dashboard_chart_capa_status(request):
+	"""JSON endpoint: CAPA open vs closed."""
+	organization = _get_current_organization()
+	if not organization:
+		return JsonResponse({"labels": [], "data": [], "colors": []})
+	
+	open_count = CAPAAction.objects.filter(
+		no_conformity__organization=organization,
+		status__in=[CAPAAction.Status.OPEN, CAPAAction.Status.IN_PROGRESS]
+	).count()
+	
+	closed_count = CAPAAction.objects.filter(
+		no_conformity__organization=organization,
+		status=CAPAAction.Status.DONE
+	).count()
+	
+	return JsonResponse({
+		"labels": ["Abiertas", "Cerradas"],
+		"data": [open_count, closed_count],
+		"colors": ["#f59e0b", "#22c55e"]
+	})
+
+
+@login_required
+def dashboard_chart_indicator_status(request):
+	"""JSON endpoint: Indicators by status."""
+	organization = _get_current_organization()
+	if not organization:
+		return JsonResponse({"labels": [], "data": [], "colors": []})
+	
+	indicators = QualityIndicator.objects.filter(organization=organization)
+	
+	status_counts = {
+		"OK": 0,
+		"OUT_OF_TARGET": 0,
+		"OVERDUE": 0,
+		"NO_DATA": 0
+	}
+	
+	for indicator in indicators:
+		status = indicator.get_status()
+		if status in status_counts:
+			status_counts[status] += 1
+	
+	labels = ["En Meta", "Fuera de Meta", "Vencido", "Sin Datos"]
+	data = [
+		status_counts["OK"],
+		status_counts["OUT_OF_TARGET"],
+		status_counts["OVERDUE"],
+		status_counts["NO_DATA"]
+	]
+	colors = ["#22c55e", "#f59e0b", "#ef4444", "#94a3b8"]
+	
+	return JsonResponse({"labels": labels, "data": data, "colors": colors})
+
+
+@login_required
+def dashboard_chart_pnc_severity(request):
+	"""JSON endpoint: Non-conforming output by severity."""
+	organization = _get_current_organization()
+	if not organization:
+		return JsonResponse({"labels": [], "data": [], "colors": []})
+	
+	minor = NonconformingOutput.objects.filter(
+		organization=organization,
+		severity=NonconformingOutput.Severity.MINOR
+	).count()
+	
+	major = NonconformingOutput.objects.filter(
+		organization=organization,
+		severity=NonconformingOutput.Severity.MAJOR
+	).count()
+	
+	critical = NonconformingOutput.objects.filter(
+		organization=organization,
+		severity=NonconformingOutput.Severity.CRITICAL
+	).count()
+	
+	return JsonResponse({
+		"labels": ["Menor", "Mayor", "Crítico"],
+		"data": [minor, major, critical],
+		"colors": ["#fbbf24", "#f59e0b", "#ef4444"]
+	})

@@ -188,6 +188,39 @@
             grid-template-columns: 1fr;
         }
     }
+
+    html.dark .detail-card,
+    [data-theme="dark"] .detail-card {
+        background: rgba(15, 23, 42, 0.8);
+        border-color: rgba(148, 163, 184, 0.25);
+    }
+
+    html.dark .detail-item strong,
+    html.dark .detail-item span,
+    [data-theme="dark"] .detail-item strong,
+    [data-theme="dark"] .detail-item span {
+        color: #e2e8f0;
+    }
+
+    html.dark .progress-container,
+    [data-theme="dark"] .progress-container {
+        background: rgba(15, 23, 42, 0.55);
+        border: 1px solid rgba(148, 163, 184, 0.25);
+    }
+
+    html.dark .metric-label,
+    html.dark .metric-value.current,
+    html.dark .progress-text,
+    [data-theme="dark"] .metric-label,
+    [data-theme="dark"] .metric-value.current,
+    [data-theme="dark"] .progress-text {
+        color: #cbd5e1;
+    }
+
+    html.dark .progress-native::-webkit-progress-bar,
+    [data-theme="dark"] .progress-native::-webkit-progress-bar {
+        background: rgba(100, 116, 139, 0.35);
+    }
 </style>
 {% endblock %}
 

@@ -238,3 +238,16 @@ Checklist rápido antes de mergear cambios de UI:
 2. Abrir vistas críticas en claro y oscuro (dashboard, listas, formularios).
 3. Verificar que no aparezcan fondos blancos inesperados en modo oscuro.
 4. Confirmar que no se introdujeron estilos inline ni `@apply`.
+
+Checklist visual final (modo oscuro):
+
+- Listas: stakeholders, objetivos, indicadores, riesgos, preguntas de auditoría, NC, PNC, suppliers.
+	- Verificar botones primarios/secundarios consistentes y legibles.
+	- Verificar hover de filas/acciones sin fondos blancos.
+	- Verificar headers de tabla con contraste correcto.
+- Formularios: parte interesada, pregunta de auditoría, auditoría, checklist, acción CAPA, NC, indicador, objetivo, medición, evaluación de proveedor.
+	- Verificar fondo del contenedor y de inputs (sin panel blanco).
+	- Verificar labels y help text legibles en oscuro.
+- Detalles: NC, objetivo, review, supplier.
+	- Verificar badges, bloques de texto y alertas con contraste correcto.
+	- Verificar títulos/secciones no se mezclen con el fondo.

@@ -118,6 +118,38 @@
         cursor: pointer !important;
         margin-bottom: 0 !important;
     }
+
+    html.dark .form-container,
+    [data-theme="dark"] .form-container {
+        background: rgba(15, 23, 42, 0.8);
+        border-color: rgba(148, 163, 184, 0.25);
+    }
+
+    html.dark .form-group label,
+    [data-theme="dark"] .form-group label {
+        color: #e2e8f0;
+    }
+
+    html.dark .form-group input,
+    html.dark .form-group select,
+    html.dark .form-group textarea,
+    [data-theme="dark"] .form-group input,
+    [data-theme="dark"] .form-group select,
+    [data-theme="dark"] .form-group textarea {
+        background: rgba(15, 23, 42, 0.7);
+        border-color: rgba(148, 163, 184, 0.35);
+        color: #f1f5f9;
+    }
+
+    html.dark .helptext,
+    [data-theme="dark"] .helptext {
+        color: #94a3b8;
+    }
+
+    html.dark .form-actions,
+    [data-theme="dark"] .form-actions {
+        border-top-color: rgba(148, 163, 184, 0.25);
+    }
 </style>
 {% endblock %}
 

@@ -127,6 +127,36 @@
             padding: var(--spacing-xs) var(--spacing-sm);
         }
     }
+
+    html.dark .evaluation-table thead,
+    [data-theme="dark"] .evaluation-table thead {
+        background: rgba(30, 41, 59, 0.9);
+    }
+
+    html.dark .evaluation-table th,
+    html.dark .evaluation-table td,
+    [data-theme="dark"] .evaluation-table th,
+    [data-theme="dark"] .evaluation-table td {
+        color: #e2e8f0;
+        border-bottom-color: rgba(148, 163, 184, 0.25);
+    }
+
+    html.dark .evaluation-table tbody tr:hover,
+    [data-theme="dark"] .evaluation-table tbody tr:hover {
+        background: rgba(148, 163, 184, 0.1);
+    }
+
+    html.dark .status-alert.upcoming,
+    [data-theme="dark"] .status-alert.upcoming {
+        background: rgba(14, 116, 144, 0.25);
+        color: #bae6fd;
+    }
+
+    html.dark .status-alert.overdue,
+    [data-theme="dark"] .status-alert.overdue {
+        background: rgba(185, 28, 28, 0.22);
+        color: #fecaca;
+    }
 </style>
 {% endblock %}
 
@@ -135,7 +165,7 @@
     <div class="detail-header">
         <div>
             <h1>{{ supplier.name }}</h1>
-            <p class="text-muted">{{ supplier.get_category_display }}</p>
+            <p class="text-slate-500 dark:text-slate-400">{{ supplier.get_category_display }}</p>
         </div>
         {% if can_edit %}
         <a href="{% url 'core:supplier_edit' supplier.pk %}" class="btn btn-secondary">✏️ Editar</a>
@@ -280,7 +310,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="7" class="text-center text-muted py-3">
+                        <td colspan="7" class="py-3 text-center text-slate-500 dark:text-slate-400">
                             <small>Sin evaluaciones registradas</small>
                         </td>
                     </tr>

@@ -3022,6 +3022,112 @@ class DashboardTests(TestCase):
         self.assertEqual(summary["total_ncs"], 1)
         self.assertEqual(summary["active_suppliers"], 1)
 
+    # Chart endpoint tests (DASH-03)
+    def test_dashboard_chart_nc_trend_responds_200(self):
+        """NC trend chart endpoint responds 200."""
+        self.client.login(username="dash_user", password="dashpass")
+        response = self.client.get(reverse("core:dashboard_chart_nc_trend"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/json")
+
+    def test_dashboard_chart_nc_trend_returns_json_structure(self):
+        """NC trend chart returns proper JSON structure."""
+        self.client.login(username="dash_user", password="dashpass")
+        response = self.client.get(reverse("core:dashboard_chart_nc_trend"))
+        data = response.json()
+        self.assertIn("labels", data)
+        self.assertIn("data", data)
+        self.assertIsInstance(data["labels"], list)
+        self.assertIsInstance(data["data"], list)
+
+    def test_dashboard_chart_nc_trend_filters_by_organization(self):
+        """NC trend chart filters by current organization."""
+        # Create NC in our org
+        NoConformity.objects.create(
+            organization=self.organization,
+            code="NC-CHART-001",
+            title="Test NC for Chart",
+            origin=NoConformity.Origin.INTERNAL,
+            severity=NoConformity.Severity.MAJOR,
+            status=NoConformity.Status.OPEN,
+            detected_at=date.today(),
+        )
+        
+        # Create another org and NC (should NOT appear)
+        other_org = Organization.objects.create(
+            name="Other Org",
+            is_active=True,
+        )
+        NoConformity.objects.create(
+            organization=other_org,
+            code="NC-OTHER-001",
+            title="Other NC",
+            origin=NoConformity.Origin.INTERNAL,
+            severity=NoConformity.Severity.MINOR,
+            status=NoConformity.Status.OPEN,
+            detected_at=date.today(),
+        )
+        
+        self.client.login(username="dash_user", password="dashpass")
+        response = self.client.get(reverse("core:dashboard_chart_nc_trend"))
+        data = response.json()
+        
+        # Data should contain our NC, not the other one
+        # Since we created 1 NC in current month, sum should be 1
+        total = sum(data["data"])
+        self.assertEqual(total, 1)
+
+    def test_dashboard_chart_capa_status_responds_200(self):
+        """CAPA status chart endpoint responds 200."""
+        self.client.login(username="dash_user", password="dashpass")
+        response = self.client.get(reverse("core:dashboard_chart_capa_status"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/json")
+
+    def test_dashboard_chart_capa_status_returns_json_structure(self):
+        """CAPA status chart returns proper JSON structure."""
+        self.client.login(username="dash_user", password="dashpass")
+        response = self.client.get(reverse("core:dashboard_chart_capa_status"))
+        data = response.json()
+        self.assertIn("labels", data)
+        self.assertIn("data", data)
+        self.assertIn("colors", data)
+        self.assertIsInstance(data["labels"], list)
+        self.assertIsInstance(data["data"], list)
+        self.assertIsInstance(data["colors"], list)
+
+    def test_dashboard_chart_indicator_status_responds_200(self):
+        """Indicator status chart endpoint responds 200."""
+        self.client.login(username="dash_user", password="dashpass")
+        response = self.client.get(reverse("core:dashboard_chart_indicator_status"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/json")
+
+    def test_dashboard_chart_indicator_status_returns_json_structure(self):
+        """Indicator status chart returns proper JSON structure."""
+        self.client.login(username="dash_user", password="dashpass")
+        response = self.client.get(reverse("core:dashboard_chart_indicator_status"))
+        data = response.json()
+        self.assertIn("labels", data)
+        self.assertIn("data", data)
+        self.assertIn("colors", data)
+
+    def test_dashboard_chart_pnc_severity_responds_200(self):
+        """PNC severity chart endpoint responds 200."""
+        self.client.login(username="dash_user", password="dashpass")
+        response = self.client.get(reverse("core:dashboard_chart_pnc_severity"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/json")
+
+    def test_dashboard_chart_pnc_severity_returns_json_structure(self):
+        """PNC severity chart returns proper JSON structure."""
+        self.client.login(username="dash_user", password="dashpass")
+        response = self.client.get(reverse("core:dashboard_chart_pnc_severity"))
+        data = response.json()
+        self.assertIn("labels", data)
+        self.assertIn("data", data)
+        self.assertIn("colors", data)
+
 
 class HtmxProgressiveTests(TestCase):
     """Tests for progressive HTMX integration on dashboard and list views."""

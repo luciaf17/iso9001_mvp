@@ -139,6 +139,76 @@
       <div class="spinner">Cargando Auditorías...</div>
     </div>
   </div>
+
+  <!-- ANALYTICS SECTION (DASH-03) -->
+  <div class="analytics-section">
+    <div class="section-header">
+      <h2>Análisis del Sistema</h2>
+      <p class="section-subtitle">Visualización de tendencias y desempeño general del SGC</p>
+    </div>
+
+    <div class="charts-grid">
+      <!-- NC Trend Chart -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="chart-title">No Conformidades por Mes</h3>
+          <p class="chart-subtitle">Últimos 12 meses</p>
+        </div>
+        <div class="chart-container">
+          <canvas id="ncTrendChart"></canvas>
+        </div>
+        <div id="ncTrendEmpty" class="chart-empty" style="display: none;">
+          <span class="empty-icon">📊</span>
+          <p>Sin datos disponibles</p>
+        </div>
+      </div>
+
+      <!-- CAPA Status Chart -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="chart-title">Estado de CAPA</h3>
+          <p class="chart-subtitle">Abiertas vs cerradas</p>
+        </div>
+        <div class="chart-container">
+          <canvas id="capaChart"></canvas>
+        </div>
+        <div id="capaEmpty" class="chart-empty" style="display: none;">
+          <span class="empty-icon">📊</span>
+          <p>Sin datos disponibles</p>
+        </div>
+      </div>
+
+      <!-- Indicator Status Chart -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="chart-title">Indicadores del Sistema</h3>
+          <p class="chart-subtitle">Distribución del estado actual</p>
+        </div>
+        <div class="chart-container">
+          <canvas id="indicatorChart"></canvas>
+        </div>
+        <div id="indicatorEmpty" class="chart-empty" style="display: none;">
+          <span class="empty-icon">📊</span>
+          <p>Sin datos disponibles</p>
+        </div>
+      </div>
+
+      <!-- PNC Severity Chart -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="chart-title">Severidad de PNC</h3>
+          <p class="chart-subtitle">Distribución de productos no conformes</p>
+        </div>
+        <div class="chart-container">
+          <canvas id="pncChart"></canvas>
+        </div>
+        <div id="pncEmpty" class="chart-empty" style="display: none;">
+          <span class="empty-icon">📊</span>
+          <p>Sin datos disponibles</p>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <style>
@@ -502,6 +572,10 @@
     .page-header h1 {
       font-size: 1.5rem;
     }
+
+    .charts-grid {
+      grid-template-columns: 1fr;
+    }
   }
 
   @media (max-width: 480px) {
@@ -522,5 +596,524 @@
       font-size: 1.5rem;
     }
   }
+
+  /* Analytics Section (DASH-03) */
+  .analytics-section {
+    margin-top: var(--spacing-xl);
+  }
+
+  .section-header {
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .section-header h2 {
+    margin: 0 0 var(--spacing-xs) 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+  }
+
+  .dark .section-header h2 {
+    color: #e2e8f0;
+  }
+
+  .section-subtitle {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--color-text-secondary);
+  }
+
+  .dark .section-subtitle {
+    color: #94a3b8;
+  }
+
+  .charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+  }
+
+  .chart-card {
+    background: white;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-lg);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.2s ease;
+  }
+
+  .dark .chart-card {
+    background: rgba(30, 41, 59, 0.5);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 1px 2px rgba(2, 6, 23, 0.35);
+  }
+
+  .chart-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  .chart-header {
+    margin-bottom: var(--spacing-md);
+  }
+
+  .chart-title {
+    margin: 0 0 var(--spacing-xs) 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  .dark .chart-title {
+    color: #e2e8f0;
+  }
+
+  .chart-subtitle {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+  }
+
+  .dark .chart-subtitle {
+    color: #94a3b8;
+  }
+
+  .chart-container {
+    position: relative;
+    height: 300px;
+  }
+
+  .chart-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    color: var(--color-text-secondary);
+    text-align: center;
+  }
+
+  .dark .chart-empty {
+    color: #94a3b8;
+  }
+
+  .empty-icon {
+    font-size: 3rem;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .chart-empty p {
+    margin: 0;
+    font-size: 0.95rem;
+    font-style: italic;
+  }
+
 </style>
+
+{% block extra_js %}
+<script>
+(function() {
+  'use strict';
+
+  // Prevent double initialization if script runs twice
+  if (window._dashboardChartsInitialized) {
+    console.warn('[Charts] Already initialized, skipping...');
+    return;
+  }
+  window._dashboardChartsInitialized = true;
+
+  // Flag to prevent concurrent renders
+  let isRendering = false;
+  let initCount = 0;
+  let hasInitializedOnce = false;
+
+  // Get theme
+  function isDarkMode() {
+    return document.documentElement.classList.contains('dark');
+  }
+
+  // Get chart colors based on theme
+  function getChartConfig() {
+    const isDark = isDarkMode();
+    
+    return {
+      textColor: isDark ? '#cbd5e1' : '#475569',
+      gridColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
+      tooltipBg: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+      tooltipText: isDark ? '#ffffff' : '#1e293b',
+      titleColor: isDark ? '#f1f5f9' : '#1e293b'
+    };
+  }
+
+  // Safely destroy chart by canvas ID
+  function safeDestroyChart(canvasId) {
+    try {
+      const existingChart = Chart.getChart(canvasId);
+      if (existingChart) {
+        existingChart.destroy();
+      }
+    } catch (e) {
+      console.warn('Error destroying chart:', canvasId, e);
+    }
+  }
+
+  // Destroy all charts before re-rendering
+  function destroyAllCharts() {
+    ['ncTrendChart', 'capaChart', 'indicatorChart', 'pncChart'].forEach(id => {
+      safeDestroyChart(id);
+    });
+  }
+
+  // Render NC Trend Chart
+  function renderNCTrendChart() {
+    fetch('{% url "core:dashboard_chart_nc_trend" %}')
+      .then(res => res.json())
+      .then(data => {
+        const canvas = document.getElementById('ncTrendChart');
+        const empty = document.getElementById('ncTrendEmpty');
+        
+        if (!data.labels || data.labels.length === 0) {
+          canvas.style.display = 'none';
+          empty.style.display = 'flex';
+          return;
+        }
+
+        canvas.style.display = 'block';
+        empty.style.display = 'none';
+
+        const config = getChartConfig();
+        const ctx = canvas.getContext('2d');
+        
+        try {
+          new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: data.labels,
+              datasets: [{
+                label: 'No Conformidades',
+                data: data.data,
+                backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                borderColor: '#ef4444',
+                borderWidth: 1
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  display: false
+                },
+                tooltip: {
+                  backgroundColor: config.tooltipBg,
+                  titleColor: config.tooltipText,
+                  bodyColor: config.tooltipText,
+                  borderColor: config.gridColor,
+                  borderWidth: 1
+                }
+              },
+              scales: {
+                x: {
+                  ticks: { color: config.textColor },
+                  grid: { color: config.gridColor }
+                },
+                y: {
+                  beginAtZero: true,
+                  ticks: { 
+                    color: config.textColor,
+                    precision: 0
+                  },
+                  grid: { color: config.gridColor }
+                }
+              }
+            }
+          });
+        } catch (err) {
+          console.error('Error creating NC trend chart:', err);
+          canvas.style.display = 'none';
+          empty.style.display = 'flex';
+        }
+      })
+      .catch(err => {
+        console.error('Error loading NC trend chart:', err);
+        document.getElementById('ncTrendChart').style.display = 'none';
+        document.getElementById('ncTrendEmpty').style.display = 'flex';
+      });
+  }
+
+  // Render CAPA Status Chart
+  function renderCAPAChart() {
+    fetch('{% url "core:dashboard_chart_capa_status" %}')
+      .then(res => res.json())
+      .then(data => {
+        const canvas = document.getElementById('capaChart');
+        const empty = document.getElementById('capaEmpty');
+        
+        if (!data.labels || data.labels.length === 0) {
+          canvas.style.display = 'none';
+          empty.style.display = 'flex';
+          return;
+        }
+
+        canvas.style.display = 'block';
+        empty.style.display = 'none';
+
+        const config = getChartConfig();
+        const ctx = canvas.getContext('2d');
+        
+        try {
+          new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+              labels: data.labels,
+              datasets: [{
+                data: data.data,
+                backgroundColor: data.colors,
+                borderWidth: 2,
+                borderColor: isDarkMode() ? '#1e293b' : '#ffffff'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'bottom',
+                  labels: { color: config.textColor }
+                },
+                tooltip: {
+                  backgroundColor: config.tooltipBg,
+                  titleColor: config.tooltipText,
+                  bodyColor: config.tooltipText,
+                  borderColor: config.gridColor,
+                  borderWidth: 1
+                }
+              }
+            }
+          });
+        } catch (err) {
+          console.error('Error creating CAPA chart:', err);
+          canvas.style.display = 'none';
+          empty.style.display = 'flex';
+        }
+      })
+      .catch(err => {
+        console.error('Error loading CAPA chart:', err);
+        document.getElementById('capaChart').style.display = 'none';
+        document.getElementById('capaEmpty').style.display = 'flex';
+      });
+  }
+
+  // Render Indicator Status Chart
+  function renderIndicatorChart() {
+    fetch('{% url "core:dashboard_chart_indicator_status" %}')
+      .then(res => res.json())
+      .then(data => {
+        const canvas = document.getElementById('indicatorChart');
+        const empty = document.getElementById('indicatorEmpty');
+        
+        if (!data.labels || data.labels.length === 0) {
+          canvas.style.display = 'none';
+          empty.style.display = 'flex';
+          return;
+        }
+
+        canvas.style.display = 'block';
+        empty.style.display = 'none';
+
+        const config = getChartConfig();
+        const ctx = canvas.getContext('2d');
+        
+        try {
+          new Chart(ctx, {
+            type: 'pie',
+            data: {
+              labels: data.labels,
+              datasets: [{
+                data: data.data,
+                backgroundColor: data.colors,
+                borderWidth: 2,
+                borderColor: isDarkMode() ? '#1e293b' : '#ffffff'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'bottom',
+                  labels: { color: config.textColor }
+                },
+                tooltip: {
+                  backgroundColor: config.tooltipBg,
+                  titleColor: config.tooltipText,
+                  bodyColor: config.tooltipText,
+                  borderColor: config.gridColor,
+                  borderWidth: 1
+                }
+              }
+            }
+          });
+        } catch (err) {
+          console.error('Error creating indicator chart:', err);
+          canvas.style.display = 'none';
+          empty.style.display = 'flex';
+        }
+      })
+      .catch(err => {
+        console.error('Error loading indicator chart:', err);
+        document.getElementById('indicatorChart').style.display = 'none';
+        document.getElementById('indicatorEmpty').style.display = 'flex';
+      });
+  }
+
+  // Render PNC Severity Chart
+  function renderPNCChart() {
+    fetch('{% url "core:dashboard_chart_pnc_severity" %}')
+      .then(res => res.json())
+      .then(data => {
+        const canvas = document.getElementById('pncChart');
+        const empty = document.getElementById('pncEmpty');
+        
+        if (!data.labels || data.labels.length === 0) {
+          canvas.style.display = 'none';
+          empty.style.display = 'flex';
+          return;
+        }
+
+        canvas.style.display = 'block';
+        empty.style.display = 'none';
+
+        const config = getChartConfig();
+        const ctx = canvas.getContext('2d');
+        
+        try {
+          new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: data.labels,
+              datasets: [{
+                label: 'PNC por Severidad',
+                data: data.data,
+                backgroundColor: data.colors,
+                borderWidth: 1,
+                borderColor: data.colors.map(c => c.replace('0.7', '1'))
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  display: false
+                },
+                tooltip: {
+                  backgroundColor: config.tooltipBg,
+                  titleColor: config.tooltipText,
+                  bodyColor: config.tooltipText,
+                  borderColor: config.gridColor,
+                  borderWidth: 1
+                }
+              },
+              scales: {
+                x: {
+                  ticks: { color: config.textColor },
+                  grid: { color: config.gridColor }
+                },
+                y: {
+                  beginAtZero: true,
+                  ticks: { 
+                    color: config.textColor,
+                    precision: 0
+                  },
+                  grid: { color: config.gridColor }
+                }
+              }
+            }
+          });
+        } catch (err) {
+          console.error('Error creating PNC chart:', err);
+          canvas.style.display = 'none';
+          empty.style.display = 'flex';
+        }
+      })
+      .catch(err => {
+        console.error('Error loading PNC chart:', err);
+        document.getElementById('pncChart').style.display = 'none';
+        document.getElementById('pncEmpty').style.display = 'flex';
+      });
+  }
+
+  // Initialize all charts
+  function initCharts() {
+    if (isRendering) {
+      console.log('[Charts] Already rendering, skipping...');
+      return;
+    }
+    isRendering = true;
+    
+    initCount++;
+    console.log('[Charts] Init #' + initCount + ' - Destroying old charts...');
+    
+    // Destroy all existing charts BEFORE creating new ones
+    destroyAllCharts();
+    
+    // Small delay to ensure destruction completes
+    setTimeout(() => {
+      console.log('[Charts] Creating new charts...');
+      // Render all charts
+      renderNCTrendChart();
+      renderCAPAChart();
+      renderIndicatorChart();
+      renderPNCChart();
+      
+      // Reset flag and mark as initialized after render functions are called
+      setTimeout(() => { 
+        isRendering = false;
+        hasInitializedOnce = true;
+        console.log('[Charts] Init complete');
+      }, 200);
+    }, 50);
+  }
+
+  // Re-render charts on theme change (with debounce)
+  let themeChangeTimeout = null;
+  const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      if (mutation.attributeName === 'class') {
+        // Only re-render on theme change after initial render completes
+        if (!hasInitializedOnce) return;
+        
+        // Debounce to avoid multiple rapid renders
+        if (themeChangeTimeout) clearTimeout(themeChangeTimeout);
+        themeChangeTimeout = setTimeout(() => {
+          console.log('[Charts] Theme changed, re-rendering...');
+          initCharts();
+        }, 150);
+      }
+    });
+  });
+
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['class']
+  });
+
+  // Initial render - use only ONE method
+  function doInitialRender() {
+    if (hasInitializedOnce) {
+      console.log('[Charts] Already initialized once, skipping duplicate call');
+      return;
+    }
+    initCharts();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', doInitialRender);
+  } else {
+    // DOM already loaded, render immediately
+    doInitialRender();
+  }
+})();
+</script>
+{% endblock %}
 {% endblock %}

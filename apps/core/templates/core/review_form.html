@@ -2,6 +2,38 @@
 
 {% block title %}{% if is_edit %}Editar{% else %}Nueva{% endif %} Revisión por la Dirección{% endblock %}
 
+{% block extra_css %}
+<style>
+    html.dark form input,
+    html.dark form select,
+    html.dark form textarea,
+    [data-theme="dark"] form input,
+    [data-theme="dark"] form select,
+    [data-theme="dark"] form textarea {
+        background: rgba(15, 23, 42, 0.75);
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        color: #f1f5f9;
+    }
+
+    html.dark form input::placeholder,
+    html.dark form textarea::placeholder,
+    [data-theme="dark"] form input::placeholder,
+    [data-theme="dark"] form textarea::placeholder {
+        color: #94a3b8;
+    }
+
+    html.dark form label,
+    [data-theme="dark"] form label {
+        color: #e2e8f0;
+    }
+    
+    html.dark form .text-slate-500,
+    [data-theme="dark"] form .text-slate-500 {
+        color: #94a3b8;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="mx-auto max-w-5xl rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900 md:p-8">
     <h1 class="mb-6 text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">{% if is_edit %}Editar{% else %}Nueva{% endif %} Revisión por la Dirección</h1>
@@ -228,8 +260,8 @@
         </div>
 
         <div class="mt-8 flex flex-wrap gap-3 border-t border-slate-200 pt-6 dark:border-slate-700">
-            <button type="submit" class="btn btn-primary">💾 Guardar</button>
-            <a href="{% if is_edit %}{% url 'core:review_detail' review.pk %}{% else %}{% url 'core:review_list' %}{% endif %}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn-primary">💾 Guardar</button>
+            <a href="{% if is_edit %}{% url 'core:review_detail' review.pk %}{% else %}{% url 'core:review_list' %}{% endif %}" class="btn-secondary">Cancelar</a>
         </div>
 
         {% if form.non_field_errors %}

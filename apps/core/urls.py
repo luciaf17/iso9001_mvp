@@ -63,6 +63,10 @@ from apps.core.views import (
     dashboard_card_suppliers,
     dashboard_card_auditorias,
     dashboard_card_audits,
+    dashboard_chart_nc_trend,
+    dashboard_chart_capa_status,
+    dashboard_chart_indicator_status,
+    dashboard_chart_pnc_severity,
 )
 
 app_name = "core"
@@ -136,4 +140,10 @@ urlpatterns = [
     path("dashboard/card/suppliers/", dashboard_card_suppliers, name="dashboard_card_suppliers"),
     path("dashboard/card/auditorias/", dashboard_card_auditorias, name="dashboard_card_auditorias"),
     path("dashboard/card/audits/", dashboard_card_audits, name="dashboard_card_audits"),
+    
+    # Dashboard Charts (DASH-03)
+    path("dashboard/chart/nc-trend/", dashboard_chart_nc_trend, name="dashboard_chart_nc_trend"),
+    path("dashboard/chart/capa-status/", dashboard_chart_capa_status, name="dashboard_chart_capa_status"),
+    path("dashboard/chart/indicator-status/", dashboard_chart_indicator_status, name="dashboard_chart_indicator_status"),
+    path("dashboard/chart/pnc-severity/", dashboard_chart_pnc_severity, name="dashboard_chart_pnc_severity"),
 ]

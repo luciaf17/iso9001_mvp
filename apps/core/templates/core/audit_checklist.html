@@ -71,6 +71,46 @@
     .checklist-title {
         margin-top: var(--spacing-sm);
     }
+
+    html.dark .checklist-card,
+    [data-theme="dark"] .checklist-card {
+        background: rgba(15, 23, 42, 0.8);
+        border-color: rgba(148, 163, 184, 0.25);
+    }
+
+    html.dark .checklist-table thead tr,
+    [data-theme="dark"] .checklist-table thead tr {
+        background: rgba(30, 41, 59, 0.9);
+        border-bottom-color: rgba(148, 163, 184, 0.35);
+    }
+
+    html.dark .checklist-table tbody tr,
+    [data-theme="dark"] .checklist-table tbody tr {
+        border-bottom-color: rgba(148, 163, 184, 0.2);
+    }
+
+    html.dark .checklist-table th,
+    html.dark .checklist-table td,
+    html.dark .checklist-title,
+    [data-theme="dark"] .checklist-table th,
+    [data-theme="dark"] .checklist-table td,
+    [data-theme="dark"] .checklist-title {
+        color: #e2e8f0;
+    }
+
+    html.dark .checklist-table select,
+    html.dark .checklist-table textarea,
+    [data-theme="dark"] .checklist-table select,
+    [data-theme="dark"] .checklist-table textarea {
+        background: rgba(15, 23, 42, 0.7);
+        border-color: rgba(148, 163, 184, 0.35);
+        color: #f1f5f9;
+    }
+
+    html.dark .empty-state,
+    [data-theme="dark"] .empty-state {
+        color: #94a3b8;
+    }
 </style>
 {% endblock %}
 
