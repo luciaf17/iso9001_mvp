@@ -14,6 +14,7 @@ from .models import (
     AuditQuestion,
     AuditAnswer,
     AuditFinding,
+    ManagementReview,
 )
 
 
@@ -344,6 +345,72 @@ class AuditFindingAdmin(admin.ModelAdmin):
             "Metadata",
             {
                 "fields": ("is_active", "created_at", "updated_at"),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+
+@admin.register(ManagementReview)
+class ManagementReviewAdmin(admin.ModelAdmin):
+    """Administración de Revisiones por la Dirección (ISO 9.3)."""
+    
+    list_display = (
+        "review_date",
+        "chairperson",
+        "organization",
+        "created_at",
+    )
+    list_filter = ("organization", "review_date")
+    search_fields = ("chairperson__first_name", "chairperson__last_name", "attendees")
+    readonly_fields = ("created_at", "updated_at")
+    
+    fieldsets = (
+        (
+            "Información de la Reunión",
+            {
+                "fields": (
+                    "organization",
+                    "review_date",
+                    "chairperson",
+                    "attendees",
+                )
+            },
+        ),
+        (
+            "Entradas (Inputs)",
+            {
+                "fields": (
+                    "input_performance",
+                    "input_compliance",
+                    "input_risks_opportunities",
+                    "input_changes",
+                    "input_external_factors",
+                    "input_customer_feedback",
+                    "input_resource_adequacy",
+                )
+            },
+        ),
+        (
+            "Salidas (Outputs)",
+            {
+                "fields": (
+                    "output_effectiveness",
+                    "output_improvement_opportunities",
+                    "output_resource_needs",
+                )
+            },
+        ),
+        (
+            "Documentación",
+            {
+                "fields": ("meeting_minutes_file",)
+            },
+        ),
+        (
+            "Metadata",
+            {
+                "fields": ("created_at", "updated_at"),
                 "classes": ("collapse",),
             },
         ),

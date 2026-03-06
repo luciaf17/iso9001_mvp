@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Revisiones de Gestión{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100">📋 Revisiones de Gestión</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">ISO 9001 Cláusula 9.3 - Registros de reuniones directivas</p>
+        </div>
+        {% if can_edit %}
+        <a href="{% url 'core:management_review_new' %}" class="btn btn-primary">➕ Nueva Revisión</a>
+        {% endif %}
+    </div>
+
+    {% if reviews %}
+    <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10 shadow-sm">
+        <table class="min-w-full divide-y divide-slate-200 dark:divide-white/10">
+            <thead class="bg-slate-100 dark:bg-slate-800/70">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Fecha</th>
+                    <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Presidente</th>
+                    <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Asistentes</th>
+                    <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-white/10">
+                {% for review in reviews %}
+                <tr class="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                    <td class="px-6 py-4 text-sm font-medium text-slate-900 dark:text-slate-100">{{ review.review_date|date:"d/m/Y" }}</td>
+                    <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ review.chairperson.get_full_name|default:"-" }}</td>
+                    <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ review.attendees|truncatechars:50 }}</td>
+                    <td class="px-6 py-4 text-sm flex gap-2">
+                        <a href="{% url 'core:management_review_detail' review.pk %}" class="btn btn-secondary">Ver</a>
+                        {% if can_edit %}
+                        <a href="{% url 'core:management_review_edit' review.pk %}" class="btn btn-primary">Editar</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="rounded-xl border border-dashed border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-800/30 p-12 text-center">
+        <div class="text-slate-400 dark:text-slate-500">
+            <div class="text-4xl mb-2">📋</div>
+            <p class="text-sm font-medium text-slate-600 dark:text-slate-400">No hay revisiones de gestión registradas</p>
+            <p class="text-xs text-slate-500 dark:text-slate-500 mt-1">Las revisiones de gestión son reuniones periódicas donde la dirección evalúa la efectividad del SGC.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

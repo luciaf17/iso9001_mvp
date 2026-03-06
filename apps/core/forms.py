@@ -649,3 +649,42 @@ class EmployeeCompetencyForm(forms.ModelForm):
             )
         
         self.fields["last_evaluated"].input_formats = ["%Y-%m-%d"]
+
+
+class ManagementReviewForm(forms.ModelForm):
+    class Meta:
+        model = ManagementReview
+        fields = [
+            "review_date",
+            "chairperson",
+            "attendees",
+            "audit_results_summary",
+            "customer_feedback_summary",
+            "process_performance_summary",
+            "nonconformities_status_summary",
+            "risk_opportunity_status_summary",
+            "supplier_performance_summary",
+            "resource_adequacy_summary",
+            "improvement_actions",
+            "changes_to_qms",
+            "resource_needs",
+            "meeting_minutes_file",
+        ]
+        widgets = {
+            "review_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "attendees": forms.Textarea(attrs={"rows": 2}),
+            "audit_results_summary": forms.Textarea(attrs={"rows": 3}),
+            "customer_feedback_summary": forms.Textarea(attrs={"rows": 3}),
+            "process_performance_summary": forms.Textarea(attrs={"rows": 3}),
+            "nonconformities_status_summary": forms.Textarea(attrs={"rows": 3}),
+            "risk_opportunity_status_summary": forms.Textarea(attrs={"rows": 3}),
+            "supplier_performance_summary": forms.Textarea(attrs={"rows": 3}),
+            "resource_adequacy_summary": forms.Textarea(attrs={"rows": 3}),
+            "improvement_actions": forms.Textarea(attrs={"rows": 3}),
+            "changes_to_qms": forms.Textarea(attrs={"rows": 3}),
+            "resource_needs": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["review_date"].input_formats = ["%Y-%m-%d"]

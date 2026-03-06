@@ -3263,3 +3263,130 @@ def dashboard_chart_pnc_severity(request):
 		"data": [minor, major, critical],
 		"colors": ["#fbbf24", "#f59e0b", "#ef4444"]
 	})
+
+
+# Management Review (ISO 9.3) - Revision por la Direccion
+
+@login_required
+def management_review_list(request):
+	organization = Organization.objects.filter(is_active=True).first()
+	if not organization:
+		messages.error(request, "No hay organización activa.")
+		return redirect("home")
+	
+	reviews = ManagementReview.objects.filter(organization=organization)
+	can_edit = request.user.is_superuser or request.user.groups.filter(name__in=["Admin", "Calidad"]).exists()
+	
+	return render(
+		request,
+		"core/management_review_list.html",
+		{
+			"organization": organization,
+			"reviews": reviews,
+			"can_edit": can_edit,
+		},
+	)
+
+
+@login_required
+def management_review_create(request):
+	organization = Organization.objects.filter(is_active=True).first()
+	if not organization:
+		messages.error(request, "No hay organización activa.")
+		return redirect("home")
+	
+	if not (request.user.is_superuser or request.user.groups.filter(name__in=["Admin", "Calidad"]).exists()):
+		raise PermissionDenied
+	
+	form = ManagementReviewForm(request.POST or None, request.FILES or None)
+	
+	if request.method == "POST" and form.is_valid():
+		review = form.save(commit=False)
+		review.organization = organization
+		review.save()
+		
+		log_audit_event(
+			actor=request.user,
+			action="core.management_review.created",
+			instance=review,
+			metadata={
+				"organization_id": organization.id,
+				"review_date": str(review.review_date),
+			},
+			object_type_override="ManagementReview",
+		)
+		
+		messages.success(request, "Revisión de gestión creada correctamente.")
+		return redirect("core:management_review_detail", pk=review.pk)
+	
+	return render(
+		request,
+		"core/management_review_form.html",
+		{
+			"organization": organization,
+			"form": form,
+			"title": "Nueva Revisión de Gestión",
+		},
+	)
+
+
+@login_required
+def management_review_detail(request, pk):
+	organization = Organization.objects.filter(is_active=True).first()
+	if not organization:
+		messages.error(request, "No hay organización activa.")
+		return redirect("home")
+	
+	review = get_object_or_404(ManagementReview, pk=pk, organization=organization)
+	can_edit = request.user.is_superuser or request.user.groups.filter(name__in=["Admin", "Calidad"]).exists()
+	
+	return render(
+		request,
+		"core/management_review_detail.html",
+		{
+			"organization": organization,
+			"review": review,
+			"can_edit": can_edit,
+		},
+	)
+
+
+@login_required
+def management_review_edit(request, pk):
+	organization = Organization.objects.filter(is_active=True).first()
+	if not organization:
+		messages.error(request, "No hay organización activa.")
+		return redirect("home")
+	
+	if not (request.user.is_superuser or request.user.groups.filter(name__in=["Admin", "Calidad"]).exists()):
+		raise PermissionDenied
+	
+	review = get_object_or_404(ManagementReview, pk=pk, organization=organization)
+	form = ManagementReviewForm(request.POST or None, request.FILES or None, instance=review)
+	
+	if request.method == "POST" and form.is_valid():
+		review = form.save()
+		
+		log_audit_event(
+			actor=request.user,
+			action="core.management_review.updated",
+			instance=review,
+			metadata={
+				"organization_id": organization.id,
+				"review_date": str(review.review_date),
+			},
+			object_type_override="ManagementReview",
+		)
+		
+		messages.success(request, "Revisión de gestión actualizada correctamente.")
+		return redirect("core:management_review_detail", pk=review.pk)
+	
+	return render(
+		request,
+		"core/management_review_form.html",
+		{
+			"organization": organization,
+			"form": form,
+			"title": f"Editar Revisión de Gestión - {review.review_date}",
+		},
+	)

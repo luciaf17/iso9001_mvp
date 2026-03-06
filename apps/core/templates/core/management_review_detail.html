@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Revisión de Gestión - {{ review.review_date|date:"d/m/Y" }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100">📋 Revisión de Gestión</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ review.review_date|date:"d de F de Y" }}</p>
+        </div>
+        {% if can_edit %}
+        <a href="{% url 'core:management_review_edit' review.pk %}" class="btn btn-primary">✏️ Editar</a>
+        {% endif %}
+    </div>
+
+    <!-- INFORMACIÓN DE LA REUNIÓN -->
+    <div class="rounded-xl border border-slate-200 dark:border-white/10 p-6 mb-6">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">📅 Información de la Reunión</h2>
+        <div class="grid md:grid-cols-2 gap-6">
+            <div>
+                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Fecha</p>
+                <p class="text-lg font-medium text-slate-900 dark:text-slate-100">{{ review.review_date|date:"d/m/Y" }}</p>
+            </div>
+            <div>
+                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Presidente</p>
+                <p class="text-lg font-medium text-slate-900 dark:text-slate-100">{{ review.chairperson.get_full_name|default:"-" }}</p>
+            </div>
+            <div class="md:col-span-2">
+                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Asistentes</p>
+                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.attendees|default:"-" }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ENTRADAS (INPUTS) -->
+    <div class="rounded-xl border border-slate-200 dark:border-white/10 p-6 mb-6">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">📥 Entradas para la reunión</h2>
+        <div class="space-y-6">
+            {% if review.input_performance %}
+            <div>
+                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Desempeño del SGC</p>
+                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.input_performance }}</p>
+            </div>
+            {% endif %}
+
+            {% if review.input_compliance %}
+            <div>
+                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Cumplimiento Legal</p>
+                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.input_compliance }}</p>
+            </div>
+            {% endif %}
+
+            {% if review.input_risks_opportunities %}
+            <div>
+                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Riesgos y Oportunidades</p>
+                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.input_risks_opportunities }}</p>
+            </div>
+            {% endif %}
+
+            {% if review.input_changes %}
+            <div>
+                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Cambios Relevantes</p>
+                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.input_changes }}</p>
+            </div>
+            {% endif %}
+
+            {% if review.input_external_factors %}
+            <div>
+                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Factores Externos</p>
+                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.input_external_factors }}</p>
+            </div>
+            {% endif %}
+
+            {% if review.input_customer_feedback %}
+            <div>
+                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Retroalimentación de Clientes</p>
+                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.input_customer_feedback }}</p>
+            </div>
+            {% endif %}
+
+            {% if review.input_resource_adequacy %}
+            <div>
+                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Adecuación de Recursos</p>
+                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.input_resource_adequacy }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- SALIDAS (OUTPUTS) -->
+    <div class="rounded-xl border border-slate-200 dark:border-white/10 p-6 mb-6">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">📤 Salidas de la reunión</h2>
+        <div class="space-y-6">
+            {% if review.output_effectiveness %}
+            <div>
+                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Evaluación de Efectividad</p>
+                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.output_effectiveness }}</p>
+            </div>
+            {% endif %}
+
+            {% if review.output_improvement_opportunities %}
+            <div>
+                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Oportunidades de Mejora</p>
+                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.output_improvement_opportunities }}</p>
+            </div>
+            {% endif %}
+
+            {% if review.output_resource_needs %}
+            <div>
+                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Necesidades de Recursos</p>
+                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.output_resource_needs }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- DOCUMENTACIÓN -->
+    {% if review.meeting_minutes_file %}
+    <div class="rounded-xl border border-slate-200 dark:border-white/10 p-6 mb-6">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">📎 Documentación</h2>
+        <div>
+            <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400 mb-2">Acta de la Reunión</p>
+            <a href="{{ review.meeting_minutes_file.url }}" class="btn btn-secondary">📄 Descargar Acta</a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- AUDIT INFO -->
+    <div class="rounded-xl border border-dashed border-slate-300 dark:border-white/5 bg-slate-50 dark:bg-slate-800/30 p-4">
+        <p class="text-xs text-slate-500 dark:text-slate-400">
+            Creado: <span class="font-semibold">{{ review.created_at|date:"d/m/Y H:i" }}</span>
+            {% if review.updated_at %}
+            | Actualizado: <span class="font-semibold">{{ review.updated_at|date:"d/m/Y H:i" }}</span>
+            {% endif %}
+        </p>
+    </div>
+
+    <!-- BOTONES -->
+    <div class="flex gap-3 mt-8">
+        <a href="{% url 'core:management_review_list' %}" class="btn btn-secondary">↩️ Volver</a>
+    </div>
+</div>
+{% endblock %}
