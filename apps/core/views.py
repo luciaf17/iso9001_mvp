@@ -1,3 +1,5 @@
+from datetime import date, timedelta
+
 from django import forms
 from django.contrib import messages
 from django.contrib.auth import get_user_model
@@ -2765,3 +2767,276 @@ def supplier_evaluation_create(request, supplier_pk):
 		"title": f"Evaluar: {supplier.name}",
 	}
 	return render(request, "supplier_evaluation_form.html", context)
+
+
+# ============================================================================
+# DASHBOARD VIEWS (DASH-01)
+# ============================================================================
+
+@login_required
+def dashboard_home(request):
+	"""Main dashboard view with filters."""
+	organization = _get_current_organization()
+	if not organization:
+		messages.error(request, "No hay organización activa.")
+		return redirect("home")
+	
+	# Get available filters
+	sites = Site.objects.filter(organization=organization, is_active=True)
+	process_types = Process.ProcessType.choices
+	
+	# Calculate executive summary metrics
+	today = date.today()
+	
+	# 1. Total open NCs
+	total_ncs = NoConformity.objects.filter(
+		organization=organization,
+		status__in=[NoConformity.Status.OPEN, NoConformity.Status.IN_ANALYSIS, NoConformity.Status.IN_TREATMENT]
+	).count()
+	
+	# 2. Total overdue CAPA actions
+	total_capa_overdue = CAPAAction.objects.filter(
+		organization=organization,
+		status__in=[CAPAAction.Status.OPEN, CAPAAction.Status.IN_PROGRESS],
+		due_date__lt=today,
+	).count()
+	
+	# 3. Indicators in target (%)
+	all_indicators = QualityIndicator.objects.filter(
+		organization=organization,
+		is_active=True,
+	)
+	indicators_in_target = 0
+	for ind in all_indicators:
+		if ind.get_status() in ["OK"]:
+			indicators_in_target += 1
+	
+	indicators_percentage = 0
+	if all_indicators.count() > 0:
+		indicators_percentage = int((indicators_in_target / all_indicators.count()) * 100)
+	
+	# 4. Active suppliers
+	active_suppliers = Supplier.objects.filter(
+		organization=organization,
+		is_active=True,
+	).count()
+	
+	context = {
+		"organization": organization,
+		"sites": sites,
+		"process_types": process_types,
+		"title": "Dashboard Ejecutivo ISO",
+		# Executive summary
+		"summary": {
+			"total_ncs": total_ncs,
+			"total_capa_overdue": total_capa_overdue,
+			"indicators_percentage": indicators_percentage,
+			"active_suppliers": active_suppliers,
+		}
+	}
+	return render(request, "dashboard/dashboard.html", context)
+
+
+@login_required
+def dashboard_card_nc(request):
+	"""Card: Non-conformities (NC) - open ones."""
+	organization = _get_current_organization()
+	if not organization:
+		return render(request, "core/dashboard/card_nc.html", {"ncs": [], "count": 0})
+	
+	# Get filters from request
+	site_id = request.GET.get("site_id")
+	process_type = request.GET.get("process_type")
+	
+	# Build queryset (apply filters BEFORE slicing)
+	ncs = NoConformity.objects.filter(
+		organization=organization,
+		status__in=[NoConformity.Status.OPEN, NoConformity.Status.IN_ANALYSIS, NoConformity.Status.IN_TREATMENT]
+	).select_related("related_process", "owner").order_by("-updated_at")
+	
+	if site_id:
+		ncs = ncs.filter(site_id=site_id)
+	
+	if process_type:
+		ncs = ncs.filter(related_process__process_type=process_type)
+	
+	count = ncs.count()
+	ncs = ncs[:5]  # Slice AFTER applying all filters
+	
+	return render(request, "core/dashboard/card_nc.html", {
+		"ncs": ncs,
+		"count": count,
+	})
+
+
+@login_required
+def dashboard_card_capa(request):
+	"""Card: CAPA Actions - overdue ones."""
+	organization = _get_current_organization()
+	if not organization:
+		return render(request, "core/dashboard/card_capa.html", {"capas": [], "count": 0})
+	
+	site_id = request.GET.get("site_id")
+	process_type = request.GET.get("process_type")
+	
+	# Get CAPA actions that are overdue (due_date < today and status != DONE)
+	today = date.today()
+	capas = CAPAAction.objects.filter(
+		organization=organization,
+		status__in=[CAPAAction.Status.OPEN, CAPAAction.Status.IN_PROGRESS],
+		due_date__lt=today,
+	).select_related("owner", "no_conformity", "finding").order_by("due_date")[:5]
+	
+	if site_id:
+		# Filter by site if no_conformity exists
+		capas = [c for c in capas if c.no_conformity and c.no_conformity.site_id == int(site_id) or c.finding and c.finding.audit.site_id == int(site_id)]
+	
+	if process_type:
+		capas = [c for c in capas if c.no_conformity and c.no_conformity.related_process and c.no_conformity.related_process.process_type == process_type]
+	
+	count = len(capas)
+	
+	return render(request, "core/dashboard/card_capa.html", {
+		"capas": capas,
+		"count": count,
+	})
+
+
+@login_required
+def dashboard_card_indicadores(request):
+	"""Card: Quality Indicators - out of target or overdue."""
+	organization = _get_current_organization()
+	if not organization:
+		return render(request, "core/dashboard/card_indicadores.html", {"indicators": [], "count": 0})
+	
+	site_id = request.GET.get("site_id")
+	process_type = request.GET.get("process_type")
+	
+	# Get indicators with status OUT_OF_TARGET or OVERDUE
+	indicators = QualityIndicator.objects.filter(
+		organization=organization,
+		is_active=True,
+	).select_related("related_process")
+	
+	if site_id:
+		# Site is not directly on indicator, skip
+		pass
+	
+	if process_type:
+		indicators = indicators.filter(related_process__process_type=process_type)
+	
+	# Filter by status
+	problematic = []
+	for ind in indicators:
+		status = ind.get_status()
+		if status in ["OUT_OF_TARGET", "OVERDUE"]:
+			problematic.append((ind, status))
+	
+	problematic = sorted(problematic, key=lambda x: x[0].name)[:5]
+	count = len(problematic)
+	
+	return render(request, "core/dashboard/card_indicadores.html", {
+		"indicators": problematic,
+		"count": count,
+	})
+
+
+@login_required
+def dashboard_card_pnc(request):
+	"""Card: Non-conforming Output (PNC) - open ones."""
+	organization = _get_current_organization()
+	if not organization:
+		return render(request, "core/dashboard/card_pnc.html", {"pncs": [], "count": 0})
+	
+	site_id = request.GET.get("site_id")
+	process_type = request.GET.get("process_type")
+	
+	pncs = NonconformingOutput.objects.filter(
+		organization=organization,
+		status__in=[NonconformingOutput.Status.OPEN, NonconformingOutput.Status.IN_TREATMENT]
+	).select_related("related_process").order_by("-detected_at")
+	
+	if site_id:
+		pncs = pncs.filter(site_id=site_id)
+	
+	if process_type:
+		pncs = pncs.filter(related_process__process_type=process_type)
+	
+	count = pncs.count()
+	pncs = pncs[:5]  # Slice AFTER applying all filters
+	
+	return render(request, "core/dashboard/card_pnc.html", {
+		"pncs": pncs,
+		"count": count,
+	})
+
+
+@login_required
+def dashboard_card_suppliers(request):
+	"""Card: Suppliers with overdue evaluations."""
+	organization = _get_current_organization()
+	if not organization:
+		return render(request, "core/dashboard/card_suppliers.html", {"suppliers": [], "count": 0})
+	
+	site_id = request.GET.get("site_id")
+	process_type = request.GET.get("process_type")
+	
+	# Get suppliers with overdue next_evaluation_date
+	today = date.today()
+	suppliers = Supplier.objects.filter(
+		organization=organization,
+		next_evaluation_date__isnull=False,
+		next_evaluation_date__lt=today,
+		is_active=True,
+	).order_by("next_evaluation_date")
+	
+	if site_id:
+		suppliers = suppliers.filter(site_id=site_id)
+	
+	if process_type:
+		suppliers = suppliers.filter(related_process__process_type=process_type)
+	
+	count = suppliers.count()
+	suppliers = suppliers[:5]  # Slice AFTER applying all filters
+	
+	return render(request, "core/dashboard/card_suppliers.html", {
+		"suppliers": suppliers,
+		"count": count,
+	})
+
+
+@login_required
+def dashboard_card_auditorias(request):
+	"""Card: Internal Audits - upcoming in next 30 days."""
+	organization = _get_current_organization()
+	if not organization:
+		return render(request, "core/dashboard/card_auditorias.html", {"audits": [], "count": 0})
+	
+	site_id = request.GET.get("site_id")
+	process_type = request.GET.get("process_type")
+	
+	# Get audits plannned/in progress for next 30 days
+	today = date.today()
+	next_month = today + timedelta(days=30)
+	
+	audits = InternalAudit.objects.filter(
+		organization=organization,
+		status__in=[InternalAudit.Status.PLANNED, InternalAudit.Status.IN_PROGRESS],
+		audit_date__gte=today,
+		audit_date__lte=next_month,
+	).select_related("auditor", "site").order_by("audit_date")
+	
+	if site_id:
+		audits = audits.filter(site_id=site_id)
+	
+	if process_type:
+		# Audits have M2M to related_processes
+		audits = audits.filter(related_processes__process_type=process_type).distinct()
+	
+	count = audits.count()
+	audits = audits[:5]  # Slice AFTER applying all filters
+	
+	return render(request, "core/dashboard/card_auditorias.html", {
+		"audits": audits,
+		"count": count,
+	})

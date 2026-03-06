@@ -1,0 +1,205 @@
+<div class="card-header">
+  <h3 class="card-title">
+    <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+      <polyline points="2 12 12 17 22 12"></polyline>
+      <polyline points="2 17 12 22 22 17"></polyline>
+    </svg>
+    Acciones CAPA Vencidas
+  </h3>
+  <span class="badge badge-counter badge-warning">{{ count }}</span>
+</div>
+
+<div class="card-body">
+  {% if capas %}
+    <ul class="card-list">
+      {% for capa in capas %}
+        <li class="card-list-item">
+          {% if capa.no_conformity %}
+            <a href="{% url 'core:nc_detail' capa.no_conformity.id %}" class="card-link">
+              <strong>{{ capa.title|truncatewords:6 }}</strong>
+            </a>
+          {% elif capa.finding %}
+            <a href="{% url 'core:audit_detail' capa.finding.audit.id %}" class="card-link">
+              <strong>{{ capa.title|truncatewords:6 }}</strong>
+            </a>
+          {% else %}
+            <strong>{{ capa.title|truncatewords:6 }}</strong>
+          {% endif %}
+          <div class="card-meta">
+            <span class="badge badge-{{ capa.get_action_type_display|lower|slugify }}">{{ capa.get_action_type_display }}</span>
+            <span class="status-badge status-{{ capa.status|lower }}">{{ capa.get_status_display }}</span>
+            {% if capa.due_date %}
+              <span class="due-date">Vence: {{ capa.due_date|date:"d/m/Y" }}</span>
+            {% endif %}
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty-state">No hay acciones CAPA vencidas</p>
+  {% endif %}
+</div>
+
+<div class="card-footer">
+  <a href="{% url 'core:nc_list' %}" class="card-footer-link">Ver todas</a>
+</div>
+
+<style>
+  .card-header {
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .card-title {
+    margin: 0;
+    font-size: 1.1rem;
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+    color: var(--color-text-primary);
+  }
+
+  .card-icon {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    color: #f59e0b;
+  }
+
+  .card-body {
+    padding: var(--spacing-md);
+  }
+
+  .card-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .card-list-item {
+    padding: var(--spacing-sm);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--border-radius-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+
+  .card-link {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+
+  .card-link:hover {
+    color: var(--color-primary-dark);
+    text-decoration: underline;
+  }
+
+  strong {
+    color: var(--color-text-primary);
+  }
+
+  .card-meta {
+    display: flex;
+    gap: var(--spacing-xs);
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .badge-counter {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+    border-radius: calc(var(--border-radius-sm) + 4px);
+  }
+
+  .badge-warning {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .badge-corrective {
+    background: #fed7aa;
+    color: #92400e;
+  }
+
+  .badge-preventive {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  .badge-containment {
+    background: #dbeafe;
+    color: #0c4a6e;
+  }
+
+  .status-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .status-open {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .status-in_progress {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .status-done {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  .due-date {
+    font-size: 0.8rem;
+    color: var(--color-danger);
+    font-weight: 600;
+  }
+
+  .empty-state {
+    text-align: center;
+    color: var(--color-text-secondary);
+    padding: var(--spacing-md) 0;
+    margin: 0;
+  }
+
+  .card-footer {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-top: 1px solid var(--color-border);
+    text-align: center;
+  }
+
+  .card-footer-link {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+  }
+
+  .card-footer-link:hover {
+    color: var(--color-primary-dark);
+    text-decoration: underline;
+  }
+</style>

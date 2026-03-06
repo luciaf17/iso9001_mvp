@@ -1,0 +1,192 @@
+<div class="card-header">
+  <h3 class="card-title">
+    <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"></path>
+      <line x1="16" y1="1" x2="16" y2="5"></line>
+      <line x1="8" y1="1" x2="8" y2="5"></line>
+      <line x1="3" y1="9" x2="21" y2="9"></line>
+    </svg>
+    Auditorías Próximas (30 días)
+  </h3>
+  <span class="badge badge-counter badge-info">{{ count }}</span>
+</div>
+
+<div class="card-body">
+  {% if audits %}
+    <ul class="card-list">
+      {% for audit in audits %}
+        <li class="card-list-item">
+          <a href="{% url 'core:audit_detail' audit.id %}" class="card-link">
+            <strong>{{ audit.title }}</strong>
+          </a>
+          <div class="card-meta">
+            <span class="badge badge-{{ audit.get_audit_type_display|lower }}">{{ audit.get_audit_type_display }}</span>
+            <span class="status-badge status-{{ audit.status|lower }}">{{ audit.get_status_display }}</span>
+            <span class="audit-date">📅 {{ audit.audit_date|date:"d/m/Y" }}</span>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty-state">No hay auditorías programadas en los próximos 30 días</p>
+  {% endif %}
+</div>
+
+<div class="card-footer">
+  <a href="{% url 'core:audit_list' %}" class="card-footer-link">Ver todas</a>
+</div>
+
+<style>
+  .card-header {
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .card-title {
+    margin: 0;
+    font-size: 1.1rem;
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+    color: var(--color-text-primary);
+  }
+
+  .card-icon {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    color: #3b82f6;
+  }
+
+  .card-body {
+    padding: var(--spacing-md);
+  }
+
+  .card-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .card-list-item {
+    padding: var(--spacing-sm);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--border-radius-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+
+  .card-link {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+
+  .card-link:hover {
+    color: var(--color-primary-dark);
+    text-decoration: underline;
+  }
+
+  .card-meta {
+    display: flex;
+    gap: var(--spacing-xs);
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .badge-counter {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+    border-radius: calc(var(--border-radius-sm) + 4px);
+  }
+
+  .badge-info {
+    background: #dbeafe;
+    color: #0c4a6e;
+  }
+
+  .badge-internal {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  .badge-external {
+    background: #fed7aa;
+    color: #92400e;
+  }
+
+  .status-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .status-planned {
+    background: #dbeafe;
+    color: #0c4a6e;
+  }
+
+  .status-in_progress {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .status-completed {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  .status-cancelled {
+    background: #f3f4f6;
+    color: #6b7280;
+  }
+
+  .audit-date {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+  }
+
+  .empty-state {
+    text-align: center;
+    color: var(--color-text-secondary);
+    padding: var(--spacing-md) 0;
+    margin: 0;
+  }
+
+  .card-footer {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-top: 1px solid var(--color-border);
+    text-align: center;
+  }
+
+  .card-footer-link {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+  }
+
+  .card-footer-link:hover {
+    color: var(--color-primary-dark);
+    text-decoration: underline;
+  }
+</style>

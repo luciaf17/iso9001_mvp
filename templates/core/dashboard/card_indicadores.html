@@ -1,0 +1,165 @@
+<div class="card-header">
+  <h3 class="card-title">
+    <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="12" y1="2" x2="12" y2="22"></line>
+      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+    </svg>
+    Indicadores Fuera de Meta
+  </h3>
+  <span class="badge badge-counter badge-info">{{ count }}</span>
+</div>
+
+<div class="card-body">
+  {% if indicators %}
+    <ul class="card-list">
+      {% for indicator, status in indicators %}
+        <li class="card-list-item">
+          <a href="{% url 'core:indicator_detail' indicator.id %}" class="card-link">
+            <strong>{{ indicator.name }}</strong>
+          </a>
+          <div class="card-meta">
+            {% if status == 'OVERDUE' %}
+              <span class="badge badge-danger">Vencido</span>
+            {% elif status == 'OUT_OF_TARGET' %}
+              <span class="badge badge-warning">Fuera de meta</span>
+            {% endif %}
+            <span class="status-text">Meta: {{ indicator.target_value }} {{ indicator.unit }}</span>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty-state">Todos los indicadores están dentro de meta</p>
+  {% endif %}
+</div>
+
+<div class="card-footer">
+  <a href="{% url 'core:indicator_list' %}" class="card-footer-link">Ver todas</a>
+</div>
+
+<style>
+  .card-header {
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .card-title {
+    margin: 0;
+    font-size: 1.1rem;
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+    color: var(--color-text-primary);
+  }
+
+  .card-icon {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    color: #3b82f6;
+  }
+
+  .card-body {
+    padding: var(--spacing-md);
+  }
+
+  .card-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .card-list-item {
+    padding: var(--spacing-sm);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--border-radius-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+
+  .card-link {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+
+  .card-link:hover {
+    color: var(--color-primary-dark);
+    text-decoration: underline;
+  }
+
+  .card-meta {
+    display: flex;
+    gap: var(--spacing-xs);
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .badge-counter {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+    border-radius: calc(var(--border-radius-sm) + 4px);
+  }
+
+  .badge-info {
+    background: #dbeafe;
+    color: #0c4a6e;
+  }
+
+  .badge-danger {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .badge-warning {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .status-text {
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+  }
+
+  .empty-state {
+    text-align: center;
+    color: var(--color-text-secondary);
+    padding: var(--spacing-md) 0;
+    margin: 0;
+  }
+
+  .card-footer {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-top: 1px solid var(--color-border);
+    text-align: center;
+  }
+
+  .card-footer-link {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+  }
+
+  .card-footer-link:hover {
+    color: var(--color-primary-dark);
+    text-decoration: underline;
+  }
+</style>

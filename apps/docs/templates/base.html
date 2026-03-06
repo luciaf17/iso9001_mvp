@@ -15,6 +15,9 @@
         <div class="nav-bar">
             <ul>
                 <li><a href="{% url 'home' %}">🏠 Inicio</a></li>
+                {% if request.user.is_authenticated %}
+                <li><a href="{% url 'core:dashboard_home' %}">📊 Dashboard</a></li>
+                {% endif %}
                 <li><a href="{% url 'core:context_detail' %}">📋 Contexto</a></li>
                 <li><a href="{% url 'core:stakeholder_list' %}">🤝 Partes Interesadas</a></li>
                 <li><a href="{% url 'core:risk_list' %}">⚠️ Riesgos y Oportunidades</a></li>

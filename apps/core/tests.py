@@ -2800,3 +2800,224 @@ class SupplierTests(TestCase):
         )
 
         self.assertTrue(supplier.is_evaluation_overdue)
+
+
+class DashboardTests(TestCase):
+    """Tests for Dashboard (DASH-01)."""
+
+    def setUp(self):
+        """Set up test data for dashboard."""
+        # Create organization and users
+        self.organization = Organization.objects.create(
+            name="Dashboard Test Org",
+            is_active=True,
+        )
+        
+        self.user = User.objects.create_user(
+            username="dash_user",
+            password="dashpass",
+        )
+        
+        # Create site
+        self.site = Site.objects.create(
+            organization=self.organization,
+            name="Test Site",
+            is_active=True,
+        )
+
+    def test_dashboard_home_requires_login(self):
+        """Dashboard home requires authentication."""
+        response = self.client.get(reverse("core:dashboard_home"))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/login/", response.url)
+
+    def test_dashboard_home_responds_200(self):
+        """Dashboard home responds 200 when authenticated."""
+        self.client.login(username="dash_user", password="dashpass")
+        response = self.client.get(reverse("core:dashboard_home"))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("title", response.context)
+        self.assertIn("sites", response.context)
+        self.assertIn("process_types", response.context)
+
+    def test_dashboard_card_nc_responds_200(self):
+        """NC Card responds 200."""
+        self.client.login(username="dash_user", password="dashpass")
+        response = self.client.get(reverse("core:dashboard_card_nc"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_dashboard_card_nc_shows_open_ncs(self):
+        """NC Card shows open non-conformities."""
+        # Create a non-conformity
+        nc = NoConformity.objects.create(
+            organization=self.organization,
+            code="NC-2025-001",
+            title="Test NC",
+            origin=NoConformity.Origin.INTERNAL,
+            severity=NoConformity.Severity.MAJOR,
+            status=NoConformity.Status.OPEN,
+            detected_at=date.today(),
+        )
+
+        self.client.login(username="dash_user", password="dashpass")
+        response = self.client.get(reverse("core:dashboard_card_nc"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "NC-2025-001")
+        self.assertContains(response, "1")  # Count should show 1
+
+    def test_dashboard_card_capa_responds_200(self):
+        """CAPA Card responds 200."""
+        self.client.login(username="dash_user", password="dashpass")
+        response = self.client.get(reverse("core:dashboard_card_capa"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_dashboard_card_capa_shows_overdue(self):
+        """CAPA Card shows overdue actions."""
+        # Create a non-conformity and CAPA action
+        nc = NoConformity.objects.create(
+            organization=self.organization,
+            code="NC-2025-002",
+            title="Test NC for CAPA",
+            origin=NoConformity.Origin.INTERNAL,
+            severity=NoConformity.Severity.MINOR,
+            status=NoConformity.Status.OPEN,
+            detected_at=date.today(),
+        )
+        
+        capa = CAPAAction.objects.create(
+            organization=self.organization,
+            no_conformity=nc,
+            title="Test CAPA",
+            action_type=CAPAAction.ActionType.CORRECTIVE,
+            status=CAPAAction.Status.OPEN,
+            due_date=date.today() - timedelta(days=5),  # Overdue
+        )
+
+        self.client.login(username="dash_user", password="dashpass")
+        response = self.client.get(reverse("core:dashboard_card_capa"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "1")  # Count should show 1
+
+    def test_dashboard_card_indicadores_responds_200(self):
+        """Indicators Card responds 200."""
+        self.client.login(username="dash_user", password="dashpass")
+        response = self.client.get(reverse("core:dashboard_card_indicadores"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_dashboard_card_pnc_responds_200(self):
+        """PNC Card responds 200."""
+        self.client.login(username="dash_user", password="dashpass")
+        response = self.client.get(reverse("core:dashboard_card_pnc"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_dashboard_card_pnc_shows_open(self):
+        """PNC Card shows open non-conforming outputs."""
+        pnc = NonconformingOutput.objects.create(
+            organization=self.organization,
+            code="PNC-2025-001",
+            product_or_service="Test Product",
+            description="Test defect",
+            detected_at=date.today(),
+            status=NonconformingOutput.Status.OPEN,
+        )
+
+        self.client.login(username="dash_user", password="dashpass")
+        response = self.client.get(reverse("core:dashboard_card_pnc"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "PNC-2025-001")
+        self.assertContains(response, "1")  # Count should show 1
+
+    def test_dashboard_card_suppliers_responds_200(self):
+        """Suppliers Card responds 200."""
+        self.client.login(username="dash_user", password="dashpass")
+        response = self.client.get(reverse("core:dashboard_card_suppliers"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_dashboard_card_suppliers_shows_overdue(self):
+        """Suppliers Card shows overdue evaluations."""
+        supplier = Supplier.objects.create(
+            organization=self.organization,
+            name="Test Supplier",
+            category=Supplier.Category.SERVICE,
+            next_evaluation_date=date.today() - timedelta(days=10),
+            is_active=True,
+        )
+
+        self.client.login(username="dash_user", password="dashpass")
+        response = self.client.get(reverse("core:dashboard_card_suppliers"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Test Supplier")
+        self.assertContains(response, "1")  # Count should show 1
+
+    def test_dashboard_card_auditorias_responds_200(self):
+        """Audits Card responds 200."""
+        self.client.login(username="dash_user", password="dashpass")
+        response = self.client.get(reverse("core:dashboard_card_auditorias"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_dashboard_card_auditorias_shows_upcoming(self):
+        """Audits Card shows upcoming audits."""
+        audit = InternalAudit.objects.create(
+            organization=self.organization,
+            title="Test Audit",
+            audit_date=date.today() + timedelta(days=10),
+            audit_type=InternalAudit.AuditType.INTERNAL,
+            status=InternalAudit.Status.PLANNED,
+        )
+
+        self.client.login(username="dash_user", password="dashpass")
+        response = self.client.get(reverse("core:dashboard_card_auditorias"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Test Audit")
+        self.assertContains(response, "1")  # Count should show 1
+
+    def test_dashboard_contains_summary_block(self):
+        """Dashboard home contains executive summary block."""
+        # Create test data
+        nc = NoConformity.objects.create(
+            organization=self.organization,
+            code="NC-2025-TEST",
+            title="Test NC for Summary",
+            origin=NoConformity.Origin.INTERNAL,
+            severity=NoConformity.Severity.MAJOR,
+            status=NoConformity.Status.OPEN,
+            detected_at=date.today(),
+        )
+
+        supplier = Supplier.objects.create(
+            organization=self.organization,
+            name="Test Supplier for Summary",
+            category=Supplier.Category.RAW_MATERIAL,
+            is_active=True,
+        )
+
+        indicator = QualityIndicator.objects.create(
+            organization=self.organization,
+            name="Test Indicator",
+            frequency=QualityIndicator.Frequency.MONTHLY,
+            target_value=95.0,
+            comparison_type=QualityIndicator.ComparisonType.GREATER_EQUAL,
+            unit="%",
+        )
+
+        # Log in and get dashboard
+        self.client.login(username="dash_user", password="dashpass")
+        response = self.client.get(reverse("core:dashboard_home"))
+        
+        # Verify summary block is present
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Resumen Ejecutivo")
+        self.assertContains(response, "No Conformidades Abiertas")
+        self.assertContains(response, "CAPA Vencidas")
+        self.assertContains(response, "Indicadores en Meta")
+        self.assertContains(response, "Proveedores Activos")
+        
+        # Verify summary context data is present
+        self.assertIn("summary", response.context)
+        summary = response.context["summary"]
+        self.assertIn("total_ncs", summary)
+        self.assertIn("total_capa_overdue", summary)
+        self.assertIn("indicators_percentage", summary)
+        self.assertIn("active_suppliers", summary)
+        self.assertEqual(summary["total_ncs"], 1)
+        self.assertEqual(summary["active_suppliers"], 1)

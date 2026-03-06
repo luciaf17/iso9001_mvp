@@ -54,6 +54,13 @@ from apps.core.views import (
     supplier_create,
     supplier_edit,
     supplier_evaluation_create,
+    dashboard_home,
+    dashboard_card_nc,
+    dashboard_card_capa,
+    dashboard_card_indicadores,
+    dashboard_card_pnc,
+    dashboard_card_suppliers,
+    dashboard_card_auditorias,
 )
 
 app_name = "core"
@@ -116,4 +123,13 @@ urlpatterns = [
     path("suppliers/<int:pk>/", supplier_detail, name="supplier_detail"),
     path("suppliers/<int:pk>/edit/", supplier_edit, name="supplier_edit"),
     path("suppliers/<int:supplier_pk>/evaluations/new/", supplier_evaluation_create, name="supplier_evaluation_new"),
+
+    # Dashboard (DASH-01)
+    path("dashboard/", dashboard_home, name="dashboard_home"),
+    path("dashboard/card/nc/", dashboard_card_nc, name="dashboard_card_nc"),
+    path("dashboard/card/capa/", dashboard_card_capa, name="dashboard_card_capa"),
+    path("dashboard/card/indicadores/", dashboard_card_indicadores, name="dashboard_card_indicadores"),
+    path("dashboard/card/pnc/", dashboard_card_pnc, name="dashboard_card_pnc"),
+    path("dashboard/card/suppliers/", dashboard_card_suppliers, name="dashboard_card_suppliers"),
+    path("dashboard/card/auditorias/", dashboard_card_auditorias, name="dashboard_card_auditorias"),
 ]
