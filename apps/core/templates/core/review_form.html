@@ -2,139 +2,21 @@
 
 {% block title %}{% if is_edit %}Editar{% else %}Nueva{% endif %} Revisión por la Dirección{% endblock %}
 
-{% block extra_css %}
-<style>
-    .form-container {
-        max-width: 900px;
-        background: var(--color-white);
-        border: 2px solid var(--color-primary-light);
-        border-radius: var(--border-radius-lg);
-        padding: var(--spacing-2xl);
-        box-shadow: var(--shadow-md);
-    }
-
-    .form-container h1 {
-        color: var(--color-primary);
-        margin-bottom: var(--spacing-xl);
-        font-size: var(--font-size-2xl);
-    }
-
-    .section-title {
-        color: var(--color-primary);
-        font-size: var(--font-size-lg);
-        margin-top: var(--spacing-2xl);
-        margin-bottom: var(--spacing-lg);
-        padding-bottom: var(--spacing-sm);
-        border-bottom: 2px solid var(--color-primary-light);
-    }
-
-    .section-badge {
-        display: inline-block;
-        background: var(--color-primary-light);
-        color: var(--color-primary);
-        padding: 4px 8px;
-        border-radius: var(--border-radius-sm);
-        font-size: var(--font-size-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        margin-left: var(--spacing-sm);
-    }
-
-    .form-group {
-        margin-bottom: var(--spacing-lg);
-    }
-
-    .form-group label {
-        display: block;
-        font-weight: 600;
-        margin-bottom: var(--spacing-sm);
-        color: var(--color-dark);
-    }
-
-    .form-group label .required {
-        color: var(--color-danger);
-    }
-
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-        width: 100%;
-        padding: var(--spacing-sm) var(--spacing-md);
-        border: 2px solid var(--color-gray-300);
-        border-radius: var(--border-radius-md);
-        font-size: var(--font-size-sm);
-        transition: var(--transition);
-        box-sizing: border-box;
-    }
-
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
-        outline: none;
-        border-color: var(--color-primary);
-        box-shadow: 0 0 0 3px var(--color-primary-light);
-    }
-
-    .form-group textarea {
-        min-height: 90px;
-        resize: vertical;
-    }
-
-    .form-row {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: var(--spacing-lg);
-    }
-
-    .form-row .form-group {
-        margin-bottom: 0;
-    }
-
-    .error-list {
-        color: var(--color-danger);
-        font-size: var(--font-size-sm);
-        margin-top: var(--spacing-xs);
-        list-style: none;
-        padding: 0;
-    }
-
-    .form-actions {
-        display: flex;
-        gap: var(--spacing-md);
-        margin-top: var(--spacing-2xl);
-        padding-top: var(--spacing-lg);
-        border-top: 2px solid var(--color-gray-200);
-    }
-
-    .help-text {
-        font-size: var(--font-size-xs);
-        color: var(--color-gray-600);
-        margin-top: var(--spacing-xs);
-    }
-
-    @media (max-width: 640px) {
-        .form-row {
-            grid-template-columns: 1fr;
-        }
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="form-container">
-    <h1>{% if is_edit %}Editar{% else %}Nueva{% endif %} Revisión por la Dirección</h1>
+<div class="mx-auto max-w-5xl rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900 md:p-8">
+    <h1 class="mb-6 text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">{% if is_edit %}Editar{% else %}Nueva{% endif %} Revisión por la Dirección</h1>
 
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
 
-        <div class="form-row">
-            <div class="form-group">
-                <label for="{{ form.review_date.id_for_label }}">
-                    {{ form.review_date.label }} <span class="required">*</span>
+        <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div>
+                <label for="{{ form.review_date.id_for_label }}" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                    {{ form.review_date.label }} <span class="text-red-600">*</span>
                 </label>
                 {{ form.review_date }}
                 {% if form.review_date.errors %}
-                <ul class="error-list">
+                <ul class="mt-1 list-none p-0 text-sm text-red-600 dark:text-red-400">
                     {% for error in form.review_date.errors %}
                     <li>{{ error }}</li>
                     {% endfor %}
@@ -142,13 +24,13 @@
                 {% endif %}
             </div>
 
-            <div class="form-group">
-                <label for="{{ form.chairperson.id_for_label }}">
+            <div>
+                <label for="{{ form.chairperson.id_for_label }}" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
                     {{ form.chairperson.label }}
                 </label>
                 {{ form.chairperson }}
                 {% if form.chairperson.errors %}
-                <ul class="error-list">
+                <ul class="mt-1 list-none p-0 text-sm text-red-600 dark:text-red-400">
                     {% for error in form.chairperson.errors %}
                     <li>{{ error }}</li>
                     {% endfor %}
@@ -157,14 +39,14 @@
             </div>
         </div>
 
-        <div class="form-group">
-            <label for="{{ form.attendees.id_for_label }}">
+        <div class="mb-5">
+            <label for="{{ form.attendees.id_for_label }}" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 {{ form.attendees.label }}
             </label>
             {{ form.attendees }}
-            <p class="help-text">{{ form.attendees.help_text }}</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ form.attendees.help_text }}</p>
             {% if form.attendees.errors %}
-            <ul class="error-list">
+            <ul class="mt-1 list-none p-0 text-sm text-red-600 dark:text-red-400">
                 {% for error in form.attendees.errors %}
                 <li>{{ error }}</li>
                 {% endfor %}
@@ -172,16 +54,16 @@
             {% endif %}
         </div>
 
-        <h2 class="section-title">📥 Entradas <span class="section-badge">ISO 9.3.2</span></h2>
+        <h2 class="mb-5 mt-8 border-b border-slate-200 pb-2 text-lg font-semibold text-slate-900 dark:border-slate-700 dark:text-white">📥 Entradas <span class="ml-2 inline-flex rounded-full border border-slate-300 px-2 py-0.5 text-xs font-semibold text-slate-600 dark:border-slate-600 dark:text-slate-300">ISO 9.3.2</span></h2>
 
-        <div class="form-group">
-            <label for="{{ form.audit_results_summary.id_for_label }}">
+        <div class="mb-5">
+            <label for="{{ form.audit_results_summary.id_for_label }}" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 {{ form.audit_results_summary.label }}
             </label>
             {{ form.audit_results_summary }}
-            <p class="help-text">{{ form.audit_results_summary.help_text }}</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ form.audit_results_summary.help_text }}</p>
             {% if form.audit_results_summary.errors %}
-            <ul class="error-list">
+            <ul class="mt-1 list-none p-0 text-sm text-red-600 dark:text-red-400">
                 {% for error in form.audit_results_summary.errors %}
                 <li>{{ error }}</li>
                 {% endfor %}
@@ -189,14 +71,14 @@
             {% endif %}
         </div>
 
-        <div class="form-group">
-            <label for="{{ form.customer_feedback_summary.id_for_label }}">
+        <div class="mb-5">
+            <label for="{{ form.customer_feedback_summary.id_for_label }}" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 {{ form.customer_feedback_summary.label }}
             </label>
             {{ form.customer_feedback_summary }}
-            <p class="help-text">{{ form.customer_feedback_summary.help_text }}</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ form.customer_feedback_summary.help_text }}</p>
             {% if form.customer_feedback_summary.errors %}
-            <ul class="error-list">
+            <ul class="mt-1 list-none p-0 text-sm text-red-600 dark:text-red-400">
                 {% for error in form.customer_feedback_summary.errors %}
                 <li>{{ error }}</li>
                 {% endfor %}
@@ -204,14 +86,14 @@
             {% endif %}
         </div>
 
-        <div class="form-group">
-            <label for="{{ form.process_performance_summary.id_for_label }}">
+        <div class="mb-5">
+            <label for="{{ form.process_performance_summary.id_for_label }}" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 {{ form.process_performance_summary.label }}
             </label>
             {{ form.process_performance_summary }}
-            <p class="help-text">{{ form.process_performance_summary.help_text }}</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ form.process_performance_summary.help_text }}</p>
             {% if form.process_performance_summary.errors %}
-            <ul class="error-list">
+            <ul class="mt-1 list-none p-0 text-sm text-red-600 dark:text-red-400">
                 {% for error in form.process_performance_summary.errors %}
                 <li>{{ error }}</li>
                 {% endfor %}
@@ -219,14 +101,14 @@
             {% endif %}
         </div>
 
-        <div class="form-group">
-            <label for="{{ form.nonconformities_status_summary.id_for_label }}">
+        <div class="mb-5">
+            <label for="{{ form.nonconformities_status_summary.id_for_label }}" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 {{ form.nonconformities_status_summary.label }}
             </label>
             {{ form.nonconformities_status_summary }}
-            <p class="help-text">{{ form.nonconformities_status_summary.help_text }}</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ form.nonconformities_status_summary.help_text }}</p>
             {% if form.nonconformities_status_summary.errors %}
-            <ul class="error-list">
+            <ul class="mt-1 list-none p-0 text-sm text-red-600 dark:text-red-400">
                 {% for error in form.nonconformities_status_summary.errors %}
                 <li>{{ error }}</li>
                 {% endfor %}
@@ -234,14 +116,14 @@
             {% endif %}
         </div>
 
-        <div class="form-group">
-            <label for="{{ form.risk_opportunity_status_summary.id_for_label }}">
+        <div class="mb-5">
+            <label for="{{ form.risk_opportunity_status_summary.id_for_label }}" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 {{ form.risk_opportunity_status_summary.label }}
             </label>
             {{ form.risk_opportunity_status_summary }}
-            <p class="help-text">{{ form.risk_opportunity_status_summary.help_text }}</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ form.risk_opportunity_status_summary.help_text }}</p>
             {% if form.risk_opportunity_status_summary.errors %}
-            <ul class="error-list">
+            <ul class="mt-1 list-none p-0 text-sm text-red-600 dark:text-red-400">
                 {% for error in form.risk_opportunity_status_summary.errors %}
                 <li>{{ error }}</li>
                 {% endfor %}
@@ -249,14 +131,14 @@
             {% endif %}
         </div>
 
-        <div class="form-group">
-            <label for="{{ form.supplier_performance_summary.id_for_label }}">
+        <div class="mb-5">
+            <label for="{{ form.supplier_performance_summary.id_for_label }}" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 {{ form.supplier_performance_summary.label }}
             </label>
             {{ form.supplier_performance_summary }}
-            <p class="help-text">{{ form.supplier_performance_summary.help_text }}</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ form.supplier_performance_summary.help_text }}</p>
             {% if form.supplier_performance_summary.errors %}
-            <ul class="error-list">
+            <ul class="mt-1 list-none p-0 text-sm text-red-600 dark:text-red-400">
                 {% for error in form.supplier_performance_summary.errors %}
                 <li>{{ error }}</li>
                 {% endfor %}
@@ -264,14 +146,14 @@
             {% endif %}
         </div>
 
-        <div class="form-group">
-            <label for="{{ form.resource_adequacy_summary.id_for_label }}">
+        <div class="mb-5">
+            <label for="{{ form.resource_adequacy_summary.id_for_label }}" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 {{ form.resource_adequacy_summary.label }}
             </label>
             {{ form.resource_adequacy_summary }}
-            <p class="help-text">{{ form.resource_adequacy_summary.help_text }}</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ form.resource_adequacy_summary.help_text }}</p>
             {% if form.resource_adequacy_summary.errors %}
-            <ul class="error-list">
+            <ul class="mt-1 list-none p-0 text-sm text-red-600 dark:text-red-400">
                 {% for error in form.resource_adequacy_summary.errors %}
                 <li>{{ error }}</li>
                 {% endfor %}
@@ -279,16 +161,16 @@
             {% endif %}
         </div>
 
-        <h2 class="section-title">📤 Salidas <span class="section-badge">ISO 9.3.3</span></h2>
+        <h2 class="mb-5 mt-8 border-b border-slate-200 pb-2 text-lg font-semibold text-slate-900 dark:border-slate-700 dark:text-white">📤 Salidas <span class="ml-2 inline-flex rounded-full border border-slate-300 px-2 py-0.5 text-xs font-semibold text-slate-600 dark:border-slate-600 dark:text-slate-300">ISO 9.3.3</span></h2>
 
-        <div class="form-group">
-            <label for="{{ form.improvement_actions.id_for_label }}">
+        <div class="mb-5">
+            <label for="{{ form.improvement_actions.id_for_label }}" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 {{ form.improvement_actions.label }}
             </label>
             {{ form.improvement_actions }}
-            <p class="help-text">{{ form.improvement_actions.help_text }}</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ form.improvement_actions.help_text }}</p>
             {% if form.improvement_actions.errors %}
-            <ul class="error-list">
+            <ul class="mt-1 list-none p-0 text-sm text-red-600 dark:text-red-400">
                 {% for error in form.improvement_actions.errors %}
                 <li>{{ error }}</li>
                 {% endfor %}
@@ -296,14 +178,14 @@
             {% endif %}
         </div>
 
-        <div class="form-group">
-            <label for="{{ form.changes_to_qms.id_for_label }}">
+        <div class="mb-5">
+            <label for="{{ form.changes_to_qms.id_for_label }}" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 {{ form.changes_to_qms.label }}
             </label>
             {{ form.changes_to_qms }}
-            <p class="help-text">{{ form.changes_to_qms.help_text }}</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ form.changes_to_qms.help_text }}</p>
             {% if form.changes_to_qms.errors %}
-            <ul class="error-list">
+            <ul class="mt-1 list-none p-0 text-sm text-red-600 dark:text-red-400">
                 {% for error in form.changes_to_qms.errors %}
                 <li>{{ error }}</li>
                 {% endfor %}
@@ -311,14 +193,14 @@
             {% endif %}
         </div>
 
-        <div class="form-group">
-            <label for="{{ form.resource_needs.id_for_label }}">
+        <div class="mb-5">
+            <label for="{{ form.resource_needs.id_for_label }}" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 {{ form.resource_needs.label }}
             </label>
             {{ form.resource_needs }}
-            <p class="help-text">{{ form.resource_needs.help_text }}</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ form.resource_needs.help_text }}</p>
             {% if form.resource_needs.errors %}
-            <ul class="error-list">
+            <ul class="mt-1 list-none p-0 text-sm text-red-600 dark:text-red-400">
                 {% for error in form.resource_needs.errors %}
                 <li>{{ error }}</li>
                 {% endfor %}
@@ -326,18 +208,18 @@
             {% endif %}
         </div>
 
-        <h2 class="section-title">📄 Evidencia</h2>
+        <h2 class="mb-5 mt-8 border-b border-slate-200 pb-2 text-lg font-semibold text-slate-900 dark:border-slate-700 dark:text-white">📄 Evidencia</h2>
 
-        <div class="form-group">
-            <label for="{{ form.meeting_minutes_file.id_for_label }}">
+        <div class="mb-5">
+            <label for="{{ form.meeting_minutes_file.id_for_label }}" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 {{ form.meeting_minutes_file.label }}
             </label>
             {{ form.meeting_minutes_file }}
             {% if is_edit and review.meeting_minutes_file %}
-            <p class="help-text">Archivo actual: <a href="{{ review.meeting_minutes_file.url }}">{{ review.meeting_minutes_file.name }}</a></p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Archivo actual: <a href="{{ review.meeting_minutes_file.url }}" class="text-indigo-600 hover:underline dark:text-indigo-300">{{ review.meeting_minutes_file.name }}</a></p>
             {% endif %}
             {% if form.meeting_minutes_file.errors %}
-            <ul class="error-list">
+            <ul class="mt-1 list-none p-0 text-sm text-red-600 dark:text-red-400">
                 {% for error in form.meeting_minutes_file.errors %}
                 <li>{{ error }}</li>
                 {% endfor %}
@@ -345,13 +227,13 @@
             {% endif %}
         </div>
 
-        <div class="form-actions">
+        <div class="mt-8 flex flex-wrap gap-3 border-t border-slate-200 pt-6 dark:border-slate-700">
             <button type="submit" class="btn btn-primary">💾 Guardar</button>
             <a href="{% if is_edit %}{% url 'core:review_detail' review.pk %}{% else %}{% url 'core:review_list' %}{% endif %}" class="btn btn-secondary">Cancelar</a>
         </div>
 
         {% if form.non_field_errors %}
-        <ul class="error-list" style="margin-top: var(--spacing-lg);">
+        <ul class="mt-5 list-none p-0 text-sm text-red-600 dark:text-red-400">
             {% for error in form.non_field_errors %}
             <li>{{ error }}</li>
             {% endfor %}

@@ -1,53 +1,54 @@
 {% if suppliers_with_status %}
-    <table class="suppliers-table">
-        <thead>
+<div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10 shadow-sm">
+    <table class="min-w-full divide-y divide-slate-200 dark:divide-white/10">
+        <thead class="bg-slate-100 dark:bg-slate-800/70">
             <tr>
-                <th>Nombre</th>
-                <th>Categoría</th>
-                <th>Estado</th>
-                <th>Próxima Evaluación</th>
-                <th>Acciones</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Nombre</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Categoría</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Estado</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Próx. Evaluación</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Acciones</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody class="divide-y divide-slate-200 dark:divide-white/10">
             {% for item in suppliers_with_status %}
-            <tr>
-                <td>
-                    <a href="{% url 'core:supplier_detail' item.supplier.pk %}" class="supplier-name">
+            <tr class="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                <td class="px-6 py-4 text-sm">
+                    <a href="{% url 'core:supplier_detail' item.supplier.pk %}" class="font-semibold text-blue-600 dark:text-blue-400 hover:underline">
                         {{ item.supplier.name }}
                     </a>
                     {% if item.supplier.cuit %}
-                    <br><small class="text-muted">{{ item.supplier.cuit }}</small>
+                    <br><span class="text-xs text-slate-500 dark:text-slate-400">{{ item.supplier.cuit }}</span>
                     {% endif %}
                 </td>
-                <td>
-                    <span class="badge badge-primary">{{ item.supplier.get_category_display }}</span>
+                <td class="px-6 py-4 text-sm">
+                    <span class="badge-info">{{ item.supplier.get_category_display }}</span>
                 </td>
-                <td>
+                <td class="px-6 py-4 text-sm">
                     {% if not item.supplier.is_active %}
-                    <span class="badge badge-danger">INACTIVO</span>
+                    <span class="badge-danger">INACTIVO</span>
                     {% elif item.supplier.status == "PENDING" %}
-                    <span class="badge badge-warning">PENDIENTE</span>
+                    <span class="badge-warning">PENDIENTE</span>
                     {% else %}
-                    <span class="badge badge-success">ACTIVO</span>
+                    <span class="badge-success">ACTIVO</span>
                     {% endif %}
                 </td>
-                <td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
                     {% if item.supplier.next_evaluation_date %}
                         {% if item.is_overdue %}
-                        <span class="badge badge-danger">{{ item.supplier.next_evaluation_date|date:"d/m/Y" }}</span>
+                        <span class="badge-danger">{{ item.supplier.next_evaluation_date|date:"d/m/Y" }}</span>
                         {% else %}
                         {{ item.supplier.next_evaluation_date|date:"d/m/Y" }}
                         {% endif %}
                     {% else %}
-                    <span class="text-muted">-</span>
+                    <span class="text-slate-400">-</span>
                     {% endif %}
                 </td>
-                <td>
-                    <div class="actions">
-                        <a href="{% url 'core:supplier_detail' item.supplier.pk %}" class="btn btn-sm btn-info">Ver</a>
+                <td class="px-6 py-4 text-sm">
+                    <div class="flex gap-2">
+                        <a href="{% url 'core:supplier_detail' item.supplier.pk %}" class="inline-flex items-center gap-2 border border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-200 bg-transparent hover:bg-slate-100 dark:hover:bg-white/5 font-semibold px-3 py-1.5 rounded-lg transition-all duration-150 text-sm">Ver</a>
                         {% if can_edit %}
-                        <a href="{% url 'core:supplier_edit' item.supplier.pk %}" class="btn btn-sm btn-secondary">Editar</a>
+                        <a href="{% url 'core:supplier_edit' item.supplier.pk %}" class="inline-flex items-center gap-2 border border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-200 bg-transparent hover:bg-slate-100 dark:hover:bg-white/5 font-semibold px-3 py-1.5 rounded-lg transition-all duration-150 text-sm">Editar</a>
                         {% endif %}
                     </div>
                 </td>
@@ -55,12 +56,13 @@
             {% endfor %}
         </tbody>
     </table>
+</div>
 {% else %}
-    <div class="empty-state">
-        <h3>No hay proveedores registrados.</h3>
-        <p class="text-muted">Crea el primer proveedor para comenzar la evaluación y seguimiento.</p>
-        {% if can_edit %}
-        <a href="{% url 'core:supplier_new' %}" class="btn btn-primary">Crear proveedor</a>
-        {% endif %}
-    </div>
+<div class="rounded-xl border-2 border-dashed border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-slate-800/30 px-6 py-12 text-center">
+    <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">No hay proveedores registrados.</h3>
+    <p class="text-slate-600 dark:text-slate-400 mb-6">Crea el primer proveedor para comenzar la evaluación y seguimiento.</p>
+    {% if can_edit %}
+    <a href="{% url 'core:supplier_new' %}" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-150">Crear proveedor</a>
+    {% endif %}
+</div>
 {% endif %}

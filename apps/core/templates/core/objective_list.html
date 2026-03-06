@@ -2,225 +2,58 @@
 
 {% block title %}Objetivos de Calidad{% endblock %}
 
-{% block extra_css %}
-<style>
-    .objectives-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: var(--spacing-xl);
-    }
-
-    .objectives-header h1 {
-        font-size: var(--font-size-3xl);
-        color: var(--color-primary);
-    }
-
-    .filter-card {
-        background: var(--color-white);
-        border: 2px solid var(--color-primary-light);
-        border-radius: var(--border-radius-lg);
-        padding: var(--spacing-lg);
-        margin-bottom: var(--spacing-xl);
-        box-shadow: var(--shadow-sm);
-    }
-
-    .filter-form {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: var(--spacing-lg);
-        align-items: flex-end;
-    }
-
-    .filter-form label {
-        display: block;
-        font-weight: 600;
-        margin-bottom: var(--spacing-sm);
-        color: var(--color-dark);
-    }
-
-    .filter-form select {
-        padding: var(--spacing-sm) var(--spacing-md);
-        border: 2px solid var(--color-gray-300);
-        border-radius: var(--border-radius-md);
-        font-size: var(--font-size-sm);
-        transition: var(--transition);
-        background-color: var(--color-white);
-        width: 100%;
-    }
-
-    .filter-form select:focus {
-        outline: none;
-        border-color: var(--color-primary);
-        box-shadow: 0 0 0 3px var(--color-primary-light);
-    }
-
-    .filter-actions {
-        grid-column: 1 / -1;
-        display: flex;
-        justify-content: flex-end;
-        gap: var(--spacing-sm);
-    }
-
-    .objectives-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .objectives-table th,
-    .objectives-table td {
-        padding: 0.75rem;
-        text-align: left;
-    }
-
-    .objectives-table thead tr {
-        background: #f8f9fa;
-        border-bottom: 2px solid #dee2e6;
-    }
-
-    .objectives-table tbody tr {
-        border-bottom: 1px solid #dee2e6;
-    }
-
-    .objectives-table tbody tr:hover {
-        background-color: var(--color-gray-50);
-        box-shadow: var(--shadow-sm);
-    }
-
-    .status-badge {
-        padding: 6px 12px;
-        border-radius: var(--border-radius-sm);
-        font-weight: 600;
-        font-size: var(--font-size-xs);
-        text-transform: uppercase;
-        display: inline-block;
-    }
-
-    .status-active {
-        background: #d1ecf1;
-        color: #0c5460;
-    }
-
-    .status-achieved {
-        background: var(--color-success-light);
-        color: var(--color-success);
-    }
-
-    .status-overdue {
-        background: #f8d7da;
-        color: var(--color-danger);
-    }
-
-    .status-cancelled {
-        background: var(--color-gray-100);
-        color: var(--color-gray-600);
-    }
-
-    .progress-cell {
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-md);
-    }
-
-    .progress-bar {
-        flex: 1;
-        height: 8px;
-        background: #e9ecef;
-        border-radius: 4px;
-        overflow: hidden;
-    }
-
-    .progress-fill {
-        height: 100%;
-        background: var(--color-primary);
-        transition: var(--transition);
-    }
-
-    .action-links {
-        display: flex;
-        gap: var(--spacing-sm);
-    }
-
-    .action-links .btn {
-        padding: 6px 12px;
-        font-size: var(--font-size-xs);
-        border-radius: var(--border-radius-sm);
-        box-shadow: var(--shadow-sm);
-        transition: var(--transition);
-    }
-
-    .action-links .btn:hover {
-        transform: translateY(-1px);
-        box-shadow: var(--shadow-md);
-    }
-
-    .empty-state {
-        color: var(--color-gray-600);
-        text-align: center;
-        padding: 3rem;
-    }
-
-    @media (max-width: 1024px) {
-        .filter-form {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-
-    @media (max-width: 640px) {
-        .filter-form {
-            grid-template-columns: 1fr;
-        }
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="objectives-header">
-    <div>
-        <h1>🎯 Objetivos de Calidad</h1>
-        <div class="text-muted">Organizacion: {{ organization.name }}</div>
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900 dark:text-white">🎯 Objetivos de Calidad</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Organizacion: {{ organization.name }}</p>
+        </div>
+        {% if can_edit %}
+        <a class="btn-primary whitespace-nowrap" href="{% url 'core:quality_objective_new' %}">+ Nuevo Objetivo</a>
+        {% endif %}
     </div>
-    {% if can_edit %}
-    <a class="btn btn-primary" href="{% url 'core:quality_objective_new' %}">+ Nuevo</a>
-    {% endif %}
-</div>
 
-<form method="get" class="filter-card" hx-get="{% url 'core:quality_objective_list' %}" hx-target="#results" hx-push-url="true" hx-trigger="change delay:300ms, submit">
-    <div class="filter-form">
-        <div>
-            <label for="status">📌 Estado</label>
-            <select id="status" name="status">
-                <option value="">Todos</option>
-                {% for value, label in status_choices %}
-                <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-            </select>
+    <!-- Filters -->
+    <form method="get" class="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl p-6 shadow-sm" hx-get="{% url 'core:quality_objective_list' %}" hx-target="#results" hx-push-url="true" hx-trigger="change delay:300ms, submit">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
+            <div>
+                <label for="status" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">📌 Estado</label>
+                <select id="status" name="status" class="w-full rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-900/50 px-3 py-2 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500">
+                    <option value="">Todos</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="process_id" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">🔗 Proceso</label>
+                <select id="process_id" name="process_id" class="w-full rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-900/50 px-3 py-2 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500">
+                    <option value="">Todos</option>
+                    {% for process in processes %}
+                    <option value="{{ process.id }}" {% if selected_process_id == process.id|stringformat:"s" %}selected{% endif %}>{{ process }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="owner_id" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">👤 Responsable</label>
+                <select id="owner_id" name="owner_id" class="w-full rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-900/50 px-3 py-2 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500">
+                    <option value="">Todos</option>
+                    {% for owner in owners %}
+                    <option value="{{ owner.id }}" {% if selected_owner_id == owner.id|stringformat:"s" %}selected{% endif %}>{{ owner.get_username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="md:col-span-2 lg:col-span-3 flex justify-end">
+                <a class="btn-secondary" href="{% url 'core:quality_objective_list' %}">Limpiar Filtros</a>
+            </div>
         </div>
-        <div>
-            <label for="process_id">🔗 Proceso</label>
-            <select id="process_id" name="process_id">
-                <option value="">Todos</option>
-                {% for process in processes %}
-                <option value="{{ process.id }}" {% if selected_process_id == process.id|stringformat:"s" %}selected{% endif %}>{{ process }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div>
-            <label for="owner_id">👤 Responsable</label>
-            <select id="owner_id" name="owner_id">
-                <option value="">Todos</option>
-                {% for owner in owners %}
-                <option value="{{ owner.id }}" {% if selected_owner_id == owner.id|stringformat:"s" %}selected{% endif %}>{{ owner.get_username }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="filter-actions">
-            <a class="btn btn-secondary" href="{% url 'core:quality_objective_list' %}">Limpiar</a>
-        </div>
+    </form>
+
+    <!-- Results -->
+    <div id="results">
+        {% include "core/objectives/_list_results.html" %}
     </div>
-</form>
-
-<div id="results">
-    {% include "core/objectives/_list_results.html" %}
 </div>
 {% endblock %}

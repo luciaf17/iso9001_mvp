@@ -12,6 +12,11 @@
         padding: var(--spacing-2xl);
         box-shadow: var(--shadow-md);
     }
+
+    .dark .context-form-container {
+        background: rgba(15, 23, 42, 0.75);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
     
     .context-form-container h1 {
         color: var(--color-primary);
@@ -22,6 +27,10 @@
     .context-meta {
         margin-bottom: var(--spacing-xl);
         color: var(--color-gray-700);
+    }
+
+    .dark .context-meta {
+        color: #94a3b8;
     }
     
     .form-errors {
@@ -44,6 +53,10 @@
         margin-bottom: var(--spacing-sm);
         color: var(--color-dark);
     }
+
+    .dark .form-group label {
+        color: #cbd5e1;
+    }
     
     .form-group input,
     .form-group select,
@@ -55,6 +68,14 @@
         font-size: var(--font-size-sm);
         transition: var(--transition);
         box-sizing: border-box;
+    }
+
+    .dark .form-group input,
+    .dark .form-group select,
+    .dark .form-group textarea {
+        background: rgba(15, 23, 42, 0.65);
+        border-color: rgba(255, 255, 255, 0.1);
+        color: #e2e8f0;
     }
     
     .form-group input:focus,
@@ -78,6 +99,16 @@
         padding-top: var(--spacing-lg);
         border-top: 2px solid var(--color-gray-200);
     }
+
+    .dark .context-actions {
+        border-top-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .field-error {
+        color: var(--color-danger);
+        font-size: var(--font-size-sm);
+        margin-top: var(--spacing-xs);
+    }
 </style>
 {% endblock %}
 
@@ -100,7 +131,7 @@
             <label for="{{ field.id_for_label }}">{{ field.label }}</label>
             {{ field }}
             {% if field.errors %}
-            <div style="color: var(--color-danger); font-size: var(--font-size-sm); margin-top: var(--spacing-xs);">
+            <div class="field-error">
                 {{ field.errors }}
             </div>
             {% endif %}

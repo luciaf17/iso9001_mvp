@@ -98,6 +98,21 @@
         color: var(--color-gray-600);
         margin-top: var(--spacing-xs);
     }
+
+    .indicator-stack {
+        display: grid;
+        gap: var(--spacing-md);
+    }
+
+    .indicator-meta-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-md);
+    }
+
+    .error-list-spaced {
+        margin-top: var(--spacing-lg);
+    }
 </style>
 {% endblock %}
 
@@ -106,12 +121,12 @@
     <h1>📊 Registrar Medición</h1>
 
     <div class="indicator-info">
-        <div style="display: grid; gap: var(--spacing-md);">
+        <div class="indicator-stack">
             <div>
                 <div class="info-label">Indicador</div>
                 <div class="info-value">{{ indicator.name }}</div>
             </div>
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--spacing-md);">
+            <div class="indicator-meta-grid">
                 <div>
                     <div class="info-label">Meta</div>
                     <div class="info-value">
@@ -183,7 +198,7 @@
         </div>
 
         {% if form.non_field_errors %}
-        <ul class="error-list" style="margin-top: var(--spacing-lg);">
+        <ul class="error-list error-list-spaced">
             {% for error in form.non_field_errors %}
             <li>{{ error }}</li>
             {% endfor %}

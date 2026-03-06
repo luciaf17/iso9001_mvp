@@ -2,80 +2,12 @@
 
 {% block title %}{{ title }}{% endblock %}
 
-{% block extra_css %}
-<style>
-    .form-container {
-        max-width: 700px;
-        background: var(--color-white);
-        border: 2px solid var(--color-primary-light);
-        border-radius: var(--border-radius-lg);
-        padding: var(--spacing-2xl);
-        box-shadow: var(--shadow-md);
-    }
-    
-    .form-container h1 {
-        color: var(--color-primary);
-        margin-bottom: var(--spacing-xl);
-        font-size: var(--font-size-2xl);
-    }
-    
-    .form-errors {
-        background: linear-gradient(135deg, var(--color-danger-light) 0%, #ffebee 100%);
-        border: 2px solid var(--color-danger);
-        color: var(--color-danger);
-        padding: var(--spacing-md);
-        border-radius: var(--border-radius-md);
-        margin-bottom: var(--spacing-lg);
-        font-weight: 600;
-    }
-    
-    .form-group {
-        margin-bottom: var(--spacing-lg);
-    }
-    
-    .form-group label {
-        display: block;
-        font-weight: 600;
-        margin-bottom: var(--spacing-sm);
-        color: var(--color-dark);
-    }
-    
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-        width: 100%;
-        padding: var(--spacing-sm) var(--spacing-md);
-        border: 2px solid var(--color-gray-300);
-        border-radius: var(--border-radius-md);
-        font-size: var(--font-size-sm);
-        transition: var(--transition);
-        box-sizing: border-box;
-    }
-    
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
-        outline: none;
-        border-color: var(--color-primary);
-        box-shadow: 0 0 0 3px var(--color-primary-light);
-    }
-    
-    .form-actions {
-        display: flex;
-        gap: var(--spacing-md);
-        margin-top: var(--spacing-2xl);
-        padding-top: var(--spacing-lg);
-        border-top: 2px solid var(--color-gray-200);
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="form-container">
-    <h1>🗠️ {{ title }}</h1>
+<div class="mx-auto max-w-4xl rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900 md:p-8">
+    <h1 class="mb-6 text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">🗺️ {{ title }}</h1>
 
     {% if form.errors %}
-    <div class="form-errors">
+    <div class="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
         ❌ Revisar los errores del formulario.
         {{ form.non_field_errors }}
     </div>
@@ -84,18 +16,18 @@
     <form method="post">
         {% csrf_token %}
         {% for field in form %}
-        <div class="form-group">
-            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        <div class="mb-5">
+            <label for="{{ field.id_for_label }}" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{{ field.label }}</label>
             {{ field }}
             {% if field.errors %}
-            <div style="color: var(--color-danger); font-size: var(--font-size-sm); margin-top: var(--spacing-xs);">
+            <div class="mt-1 text-sm text-red-600 dark:text-red-400">
                 {{ field.errors }}
             </div>
             {% endif %}
         </div>
         {% endfor %}
 
-        <div class="form-actions">
+        <div class="mt-8 flex flex-wrap gap-3 border-t border-slate-200 pt-6 dark:border-slate-700">
             <button type="submit" class="btn btn-primary">💾 Guardar</button>
             <a class="btn btn-secondary" href="{% url 'org:process_map' %}">← Cancelar</a>
         </div>

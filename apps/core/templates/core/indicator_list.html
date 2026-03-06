@@ -2,149 +2,35 @@
 
 {% block title %}Indicadores de Calidad{% endblock %}
 
-{% block extra_css %}
-<style>
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: var(--spacing-xl);
-    }
-
-    .page-header h1 {
-        margin: 0;
-        color: var(--color-primary);
-    }
-
-    .filters-card {
-        background: var(--color-white);
-        border: 1px solid var(--color-gray-300);
-        border-radius: var(--border-radius-lg);
-        padding: var(--spacing-lg);
-        margin-bottom: var(--spacing-xl);
-        box-shadow: var(--shadow-sm);
-    }
-
-    .filters-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: var(--spacing-md);
-        align-items: end;
-    }
-
-    .indicators-table {
-        width: 100%;
-        border-collapse: collapse;
-        background: var(--color-white);
-        border-radius: var(--border-radius-lg);
-        overflow: hidden;
-        box-shadow: var(--shadow-sm);
-    }
-
-    .indicators-table thead {
-        background: var(--color-primary-light);
-    }
-
-    .indicators-table th {
-        padding: var(--spacing-md);
-        text-align: left;
-        font-weight: 700;
-        color: var(--color-primary);
-        border-bottom: 2px solid var(--color-primary);
-    }
-
-    .indicators-table td {
-        padding: var(--spacing-md);
-        border-bottom: 1px solid var(--color-gray-200);
-    }
-
-    .indicators-table tbody tr:hover {
-        background: var(--color-gray-50);
-    }
-
-    .indicator-row {
-        cursor: pointer;
-    }
-
-    .indicator-row:hover {
-        background: var(--color-gray-50);
-    }
-
-    .indicator-name {
-        font-weight: 600;
-        color: var(--color-primary);
-    }
-
-    .badge {
-        display: inline-block;
-        padding: 4px 8px;
-        border-radius: var(--border-radius-sm);
-        font-size: var(--font-size-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-    }
-
-    .badge-monthly { background: #e3f2fd; color: #1976d2; }
-    .badge-quarterly { background: #f3e5f5; color: #7b1fa2; }
-    .badge-yearly { background: #e0f2f1; color: #00796b; }
-
-    .badge-ok { background: #c8e6c9; color: #2e7d32; }
-    .badge-out-of-target { background: #ffcdd2; color: #c62828; }
-    .badge-overdue { background: #ffe0b2; color: #e65100; }
-    .badge-no-data { background: #eceff1; color: #455a64; }
-
-    .empty-state {
-        text-align: center;
-        padding: var(--spacing-xl);
-        background: var(--color-white);
-        border: 2px dashed var(--color-gray-300);
-        border-radius: var(--border-radius-lg);
-    }
-
-    .empty-state-icon {
-        font-size: 4rem;
-        margin-bottom: var(--spacing-md);
-    }
-
-    @media (max-width: 768px) {
-        .indicators-table {
-            font-size: var(--font-size-sm);
-        }
-
-        .indicators-table th,
-        .indicators-table td {
-            padding: var(--spacing-sm);
-        }
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="page-header">
-    <h1>📊 Indicadores de Calidad</h1>
-    {% if can_edit %}
-    <a href="{% url 'core:indicator_new' %}" class="btn btn-primary">➕ Nuevo Indicador</a>
-    {% endif %}
-</div>
-
-<form method="get" class="filters-card" hx-get="{% url 'core:indicator_list' %}" hx-target="#results" hx-push-url="true" hx-trigger="change delay:300ms, submit">
-    <div class="filters-grid">
-        <div class="form-group">
-            <label for="process-filter" class="form-label">Proceso</label>
-            <select class="form-select" id="process-filter" name="process_id">
-                <option value="">Todos</option>
-                {% for process in processes %}
-                <option value="{{ process.id }}" {% if process.id|stringformat:"s" == selected_process_id %}selected{% endif %}>{{ process.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="form-group">
-            <a class="btn btn-secondary" href="{% url 'core:indicator_list' %}">Limpiar</a>
-        </div>
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100">📊 Indicadores de Calidad</h1>
+        {% if can_edit %}
+        <a href="{% url 'core:indicator_new' %}" class="btn-primary">➕ Nuevo Indicador</a>
+        {% endif %}
     </div>
-</form>
 
-<div id="results">
-    {% include "core/indicators/_list_results.html" %}
+    <!-- Filters Card -->
+    <form method="get" class="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl p-6 shadow-sm" hx-get="{% url 'core:indicator_list' %}" hx-target="#results" hx-push-url="true" hx-trigger="change delay:300ms, submit">
+        <div class="flex items-end gap-4">
+            <div class="flex-1">
+                <label for="process-filter" class="block text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300 mb-2">Proceso</label>
+                <select class="w-full rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-900/50 px-3 py-2 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" id="process-filter" name="process_id">
+                    <option value="">Todos</option>
+                    {% for process in processes %}
+                    <option value="{{ process.id }}" {% if process.id|stringformat:"s" == selected_process_id %}selected{% endif %}>{{ process.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <a class="btn-secondary" href="{% url 'core:indicator_list' %}">Limpiar</a>
+        </div>
+    </form>
+
+    <!-- Results -->
+    <div id="results">
+        {% include "core/indicators/_list_results.html" %}
+    </div>
 </div>
 {% endblock %}

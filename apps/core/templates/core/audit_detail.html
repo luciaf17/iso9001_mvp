@@ -194,6 +194,62 @@
         color: var(--color-gray-600);
     }
 
+    .title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .title-row h1 {
+        margin: 0;
+    }
+
+    .section-spacing {
+        margin-top: var(--spacing-lg);
+    }
+
+    .subsection-spacing {
+        margin-top: var(--spacing-sm);
+    }
+
+    .scope-text {
+        color: var(--color-gray-700);
+    }
+
+    .doc-item {
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .doc-link {
+        padding: 6px 12px;
+        font-size: var(--font-size-sm);
+    }
+
+    .finding-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: var(--spacing-md);
+    }
+
+    .finding-main {
+        flex: 1;
+    }
+
+    .finding-badges {
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .meta-label {
+        font-weight: 600;
+    }
+
+    .empty-icon {
+        font-size: var(--font-size-lg);
+        margin-bottom: var(--spacing-md);
+    }
+
     @media (max-width: 768px) {
         .detail-header {
             flex-direction: column;
@@ -219,8 +275,8 @@
 </div>
 
 <div class="detail-card">
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--spacing-lg);">
-        <h1 style="margin: 0;">{{ audit.title }}</h1>
+    <div class="title-row">
+        <h1>{{ audit.title }}</h1>
         <span class="status-badge status-{{ audit.status|lower }}">{{ audit.get_status_display }}</span>
     </div>
 
@@ -262,31 +318,31 @@
     </div>
 
     {% if audit.scope %}
-    <div style="margin-top: var(--spacing-lg);">
+    <div class="section-spacing">
         <strong>Alcance</strong>
-        <div style="margin-top: var(--spacing-sm); color: var(--color-gray-700);">
+        <div class="subsection-spacing scope-text">
             {{ audit.scope }}
         </div>
     </div>
     {% endif %}
 
     {% if audit.plan_file or audit.report_file or audit.team_cv_file %}
-    <div style="margin-top: var(--spacing-lg);">
+    <div class="section-spacing">
         <strong>Documentos de Auditoria</strong>
-        <div style="margin-top: var(--spacing-sm);">
+        <div class="subsection-spacing">
             {% if audit.plan_file %}
-            <div style="margin-bottom: var(--spacing-sm);">
-                <a href="{{ audit.plan_file.url }}" class="btn btn-secondary" style="padding: 6px 12px; font-size: var(--font-size-sm);">📥 Descargar Planificacion</a>
+            <div class="doc-item">
+                <a href="{{ audit.plan_file.url }}" class="btn btn-secondary doc-link">📥 Descargar Planificacion</a>
             </div>
             {% endif %}
             {% if audit.report_file %}
-            <div style="margin-bottom: var(--spacing-sm);">
-                <a href="{{ audit.report_file.url }}" class="btn btn-secondary" style="padding: 6px 12px; font-size: var(--font-size-sm);">📥 Descargar Informe</a>
+            <div class="doc-item">
+                <a href="{{ audit.report_file.url }}" class="btn btn-secondary doc-link">📥 Descargar Informe</a>
             </div>
             {% endif %}
             {% if audit.team_cv_file %}
-            <div style="margin-bottom: var(--spacing-sm);">
-                <a href="{{ audit.team_cv_file.url }}" class="btn btn-secondary" style="padding: 6px 12px; font-size: var(--font-size-sm);">📥 Descargar CV Equipo Auditor</a>
+            <div class="doc-item">
+                <a href="{{ audit.team_cv_file.url }}" class="btn btn-secondary doc-link">📥 Descargar CV Equipo Auditor</a>
             </div>
             {% endif %}
         </div>
@@ -328,9 +384,9 @@
     {% if findings %}
         {% for finding in findings %}
         <div class="finding-item type-{{ finding.finding_type }}">
-            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: var(--spacing-md);">
-                <div style="flex: 1;">
-                    <div style="margin-bottom: var(--spacing-sm);">
+            <div class="finding-row">
+                <div class="finding-main">
+                    <div class="finding-badges">
                         <span class="finding-type-badge finding-type-{{ finding.finding_type }}">
                             {{ finding.get_finding_type_display }}
                         </span>
@@ -347,16 +403,16 @@
 
                     <div class="finding-meta">
                         <div class="finding-meta-item">
-                            <span style="font-weight: 600;">📋 Proceso:</span>
+                            <span class="meta-label">📋 Proceso:</span>
                             <span>{% if finding.related_process %}{{ finding.related_process }}{% else %}<em>No asignado</em>{% endif %}</span>
                         </div>
                         <div class="finding-meta-item">
-                            <span style="font-weight: 600;">📅 Fecha:</span>
+                            <span class="meta-label">📅 Fecha:</span>
                             <span>{{ finding.created_at|date:"d/m/Y" }}</span>
                         </div>
                         {% if finding.nc %}
                         <div class="finding-meta-item">
-                            <span style="font-weight: 600;">🔗 NC:</span>
+                            <span class="meta-label">🔗 NC:</span>
                             <span><a href="{% url 'core:nc_detail' finding.nc.pk %}"><strong>{{ finding.nc.code }}</strong></a></span>
                         </div>
                         {% endif %}
@@ -378,7 +434,7 @@
         {% endfor %}
     {% else %}
         <div class="empty-state">
-            <div style="font-size: var(--font-size-lg); margin-bottom: var(--spacing-md);">📝</div>
+            <div class="empty-icon">📝</div>
             No hay hallazgos registrados.
         </div>
     {% endif %}

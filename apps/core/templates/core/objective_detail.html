@@ -72,6 +72,17 @@
         gap: var(--spacing-lg);
     }
 
+    .title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .title-row h1 {
+        margin: 0;
+    }
+
     .detail-item strong {
         color: var(--color-dark);
         display: block;
@@ -83,6 +94,66 @@
         padding: var(--spacing-lg);
         border-radius: var(--border-radius-md);
         margin-top: var(--spacing-md);
+    }
+
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--spacing-lg);
+    }
+
+    .metric-label {
+        display: block;
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .metric-value {
+        font-size: var(--font-size-2xl);
+        font-weight: 700;
+    }
+
+    .metric-value.target {
+        color: var(--color-primary);
+    }
+
+    .metric-value.current {
+        color: var(--color-dark);
+    }
+
+    .metric-value.progress {
+        color: var(--color-success);
+    }
+
+    .progress-track {
+        margin-top: var(--spacing-lg);
+    }
+
+    .progress-native {
+        width: 100%;
+        height: 24px;
+    }
+
+    .progress-native::-webkit-progress-bar {
+        background: #e9ecef;
+        border-radius: 12px;
+    }
+
+    .progress-native::-webkit-progress-value {
+        background: var(--color-primary);
+        border-radius: 12px;
+    }
+
+    .progress-native::-moz-progress-bar {
+        background: var(--color-primary);
+        border-radius: 12px;
+    }
+
+    .progress-text {
+        margin-top: var(--spacing-xs);
+        text-align: right;
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        color: var(--color-gray-700);
     }
 
     .progress-bar {
@@ -131,8 +202,8 @@
 </div>
 
 <div class="detail-card">
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--spacing-lg);">
-        <h1 style="margin: 0;">{{ objective.title }}</h1>
+    <div class="title-row">
+        <h1>{{ objective.title }}</h1>
         <span class="status-badge status-{{ objective.status|lower }}">
             {{ objective.get_status_display }}
         </span>
@@ -174,31 +245,30 @@
     </div>
 
     <div class="progress-container">
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-lg);">
+        <div class="metrics-grid">
             <div>
-                <strong style="display: block; margin-bottom: var(--spacing-sm);">🎯 Meta</strong>
-                <div style="font-size: var(--font-size-2xl); color: var(--color-primary); font-weight: 700;">
+                <strong class="metric-label">🎯 Meta</strong>
+                <div class="metric-value target">
                     {{ objective.target_value }} {{ objective.unit }}
                 </div>
             </div>
             <div>
-                <strong style="display: block; margin-bottom: var(--spacing-sm);">📈 Actual</strong>
-                <div style="font-size: var(--font-size-2xl); color: var(--color-dark); font-weight: 700;">
+                <strong class="metric-label">📈 Actual</strong>
+                <div class="metric-value current">
                     {{ objective.current_value }} {{ objective.unit }}
                 </div>
             </div>
             <div>
-                <strong style="display: block; margin-bottom: var(--spacing-sm);">✅ Avance</strong>
-                <div style="font-size: var(--font-size-2xl); color: var(--color-success); font-weight: 700;">
+                <strong class="metric-label">✅ Avance</strong>
+                <div class="metric-value progress">
                     {{ progress_percent|floatformat:1 }}%
                 </div>
             </div>
         </div>
 
-        <div class="progress-bar" style="margin-top: var(--spacing-lg);">
-            <div class="progress-fill" style="width: {{ progress_percent|floatformat:0 }}%">
-                {{ progress_percent|floatformat:0 }}%
-            </div>
+        <div class="progress-track">
+            <progress class="progress-native" max="100" value="{{ progress_percent|floatformat:0 }}"></progress>
+            <div class="progress-text">{{ progress_percent|floatformat:0 }}%</div>
         </div>
     </div>
 </div>

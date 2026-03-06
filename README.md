@@ -218,3 +218,23 @@ git commit -m "Remove pycache from tracking"
 ```
 
 Los archivos `.pyc` y `__pycache__/` ya están en `.gitignore` para evitar commits futuros.
+
+---
+
+## 13. Estándar de templates (UI MVP)
+
+Para mantener consistencia visual y auditabilidad en el frontend (Django Templates + HTMX):
+
+- No usar `@apply` dentro de templates HTML.
+- No usar `style="..."` inline en templates.
+- Definir clases reutilizables en bloques `<style>` solo cuando sea estrictamente necesario.
+- Toda tarjeta, tabla y formulario debe tener variantes de tema claro/oscuro (`dark:*`).
+- Mantener vistas delgadas: evitar lógica de negocio en templates.
+- Para filas clickeables, usar patrón seguro con `data-href`.
+
+Checklist rápido antes de mergear cambios de UI:
+
+1. `python manage.py check`
+2. Abrir vistas críticas en claro y oscuro (dashboard, listas, formularios).
+3. Verificar que no aparezcan fondos blancos inesperados en modo oscuro.
+4. Confirmar que no se introdujeron estilos inline ni `@apply`.

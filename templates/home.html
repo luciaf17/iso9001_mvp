@@ -16,6 +16,10 @@
         font-weight: 700;
         color: var(--color-dark);
     }
+
+    .dark .page-header h1 {
+        color: rgb(248 250 252);
+    }
     
     .home-grid {
         display: grid;
@@ -35,6 +39,12 @@
         transition: var(--transition);
         position: relative;
         overflow: hidden;
+    }
+
+    .dark .home-card {
+        background: rgba(30, 41, 59, 0.55);
+        border-color: rgba(255, 255, 255, 0.1);
+        box-shadow: 0 1px 2px rgba(2, 6, 23, 0.35);
     }
     
     .home-card::before {
@@ -61,6 +71,10 @@
         align-items: center;
         gap: var(--spacing-sm);
     }
+
+    .dark .home-card h2 {
+        color: rgb(241 245 249);
+    }
     
     .home-card p {
         margin-bottom: var(--spacing-lg);
@@ -68,6 +82,10 @@
         flex-grow: 1;
         font-size: var(--font-size-sm);
         line-height: 1.5;
+    }
+
+    .dark .home-card p {
+        color: rgb(148 163 184);
     }
     
     .home-card a {
@@ -131,13 +149,13 @@
     </div>
     
     <div class="home-card">
-        <h2>� Indicadores de Desempeño</h2>
+        <h2>📈 Indicadores de Desempeño</h2>
         <p>Crea y monitorea indicadores para evaluar el SGC según ISO 9001 9.1.</p>
         <a href="{% url 'core:indicator_list' %}">Ir a Indicadores →</a>
     </div>
     
     <div class="home-card">
-        <h2>�📄 Documentos</h2>
+        <h2>📄 Documentos</h2>
         <p>Acceso rápido al control documental. Gestiona versiones y aprobaciones.</p>
         <a href="{% url 'docs:docs_list' %}">Ir a Documentos →</a>
     </div>
@@ -179,7 +197,7 @@
     </div>
     
     <div class="home-card">
-        <h2>� Productos/Servicios No Conformes</h2>
+        <h2>📦 Productos/Servicios No Conformes</h2>
         <p>Control operativo de productos/servicios no conformes detectados (ISO 9001 8.7).</p>
         <a href="{% url 'core:nonconforming_output_list' %}">Ir a PNC →</a>
     </div>
@@ -191,7 +209,7 @@
     </div>
     
     <div class="home-card">
-        <h2>�🔍 Hallazgos de Auditorías</h2>
+        <h2>🔍 Hallazgos de Auditorías</h2>
         <p>Visualiza y gestiona todos los hallazgos registrados en las auditorías internas.</p>
         <a href="{% url 'core:audit_list' %}">Ir a Hallazgos →</a>
     </div>

@@ -67,6 +67,10 @@
         padding: var(--spacing-xl);
         color: var(--color-gray-600);
     }
+
+    .checklist-title {
+        margin-top: var(--spacing-sm);
+    }
 </style>
 {% endblock %}
 
@@ -74,7 +78,7 @@
 <div class="checklist-header">
     <div>
         <a href="{% url 'core:audit_detail' audit.pk %}">← Volver al detalle</a>
-        <h1 style="margin-top: var(--spacing-sm);">Checklist - {{ audit.title }}</h1>
+        <h1 class="checklist-title">Checklist - {{ audit.title }}</h1>
     </div>
 </div>
 

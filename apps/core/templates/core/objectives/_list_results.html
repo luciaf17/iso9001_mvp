@@ -1,50 +1,62 @@
 {% if objectives %}
-<table class="objectives-table">
-    <thead>
-        <tr>
-            <th>Titulo</th>
-            <th>Indicador</th>
-            <th>Meta</th>
-            <th>Actual</th>
-            <th>Avance</th>
-            <th>Estado</th>
-            <th>Vencimiento</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for item in objectives %}
-        <tr>
-            <td><strong>{{ item.obj.title }}</strong></td>
-            <td>{{ item.obj.indicator }}</td>
-            <td>{{ item.obj.target_value }} {{ item.obj.unit }}</td>
-            <td>{{ item.obj.current_value }} {{ item.obj.unit }}</td>
-            <td>
-                <div class="progress-cell">
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: {{ item.progress|floatformat:0 }}%"></div>
+<div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10 shadow-sm">
+    <table class="min-w-full divide-y divide-slate-200 dark:divide-white/10">
+        <thead class="bg-slate-100 dark:bg-slate-800/70">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Titulo</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Indicador</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Meta</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Actual</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Avance</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Estado</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Vencimiento</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Acciones</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200 dark:divide-white/10">
+            {% for item in objectives %}
+            <tr class="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                <td class="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ item.obj.title }}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ item.obj.indicator }}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ item.obj.target_value }} {{ item.obj.unit }}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ item.obj.current_value }} {{ item.obj.unit }}</td>
+                <td class="px-6 py-4 text-sm">
+                    <div class="flex items-center gap-3">
+                        <progress class="h-2 w-24 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700" max="100" value="{{ item.progress|floatformat:0 }}"></progress>
+                        <span class="text-xs text-slate-600 dark:text-slate-400">{{ item.progress|floatformat:1 }}%</span>
                     </div>
-                    <span style="font-size: var(--font-size-xs); color: var(--color-gray-600);">{{ item.progress|floatformat:1 }}%</span>
-                </div>
-            </td>
-            <td>
-                <span class="status-badge status-{{ item.obj.status|lower }}">
-                    {{ item.obj.get_status_display }}
-                </span>
-            </td>
-            <td>{{ item.obj.due_date|date:"d/m/Y" }}</td>
-            <td>
-                <div class="action-links">
-                    <a class="btn btn-secondary" href="{% url 'core:quality_objective_detail' item.obj.pk %}">Ver</a>
-                    {% if can_edit %}
-                    <a class="btn btn-primary" href="{% url 'core:quality_objective_edit' item.obj.pk %}">Editar</a>
+                </td>
+                <td class="px-6 py-4 text-sm">
+                    {% if item.obj.status == 'ACTIVE' %}
+                        <span class="badge-info">{{ item.obj.get_status_display }}</span>
+                    {% elif item.obj.status == 'ACHIEVED' %}
+                        <span class="badge-success">{{ item.obj.get_status_display }}</span>
+                    {% elif item.obj.status == 'OVERDUE' %}
+                        <span class="badge-danger">{{ item.obj.get_status_display }}</span>
+                    {% elif item.obj.status == 'CANCELLED' %}
+                        <span class="badge-neutral">{{ item.obj.get_status_display }}</span>
+                    {% else %}
+                        <span class="badge-warning">{{ item.obj.get_status_display }}</span>
                     {% endif %}
-                </div>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+                </td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ item.obj.due_date|date:"d/m/Y" }}</td>
+                <td class="px-6 py-4 text-sm">
+                    <div class="flex gap-2">
+                        <a class="btn-secondary" href="{% url 'core:quality_objective_detail' item.obj.pk %}">Ver</a>
+                        {% if can_edit %}
+                        <a class="btn-primary" href="{% url 'core:quality_objective_edit' item.obj.pk %}">Editar</a>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% else %}
-<p class="empty-state">📭 No hay objetivos de calidad registrados.</p>
+<div class="rounded-xl border-2 border-dashed border-slate-300 dark:border-white/10 p-8 text-center">
+    <div class="text-5xl mb-4">📭</div>
+    <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">No hay objetivos de calidad</h3>
+    <p class="text-sm text-slate-600 dark:text-slate-400">Registra los objetivos de calidad de la organizacion.</p>
+</div>
 {% endif %}

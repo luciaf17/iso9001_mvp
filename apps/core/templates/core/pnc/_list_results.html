@@ -1,53 +1,65 @@
 {% if outputs %}
-    <table class="pnc-table">
-        <thead>
+<div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10 shadow-sm">
+    <table class="min-w-full divide-y divide-slate-200 dark:divide-white/10">
+        <thead class="bg-slate-100 dark:bg-slate-800/70">
             <tr>
-                <th>Código</th>
-                <th>Producto/Servicio</th>
-                <th>Severidad</th>
-                <th>Estado</th>
-                <th>Disposición</th>
-                <th>Detectado</th>
-                <th>Proceso</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Código</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Producto/Servicio</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Severidad</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Estado</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Disposición</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Detectado</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Proceso</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody class="divide-y divide-slate-200 dark:divide-white/10">
             {% for output in outputs %}
-            <tr class="pnc-row" onclick="window.location='{% url 'core:nonconforming_output_detail' output.pk %}'">
-                <td><strong>{{ output.code }}</strong></td>
-                <td>{{ output.product_or_service }}</td>
-                <td>
-                    <span class="badge badge-{{ output.severity|lower }}">
-                        {{ output.get_severity_display }}
-                    </span>
+            <tr class="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer" data-href="{% url 'core:nonconforming_output_detail' output.pk %}" onclick="window.location=this.dataset.href">
+                <td class="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ output.code }}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ output.product_or_service }}</td>
+                <td class="px-6 py-4 text-sm">
+                    {% if output.severity == 'MINOR' %}
+                        <span class="badge-success">{{ output.get_severity_display }}</span>
+                    {% elif output.severity == 'MAJOR' %}
+                        <span class="badge-warning">{{ output.get_severity_display }}</span>
+                    {% elif output.severity == 'CRITICAL' %}
+                        <span class="badge-danger">{{ output.get_severity_display }}</span>
+                    {% else %}
+                        <span class="inline-block px-3 py-1 rounded-lg text-xs font-bold uppercase bg-slate-100 dark:bg-slate-800/50 text-slate-700 dark:text-slate-400">{{ output.get_severity_display }}</span>
+                    {% endif %}
                 </td>
-                <td>
-                    <span class="badge badge-{{ output.status|lower|cut:'_' }}">
-                        {{ output.get_status_display }}
-                    </span>
+                <td class="px-6 py-4 text-sm">
+                    {% if output.status == 'OPEN' %}
+                        <span class="badge-info">{{ output.get_status_display }}</span>
+                    {% elif output.status == 'IN_TREATMENT' %}
+                        <span class="badge-warning">{{ output.get_status_display }}</span>
+                    {% elif output.status == 'CLOSED' %}
+                        <span class="badge-success">{{ output.get_status_display }}</span>
+                    {% else %}
+                        <span class="inline-block px-3 py-1 rounded-lg text-xs font-bold uppercase bg-slate-100 dark:bg-slate-800/50 text-slate-700 dark:text-slate-400">{{ output.get_status_display }}</span>
+                    {% endif %}
                 </td>
-                <td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
                     {% if output.disposition %}
                         {{ output.get_disposition_display }}
                     {% else %}
-                        <span style="color: var(--color-gray-400);">—</span>
+                        <span class="text-slate-400 dark:text-slate-600">—</span>
                     {% endif %}
                 </td>
-                <td>{{ output.detected_at|date:"d/m/Y" }}</td>
-                <td>{% if output.related_process %}{{ output.related_process }}{% else %}-{% endif %}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ output.detected_at|date:"d/m/Y" }}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{% if output.related_process %}{{ output.related_process }}{% else %}<span class="text-slate-400 dark:text-slate-600">—</span>{% endif %}</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+</div>
 {% else %}
-    <div class="empty-state">
-        <div class="empty-state-icon">🔴</div>
-        <h3>No hay productos/servicios no conformes</h3>
-        <p>Los PNC son registros de control de productos/servicios no conformes (ISO 9001 8.7)</p>
-        {% if can_edit %}
-        <div style="margin-top: var(--spacing-lg);">
-            <a href="{% url 'core:nonconforming_output_new' %}" class="btn btn-primary">Registrar primer PNC</a>
-        </div>
-        {% endif %}
-    </div>
+<div class="rounded-xl border-2 border-dashed border-slate-300 dark:border-white/10 p-8 text-center">
+    <div class="text-5xl mb-4">🔴</div>
+    <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">No hay productos/servicios no conformes</h3>
+    <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">Los PNC son registros de control de productos/servicios no conformes (ISO 9001 8.7)</p>
+    {% if can_edit %}
+    <a href="{% url 'core:nonconforming_output_new' %}" class="btn-primary">Registrar primer PNC</a>
+    {% endif %}
+</div>
 {% endif %}

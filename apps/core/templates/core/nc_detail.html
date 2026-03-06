@@ -48,6 +48,10 @@
         margin-bottom: var(--spacing-sm);
     }
 
+    .detail-item-full {
+        grid-column: 1 / -1;
+    }
+
     .severity-badge {
         padding: 4px 8px;
         border-radius: var(--border-radius-sm);
@@ -359,19 +363,19 @@
             <strong>👤 Cerrada por</strong>
             <span>{% if nc.closed_by %}{{ nc.closed_by.get_username }}{% else %}-{% endif %}</span>
         </div>
-        <div class="detail-item" style="grid-column: 1 / -1;">
+        <div class="detail-item detail-item-full">
             <strong>📝 Descripción</strong>
             <span>{{ nc.description }}</span>
         </div>
-        <div class="detail-item" style="grid-column: 1 / -1;">
+        <div class="detail-item detail-item-full">
             <strong>🔎 Análisis de causa raíz</strong>
             <span>{% if nc.root_cause_analysis %}{{ nc.root_cause_analysis }}{% else %}-{% endif %}</span>
         </div>
-        <div class="detail-item" style="grid-column: 1 / -1;">
+        <div class="detail-item detail-item-full">
             <strong>✅ Acciones correctivas</strong>
             <span>{% if nc.corrective_action %}{{ nc.corrective_action }}{% else %}-{% endif %}</span>
         </div>
-        <div class="detail-item" style="grid-column: 1 / -1;">
+        <div class="detail-item detail-item-full">
             <strong>🧪 Notas de verificacion</strong>
             <span>{% if nc.verification_notes %}{{ nc.verification_notes }}{% else %}-{% endif %}</span>
         </div>

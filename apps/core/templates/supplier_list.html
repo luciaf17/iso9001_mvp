@@ -3,153 +3,58 @@
 
 {% block title %}Proveedores{% endblock %}
 
-{% block extra_css %}
-<style>
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: var(--spacing-md);
-        margin-bottom: var(--spacing-xl);
-    }
-
-    .page-header h1 {
-        margin: 0;
-        color: var(--color-primary);
-    }
-
-    .filters-card {
-        background: var(--color-white);
-        border: 1px solid var(--color-gray-300);
-        border-radius: var(--border-radius-lg);
-        padding: var(--spacing-lg);
-        margin-bottom: var(--spacing-xl);
-        box-shadow: var(--shadow-sm);
-    }
-
-    .filters-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: var(--spacing-md);
-        align-items: end;
-    }
-
-    .suppliers-table {
-        width: 100%;
-        border-collapse: collapse;
-        background: var(--color-white);
-        border-radius: var(--border-radius-lg);
-        overflow: hidden;
-        box-shadow: var(--shadow-sm);
-    }
-
-    .suppliers-table thead {
-        background: var(--color-primary-light);
-    }
-
-    .suppliers-table th {
-        padding: var(--spacing-md);
-        text-align: left;
-        font-weight: 700;
-        color: var(--color-primary);
-        border-bottom: 2px solid var(--color-primary);
-        white-space: nowrap;
-    }
-
-    .suppliers-table td {
-        padding: var(--spacing-md);
-        border-bottom: 1px solid var(--color-gray-200);
-        vertical-align: middle;
-    }
-
-    .suppliers-table tbody tr:hover {
-        background: var(--color-gray-50);
-    }
-
-    .supplier-name {
-        font-weight: 700;
-        color: var(--color-primary);
-    }
-
-    .actions {
-        display: flex;
-        gap: var(--spacing-sm);
-        flex-wrap: wrap;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: var(--spacing-2xl) var(--spacing-lg);
-        background: var(--color-white);
-        border: 2px dashed var(--color-gray-300);
-        border-radius: var(--border-radius-lg);
-    }
-
-    @media (max-width: 900px) {
-        .page-header {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        .suppliers-table {
-            font-size: var(--font-size-sm);
-        }
-
-        .suppliers-table th,
-        .suppliers-table td {
-            padding: var(--spacing-sm);
-        }
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="page-header">
-    <div>
-        <h1>📋 Proveedores</h1>
-        <p class="text-muted">Gestión de proveedores (ISO 8.4)</p>
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="md:flex items-center justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100">📋 Proveedores</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Gestión de proveedores (ISO 8.4)</p>
+        </div>
+        {% if can_edit %}
+        <a href="{% url 'core:supplier_new' %}" class="btn-primary">➕ Nuevo Proveedor</a>
+        {% endif %}
     </div>
-    {% if can_edit %}
-    <a href="{% url 'core:supplier_new' %}" class="btn btn-primary">➕ Nuevo Proveedor</a>
-    {% endif %}
-</div>
 
-<div class="filters-card">
-    <form method="get" class="filters-grid" hx-get="{% url 'core:supplier_list' %}" hx-target="#results" hx-push-url="true" hx-trigger="change delay:300ms, submit">
-        <div class="form-group">
-            <label for="status-filter" class="form-label">Estado</label>
-            <select class="form-select" id="status-filter" name="status">
-                <option value="">Todos</option>
-                {% for value, label in status_choices %}
-                <option value="{{ value }}" {% if value == selected_status %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="category-filter" class="form-label">Categoría</label>
-            <select class="form-select" id="category-filter" name="category">
-                <option value="">Todas</option>
-                {% for value, label in category_choices %}
-                <option value="{{ value }}" {% if value == selected_category %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="process-filter" class="form-label">Proceso</label>
-            <select class="form-select" id="process-filter" name="process">
-                <option value="">Todos</option>
-                {% for process in processes %}
-                <option value="{{ process.id }}" {% if process.id|stringformat:"s" == selected_process %}selected{% endif %}>{{ process.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="form-group">
-            <a class="btn btn-secondary" href="{% url 'core:supplier_list' %}">Limpiar</a>
+    <!-- Filters Card -->
+    <form method="get" class="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl p-6 shadow-sm" hx-get="{% url 'core:supplier_list' %}" hx-target="#results" hx-push-url="true" hx-trigger="change delay:300ms, submit">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+            <div>
+                <label for="status-filter" class="block text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300 mb-2">Estado</label>
+                <select class="w-full rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-900/50 px-3 py-2 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" id="status-filter" name="status">
+                    <option value="">Todos</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if value == selected_status %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="category-filter" class="block text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300 mb-2">Categoría</label>
+                <select class="w-full rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-900/50 px-3 py-2 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" id="category-filter" name="category">
+                    <option value="">Todas</option>
+                    {% for value, label in category_choices %}
+                    <option value="{{ value }}" {% if value == selected_category %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="process-filter" class="block text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300 mb-2">Proceso</label>
+                <select class="w-full rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-900/50 px-3 py-2 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" id="process-filter" name="process">
+                    <option value="">Todos</option>
+                    {% for process in processes %}
+                    <option value="{{ process.id }}" {% if process.id|stringformat:"s" == selected_process %}selected{% endif %}>{{ process.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex gap-2">
+                <a class="btn-secondary btn-small" href="{% url 'core:supplier_list' %}">Limpiar</a>
+            </div>
         </div>
     </form>
-</div>
 
-<div id="results">
-    {% include "core/suppliers/_list_results.html" %}
+    <!-- Results -->
+    <div id="results">
+        {% include "core/suppliers/_list_results.html" %}
+    </div>
 </div>
 {% endblock %}

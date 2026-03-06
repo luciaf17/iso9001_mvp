@@ -2,162 +2,70 @@
 
 {% block title %}Detalle Riesgo u Oportunidad{% endblock %}
 
-{% block extra_css %}
-<style>
-    .detail-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: var(--spacing-xl);
-    }
-
-    .detail-header a {
-        color: var(--color-gray-600);
-        text-decoration: none;
-        transition: var(--transition);
-    }
-
-    .detail-header a:hover {
-        color: var(--color-primary);
-        text-decoration: underline;
-    }
-
-    .detail-card {
-        background: var(--color-white);
-        border: 2px solid var(--color-primary-light);
-        border-radius: var(--border-radius-lg);
-        padding: var(--spacing-lg);
-        margin-bottom: var(--spacing-xl);
-        box-shadow: var(--shadow-sm);
-    }
-
-    .detail-card h1 {
-        margin-bottom: var(--spacing-lg);
-        color: var(--color-primary);
-    }
-
-    .detail-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: var(--spacing-lg);
-    }
-
-    .detail-item strong {
-        color: var(--color-dark);
-        display: block;
-        margin-bottom: var(--spacing-sm);
-    }
-
-    .level-badge {
-        padding: 4px 8px;
-        border-radius: var(--border-radius-sm);
-        font-weight: 600;
-        font-size: var(--font-size-xs);
-        text-transform: uppercase;
-    }
-
-    .level-low {
-        background: var(--color-success-light);
-        color: var(--color-success);
-    }
-
-    .level-medium {
-        background: #fff3cd;
-        color: #856404;
-    }
-
-    .level-high {
-        background: #f8d7da;
-        color: var(--color-danger);
-    }
-
-    .status-badge {
-        padding: 4px 8px;
-        border-radius: var(--border-radius-sm);
-        font-weight: 600;
-        font-size: var(--font-size-xs);
-        text-transform: uppercase;
-        background: var(--color-gray-100);
-        color: var(--color-gray-600);
-    }
-
-    @media (max-width: 768px) {
-        .detail-header {
-            flex-direction: column;
-            gap: var(--spacing-md);
-        }
-
-        .detail-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="detail-header">
-    <a href="{% url 'core:risk_list' %}">← ⚠️ Volver a Riesgos</a>
+<div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <a href="{% url 'core:risk_list' %}" class="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">← ⚠️ Volver a Riesgos</a>
     {% if can_edit %}
     <a href="{% url 'core:risk_edit' risk.pk %}" class="btn btn-primary">✏️ Editar</a>
     {% endif %}
 </div>
 
-<div class="detail-card">
-    <h1>{{ risk.title }}</h1>
-    <div class="detail-grid">
-        <div class="detail-item">
-            <strong>📋 Tipo</strong>
-            <span>{{ risk.get_kind_display }}</span>
+<div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+    <h1 class="mb-6 text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">{{ risk.title }}</h1>
+    <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+        <div>
+            <strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">📋 Tipo</strong>
+            <span class="text-sm text-slate-900 dark:text-slate-100">{{ risk.get_kind_display }}</span>
         </div>
-        <div class="detail-item">
-            <strong>📌 Estado</strong>
+        <div>
+            <strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">📌 Estado</strong>
             <span class="status-badge">{{ risk.get_status_display }}</span>
         </div>
-        <div class="detail-item">
-            <strong>🔗 Proceso</strong>
-            <span>{% if risk.related_process %}{{ risk.related_process }}{% else %}-{% endif %}</span>
+        <div>
+            <strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">🔗 Proceso</strong>
+            <span class="text-sm text-slate-900 dark:text-slate-100">{% if risk.related_process %}{{ risk.related_process }}{% else %}-{% endif %}</span>
         </div>
-        <div class="detail-item">
-            <strong>🤝 Parte interesada</strong>
-            <span>{% if risk.stakeholder %}{{ risk.stakeholder }}{% else %}-{% endif %}</span>
+        <div>
+            <strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">🤝 Parte interesada</strong>
+            <span class="text-sm text-slate-900 dark:text-slate-100">{% if risk.stakeholder %}{{ risk.stakeholder }}{% else %}-{% endif %}</span>
         </div>
-        <div class="detail-item">
-            <strong>🎯 Probabilidad</strong>
-            <span>{{ risk.probability }}</span>
+        <div>
+            <strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">🎯 Probabilidad</strong>
+            <span class="text-sm text-slate-900 dark:text-slate-100">{{ risk.probability }}</span>
         </div>
-        <div class="detail-item">
-            <strong>💥 Impacto</strong>
-            <span>{{ risk.impact }}</span>
+        <div>
+            <strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">💥 Impacto</strong>
+            <span class="text-sm text-slate-900 dark:text-slate-100">{{ risk.impact }}</span>
         </div>
-        <div class="detail-item">
-            <strong>🧮 Puntaje</strong>
-            <span>{{ risk.score }}</span>
+        <div>
+            <strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">🧮 Puntaje</strong>
+            <span class="text-sm text-slate-900 dark:text-slate-100">{{ risk.score }}</span>
         </div>
-        <div class="detail-item">
-            <strong>🚦 Nivel</strong>
-            <span class="level-badge {% if risk.level == 'LOW' %}level-low{% elif risk.level == 'MEDIUM' %}level-medium{% else %}level-high{% endif %}">
+        <div>
+            <strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">🚦 Nivel</strong>
+            <span class="badge {% if risk.level == 'LOW' %}badge-success{% elif risk.level == 'MEDIUM' %}badge-warning{% else %}badge-danger{% endif %}">
                 {{ risk.get_level_display }}
             </span>
         </div>
-        <div class="detail-item">
-            <strong>👤 Responsable</strong>
-            <span>{% if risk.owner %}{{ risk.owner.get_username }}{% else %}-{% endif %}</span>
+        <div>
+            <strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">👤 Responsable</strong>
+            <span class="text-sm text-slate-900 dark:text-slate-100">{% if risk.owner %}{{ risk.owner.get_username }}{% else %}-{% endif %}</span>
         </div>
-        <div class="detail-item">
-            <strong>📅 Fecha limite</strong>
-            <span>{% if risk.due_date %}{{ risk.due_date|date:"d/m/Y" }}{% else %}-{% endif %}</span>
+        <div>
+            <strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">📅 Fecha limite</strong>
+            <span class="text-sm text-slate-900 dark:text-slate-100">{% if risk.due_date %}{{ risk.due_date|date:"d/m/Y" }}{% else %}-{% endif %}</span>
         </div>
-        <div class="detail-item">
-            <strong>📄 Evidencia</strong>
-            <span>{% if risk.evidence_document %}{{ risk.evidence_document }}{% else %}-{% endif %}</span>
+        <div>
+            <strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">📄 Evidencia</strong>
+            <span class="text-sm text-slate-900 dark:text-slate-100">{% if risk.evidence_document %}{{ risk.evidence_document }}{% else %}-{% endif %}</span>
         </div>
-        <div class="detail-item" style="grid-column: 1 / -1;">
-            <strong>📝 Descripcion</strong>
-            <span>{{ risk.description }}</span>
+        <div class="md:col-span-2">
+            <strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">📝 Descripcion</strong>
+            <span class="text-sm text-slate-900 dark:text-slate-100">{{ risk.description }}</span>
         </div>
-        <div class="detail-item" style="grid-column: 1 / -1;">
-            <strong>🧩 Plan de tratamiento</strong>
-            <span>{% if risk.treatment_plan %}{{ risk.treatment_plan }}{% else %}-{% endif %}</span>
+        <div class="md:col-span-2">
+            <strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">🧩 Plan de tratamiento</strong>
+            <span class="text-sm text-slate-900 dark:text-slate-100">{% if risk.treatment_plan %}{{ risk.treatment_plan }}{% else %}-{% endif %}</span>
         </div>
     </div>
 </div>

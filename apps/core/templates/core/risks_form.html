@@ -2,149 +2,40 @@
 
 {% block title %}{% if is_edit %}Editar{% else %}Nuevo{% endif %} Riesgo u Oportunidad{% endblock %}
 
-{% block extra_css %}
-<style>
-    .form-container {
-        max-width: 800px;
-        background: var(--color-white);
-        border: 2px solid var(--color-primary-light);
-        border-radius: var(--border-radius-lg);
-        padding: var(--spacing-2xl);
-        box-shadow: var(--shadow-md);
-    }
-
-    .form-container h1 {
-        color: var(--color-primary);
-        margin-bottom: var(--spacing-xl);
-        font-size: var(--font-size-2xl);
-    }
-
-    .form-group {
-        margin-bottom: var(--spacing-lg);
-    }
-
-    .form-group label {
-        display: block;
-        font-weight: 600;
-        margin-bottom: var(--spacing-sm);
-        color: var(--color-dark);
-    }
-
-    .form-group label .required {
-        color: var(--color-danger);
-    }
-
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-        width: 100%;
-        padding: var(--spacing-sm) var(--spacing-md);
-        border: 2px solid var(--color-gray-300);
-        border-radius: var(--border-radius-md);
-        font-size: var(--font-size-sm);
-        transition: var(--transition);
-        box-sizing: border-box;
-    }
-
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
-        outline: none;
-        border-color: var(--color-primary);
-        box-shadow: 0 0 0 3px var(--color-primary-light);
-    }
-
-    .form-group textarea {
-        min-height: 110px;
-        resize: vertical;
-    }
-
-    .error-list {
-        color: var(--color-danger);
-        font-size: var(--font-size-sm);
-        margin-top: var(--spacing-xs);
-        list-style: none;
-        padding: 0;
-    }
-
-    .helptext {
-        color: var(--color-gray-600);
-        font-size: var(--font-size-xs);
-        margin-top: var(--spacing-xs);
-        font-style: italic;
-    }
-
-    .form-actions {
-        display: flex;
-        gap: var(--spacing-md);
-        margin-top: var(--spacing-2xl);
-        padding-top: var(--spacing-lg);
-        border-top: 2px solid var(--color-gray-200);
-    }
-
-    .form-actions a {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    #id_is_active {
-        display: inline-block !important;
-        width: 18px !important;
-        height: 18px !important;
-        min-width: 18px !important;
-        min-height: 18px !important;
-        margin: 0 var(--spacing-sm) 0 0 !important;
-        padding: 0 !important;
-        cursor: pointer;
-        accent-color: var(--color-primary);
-        vertical-align: middle;
-    }
-
-    label[for="id_is_active"] {
-        display: flex !important;
-        align-items: center !important;
-        gap: var(--spacing-sm) !important;
-        cursor: pointer !important;
-        margin-bottom: 0 !important;
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="form-container">
-    <h1>{% if is_edit %}✏️ Editar{% else %}⚠️ Nuevo{% endif %} Riesgo u Oportunidad</h1>
+<div class="mx-auto max-w-4xl rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900 md:p-8">
+    <h1 class="mb-6 text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">{% if is_edit %}✏️ Editar{% else %}⚠️ Nuevo{% endif %} Riesgo u Oportunidad</h1>
 
     <form method="post">
         {% csrf_token %}
 
         {% if form.non_field_errors %}
-        <div class="alert alert-danger" style="padding: var(--spacing-md); background: var(--color-danger-light); border: 2px solid var(--color-danger); border-radius: var(--border-radius-md); margin-bottom: var(--spacing-lg); color: var(--color-danger);">
+        <div class="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
             {{ form.non_field_errors }}
         </div>
         {% endif %}
 
         {% for field in form %}
-        <div class="form-group">
-            <label for="{{ field.id_for_label }}">
+        <div class="mb-5">
+            <label for="{{ field.id_for_label }}" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 {{ field.label }}
-                {% if field.field.required %}<span class="required">*</span>{% endif %}
+                {% if field.field.required %}<span class="text-red-600">*</span>{% endif %}
             </label>
             {{ field }}
             {% if field.errors %}
-            <ul class="error-list">
+            <ul class="mt-1 list-none p-0 text-sm text-red-600 dark:text-red-400">
                 {% for error in field.errors %}
-                <li>❌ {{ error }}</li>
+                <li>{{ error }}</li>
                 {% endfor %}
             </ul>
             {% endif %}
             {% if field.help_text %}
-            <div class="helptext">{{ field.help_text }}</div>
+            <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ field.help_text }}</div>
             {% endif %}
         </div>
         {% endfor %}
 
-        <div class="form-actions">
+        <div class="mt-8 flex flex-wrap gap-3 border-t border-slate-200 pt-6 dark:border-slate-700">
             <button type="submit" class="btn btn-success">✅ Guardar</button>
             <a href="{% url 'core:risk_list' %}" class="btn btn-secondary">← Cancelar</a>
         </div>

@@ -1,26 +1,26 @@
 {% if documents %}
-<div class="doc-list">
+<div id="doc-list" class="space-y-4">
     {% for doc in documents %}
-    <div class="doc-card">
-        <div class="doc-card-header">
+    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-                <div class="doc-card-title">
-                    <a href="{% url 'docs:docs_detail' doc.pk %}">{{ doc.code }} - {{ doc.title }}</a>
+                <div class="text-base font-semibold text-slate-900 dark:text-white">
+                    <a href="{% url 'docs:docs_detail' doc.pk %}" class="text-blue-600 hover:underline dark:text-blue-400">{{ doc.code }} - {{ doc.title }}</a>
                 </div>
-                <div class="doc-meta">
+                <div class="mt-1 flex flex-wrap gap-3 text-xs text-slate-600 dark:text-slate-400">
                     <span>📋 {{ doc.get_doc_type_display }}</span>
                     <span>📄 Vigente: {% if doc.current_version %}v{{ doc.current_version.version_number }}{% else %}-{% endif %}</span>
                 </div>
             </div>
-            <div class="doc-actions">
+            <div class="flex gap-2">
                 <a class="btn btn-secondary" href="{% url 'docs:docs_detail' doc.pk %}">Ver</a>
                 {% if doc.current_version and doc.current_version.file %}
                 <a class="btn btn-primary" href="{{ doc.current_version.file.url }}" download>Descargar vigente</a>
                 {% endif %}
             </div>
         </div>
-        <div class="doc-processes">
-            <strong>Procesos:</strong>
+        <div class="mt-3 text-sm text-slate-600 dark:text-slate-400">
+            <strong class="text-slate-700 dark:text-slate-300">Procesos:</strong>
             {% if doc.processes.all %}
             <span>
                 {% for process in doc.processes.all %}
@@ -33,5 +33,7 @@
     {% endfor %}
 </div>
 {% else %}
-<p style="color: #6c757d; text-align: center; padding: 3rem;">No hay documentos que coincidan con los filtros.</p>
+<div class="rounded-xl border-2 border-dashed border-slate-300 px-6 py-10 text-center dark:border-slate-700">
+    <p class="text-sm text-slate-600 dark:text-slate-400">No hay documentos que coincidan con los filtros.</p>
+</div>
 {% endif %}

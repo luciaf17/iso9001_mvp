@@ -1,23 +1,29 @@
 {% if stakeholders %}
-<div class="stakeholder-list">
+<div id="stakeholder-list" class="space-y-4">
     {% for stakeholder in stakeholders %}
-    <div class="stakeholder-card">
-        <div class="stakeholder-card-header">
-            <div>
-                <div class="stakeholder-card-title">
-                    <a href="{% url 'core:stakeholder_detail' stakeholder.pk %}">{{ stakeholder.name }}</a>
-                </div>
-                <div class="stakeholder-meta">
-                    <span>📋 {{ stakeholder.get_stakeholder_type_display }}</span>
-                    <span>🔗 {% if stakeholder.related_process %}{{ stakeholder.related_process }}{% else %}Sin proceso{% endif %}</span>
-                    <span>📅 {% if stakeholder.review_date %}{{ stakeholder.review_date|date:"d/m/Y" }}{% else %}Sin fecha{% endif %}</span>
-                    <span>{% if stakeholder.is_active %}✅ Activo{% else %}⛔ Inactivo{% endif %}</span>
+    <div class="bg-white dark:bg-slate-800/50 border-l-4 border-l-blue-600 border border-slate-200 dark:border-white/10 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div class="flex-1">
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-3">
+                    <a href="{% url 'core:stakeholder_detail' stakeholder.pk %}" class="text-blue-600 dark:text-blue-400 hover:underline">{{ stakeholder.name }}</a>
+                </h3>
+                <div class="flex flex-wrap gap-3 text-sm text-slate-600 dark:text-slate-400">
+                    <span class="flex items-center gap-1">📋 {{ stakeholder.get_stakeholder_type_display }}</span>
+                    <span class="flex items-center gap-1">🔗 {% if stakeholder.related_process %}{{ stakeholder.related_process }}{% else %}<span class="text-slate-500">Sin proceso</span>{% endif %}</span>
+                    <span class="flex items-center gap-1">📅 {% if stakeholder.review_date %}{{ stakeholder.review_date|date:"d/m/Y" }}{% else %}<span class="text-slate-500">Sin fecha</span>{% endif %}</span>
+                    <span class="flex items-center gap-1">
+                        {% if stakeholder.is_active %}
+                            <span class="badge-success">Activo</span>
+                        {% else %}
+                            <span class="badge-danger">Inactivo</span>
+                        {% endif %}
+                    </span>
                 </div>
             </div>
-            <div class="stakeholder-actions">
-                <a class="btn btn-secondary" href="{% url 'core:stakeholder_detail' stakeholder.pk %}">Ver</a>
+            <div class="flex gap-2 md:ml-4">
+                <a class="btn-secondary" href="{% url 'core:stakeholder_detail' stakeholder.pk %}">Ver</a>
                 {% if can_edit %}
-                <a class="btn btn-primary" href="{% url 'core:stakeholder_edit' stakeholder.pk %}">Editar</a>
+                <a class="btn-primary" href="{% url 'core:stakeholder_edit' stakeholder.pk %}">Editar</a>
                 {% endif %}
             </div>
         </div>
@@ -25,5 +31,9 @@
     {% endfor %}
 </div>
 {% else %}
-<p class="empty-state">No hay partes interesadas registradas.</p>
+<div class="rounded-xl border-2 border-dashed border-slate-300 dark:border-white/10 p-8 text-center">
+    <div class="text-5xl mb-4">🤝</div>
+    <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">No hay partes interesadas</h3>
+    <p class="text-sm text-slate-600 dark:text-slate-400">Registra las partes interesadas de la organizacion.</p>
+</div>
 {% endif %}

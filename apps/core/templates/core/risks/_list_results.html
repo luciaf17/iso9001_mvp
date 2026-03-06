@@ -1,43 +1,63 @@
 {% if risks %}
-<table class="risks-table">
-    <thead>
-        <tr>
-            <th>Titulo</th>
-            <th>Tipo</th>
-            <th>Proceso</th>
-            <th>Puntaje</th>
-            <th>Nivel</th>
-            <th>Estado</th>
-            <th>Vencimiento</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for risk in risks %}
-        <tr>
-            <td><strong>{{ risk.title }}</strong></td>
-            <td>{{ risk.get_kind_display }}</td>
-            <td>{% if risk.related_process %}{{ risk.related_process }}{% else %}-{% endif %}</td>
-            <td>{{ risk.score }}</td>
-            <td>
-                <span class="level-badge {% if risk.level == 'LOW' %}level-low{% elif risk.level == 'MEDIUM' %}level-medium{% else %}level-high{% endif %}">
-                    {{ risk.get_level_display }}
-                </span>
-            </td>
-            <td><span class="status-badge">{{ risk.get_status_display }}</span></td>
-            <td>{% if risk.due_date %}{{ risk.due_date|date:"d/m/Y" }}{% else %}-{% endif %}</td>
-            <td>
-                <div class="action-links">
-                    <a class="btn btn-secondary" href="{% url 'core:risk_detail' risk.pk %}">Ver</a>
-                    {% if can_edit %}
-                    <a class="btn btn-primary" href="{% url 'core:risk_edit' risk.pk %}">Editar</a>
+<div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10 shadow-sm">
+    <table id="risks-table" class="min-w-full divide-y divide-slate-200 dark:divide-white/10">
+        <thead class="bg-slate-100 dark:bg-slate-800/70">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Titulo</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Tipo</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Proceso</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Puntaje</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Nivel</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Estado</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Vencimiento</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Acciones</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200 dark:divide-white/10">
+            {% for risk in risks %}
+            <tr class="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                <td class="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ risk.title }}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ risk.get_kind_display }}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{% if risk.related_process %}{{ risk.related_process }}{% else %}<span class="text-slate-400 dark:text-slate-600">—</span>{% endif %}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ risk.score }}</td>
+                <td class="px-6 py-4 text-sm">
+                    {% if risk.level == 'LOW' %}
+                    <span class="badge-success">{{ risk.get_level_display }}</span>
+                    {% elif risk.level == 'MEDIUM' %}
+                    <span class="badge-warning">{{ risk.get_level_display }}</span>
+                    {% else %}
+                    <span class="badge-danger">{{ risk.get_level_display }}</span>
                     {% endif %}
-                </div>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+                </td>
+                <td class="px-6 py-4 text-sm">
+                    {% if risk.status == 'OPEN' %}
+                    <span class="badge-info">{{ risk.get_status_display }}</span>
+                    {% elif risk.status == 'IN_TREATMENT' %}
+                    <span class="badge-warning">{{ risk.get_status_display }}</span>
+                    {% elif risk.status == 'CLOSED' %}
+                    <span class="badge-success">{{ risk.get_status_display }}</span>
+                    {% else %}
+                    <span class="badge-neutral">{{ risk.get_status_display }}</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{% if risk.due_date %}{{ risk.due_date|date:"d/m/Y" }}{% else %}<span class="text-slate-400 dark:text-slate-600">—</span>{% endif %}</td>
+                <td class="px-6 py-4 text-sm">
+                    <div class="flex gap-2">
+                        <a class="btn-secondary" href="{% url 'core:risk_detail' risk.pk %}">Ver</a>
+                        {% if can_edit %}
+                        <a class="btn-primary" href="{% url 'core:risk_edit' risk.pk %}">Editar</a>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% else %}
-<p class="empty-state">No hay riesgos u oportunidades registrados.</p>
+<div class="rounded-xl border-2 border-dashed border-slate-300 dark:border-white/10 p-8 text-center">
+    <div class="text-5xl mb-4">⚠️</div>
+    <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">No hay riesgos u oportunidades</h3>
+    <p class="text-sm text-slate-600 dark:text-slate-400">Registra riesgos y oportunidades para el seguimiento del SGC.</p>
+</div>
 {% endif %}

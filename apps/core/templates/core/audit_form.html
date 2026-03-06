@@ -77,6 +77,15 @@
         padding: 0;
     }
 
+    .form-alert-danger {
+        padding: var(--spacing-md);
+        background: var(--color-danger-light);
+        border: 2px solid var(--color-danger);
+        border-radius: var(--border-radius-md);
+        margin-bottom: var(--spacing-lg);
+        color: var(--color-danger);
+    }
+
     .form-actions {
         display: flex;
         gap: var(--spacing-md);
@@ -101,7 +110,7 @@
         {% csrf_token %}
 
         {% if form.non_field_errors %}
-        <div class="alert alert-danger" style="padding: var(--spacing-md); background: var(--color-danger-light); border: 2px solid var(--color-danger); border-radius: var(--border-radius-md); margin-bottom: var(--spacing-lg); color: var(--color-danger);">
+        <div class="alert alert-danger form-alert-danger">
             {{ form.non_field_errors }}
         </div>
         {% endif %}

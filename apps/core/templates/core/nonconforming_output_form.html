@@ -136,6 +136,22 @@
         margin-bottom: var(--spacing-xs);
     }
 
+    .form-error-summary {
+        color: #c62828;
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .field-error {
+        color: #c62828;
+        font-size: var(--font-size-sm);
+        margin-top: 4px;
+    }
+
+    .label-help {
+        color: var(--color-gray-600);
+        font-weight: 400;
+    }
+
     @media (max-width: 768px) {
         .form-row {
             grid-template-columns: 1fr;
@@ -159,7 +175,7 @@
         {% csrf_token %}
 
         {% if form.non_field_errors %}
-        <div style="color: #c62828; margin-bottom: var(--spacing-lg);">
+        <div class="form-error-summary">
             {{ form.non_field_errors }}
         </div>
         {% endif %}
@@ -175,7 +191,7 @@
                     </label>
                     {{ form.detected_at }}
                     {% if form.detected_at.errors %}
-                    <div style="color: #c62828; font-size: var(--font-size-sm); margin-top: 4px;">
+                    <div class="field-error">
                         {{ form.detected_at.errors }}
                     </div>
                     {% endif %}
@@ -185,7 +201,7 @@
                     <label for="{{ form.detected_by.id_for_label }}">Detectado por</label>
                     {{ form.detected_by }}
                     {% if form.detected_by.errors %}
-                    <div style="color: #c62828; font-size: var(--font-size-sm); margin-top: 4px;">
+                    <div class="field-error">
                         {{ form.detected_by.errors }}
                     </div>
                     {% endif %}
@@ -197,7 +213,7 @@
                     <label for="{{ form.site.id_for_label }}">Sede</label>
                     {{ form.site }}
                     {% if form.site.errors %}
-                    <div style="color: #c62828; font-size: var(--font-size-sm); margin-top: 4px;">
+                    <div class="field-error">
                         {{ form.site.errors }}
                     </div>
                     {% endif %}
@@ -207,7 +223,7 @@
                     <label for="{{ form.related_process.id_for_label }}">Proceso Relacionado</label>
                     {{ form.related_process }}
                     {% if form.related_process.errors %}
-                    <div style="color: #c62828; font-size: var(--font-size-sm); margin-top: 4px;">
+                    <div class="field-error">
                         {{ form.related_process.errors }}
                     </div>
                     {% endif %}
@@ -226,7 +242,7 @@
                     </label>
                     {{ form.product_or_service }}
                     {% if form.product_or_service.errors %}
-                    <div style="color: #c62828; font-size: var(--font-size-sm); margin-top: 4px;">
+                    <div class="field-error">
                         {{ form.product_or_service.errors }}
                     </div>
                     {% endif %}
@@ -236,7 +252,7 @@
                     <label for="{{ form.quantity.id_for_label }}">Cantidad</label>
                     {{ form.quantity }}
                     {% if form.quantity.errors %}
-                    <div style="color: #c62828; font-size: var(--font-size-sm); margin-top: 4px;">
+                    <div class="field-error">
                         {{ form.quantity.errors }}
                     </div>
                     {% endif %}
@@ -250,7 +266,7 @@
                 </label>
                 {{ form.description }}
                 {% if form.description.errors %}
-                <div style="color: #c62828; font-size: var(--font-size-sm); margin-top: 4px;">
+                <div class="field-error">
                     {{ form.description.errors }}
                 </div>
                 {% endif %}
@@ -268,7 +284,7 @@
                     </label>
                     {{ form.severity }}
                     {% if form.severity.errors %}
-                    <div style="color: #c62828; font-size: var(--font-size-sm); margin-top: 4px;">
+                    <div class="field-error">
                         {{ form.severity.errors }}
                     </div>
                     {% endif %}
@@ -278,7 +294,7 @@
                     <label for="{{ form.disposition.id_for_label }}">Disposición</label>
                     {{ form.disposition }}
                     {% if form.disposition.errors %}
-                    <div style="color: #c62828; font-size: var(--font-size-sm); margin-top: 4px;">
+                    <div class="field-error">
                         {{ form.disposition.errors }}
                     </div>
                     {% endif %}
@@ -288,13 +304,13 @@
             <div class="form-group">
                 <label for="{{ form.disposition_notes.id_for_label }}">
                     Notas sobre Disposición
-                    <small style="color: var(--color-gray-600); font-weight: 400;">
+                    <small class="label-help">
                         (obligatorio para CONCESIÓN)
                     </small>
                 </label>
                 {{ form.disposition_notes }}
                 {% if form.disposition_notes.errors %}
-                <div style="color: #c62828; font-size: var(--font-size-sm); margin-top: 4px;">
+                <div class="field-error">
                     {{ form.disposition_notes.errors }}
                 </div>
                 {% endif %}
@@ -309,7 +325,7 @@
                     <label for="{{ form.responsible.id_for_label }}">Responsable del Tratamiento</label>
                     {{ form.responsible }}
                     {% if form.responsible.errors %}
-                    <div style="color: #c62828; font-size: var(--font-size-sm); margin-top: 4px;">
+                    <div class="field-error">
                         {{ form.responsible.errors }}
                     </div>
                     {% endif %}
@@ -322,7 +338,7 @@
                     </label>
                     {{ form.status }}
                     {% if form.status.errors %}
-                    <div style="color: #c62828; font-size: var(--font-size-sm); margin-top: 4px;">
+                    <div class="field-error">
                         {{ form.status.errors }}
                     </div>
                     {% endif %}
@@ -333,7 +349,7 @@
                 <label for="{{ form.evidence_file.id_for_label }}">Archivo de Evidencia</label>
                 {{ form.evidence_file }}
                 {% if form.evidence_file.errors %}
-                <div style="color: #c62828; font-size: var(--font-size-sm); margin-top: 4px;">
+                <div class="field-error">
                     {{ form.evidence_file.errors }}
                 </div>
                 {% endif %}

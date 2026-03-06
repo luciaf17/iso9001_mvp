@@ -2,194 +2,57 @@
 
 {% block title %}Auditorias Internas{% endblock %}
 
-{% block extra_css %}
-<style>
-    .audits-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: var(--spacing-xl);
-    }
-
-    .audits-header h1 {
-        font-size: var(--font-size-3xl);
-        color: var(--color-primary);
-    }
-
-    .filter-card {
-        background: var(--color-white);
-        border: 2px solid var(--color-primary-light);
-        border-radius: var(--border-radius-lg);
-        padding: var(--spacing-lg);
-        margin-bottom: var(--spacing-xl);
-        box-shadow: var(--shadow-sm);
-    }
-
-    .filter-form {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: var(--spacing-lg);
-        align-items: flex-end;
-    }
-
-    .filter-form label {
-        display: block;
-        font-weight: 600;
-        margin-bottom: var(--spacing-sm);
-        color: var(--color-dark);
-    }
-
-    .filter-form input,
-    .filter-form select {
-        padding: var(--spacing-sm) var(--spacing-md);
-        border: 2px solid var(--color-gray-300);
-        border-radius: var(--border-radius-md);
-        font-size: var(--font-size-sm);
-        transition: var(--transition);
-        background-color: var(--color-white);
-        width: 100%;
-        box-sizing: border-box;
-    }
-
-    .filter-form input:focus,
-    .filter-form select:focus {
-        outline: none;
-        border-color: var(--color-primary);
-        box-shadow: 0 0 0 3px var(--color-primary-light);
-    }
-
-    .filter-actions {
-        grid-column: 1 / -1;
-        display: flex;
-        justify-content: flex-end;
-        gap: var(--spacing-sm);
-    }
-
-    .audits-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .audits-table th,
-    .audits-table td {
-        padding: 0.75rem;
-        text-align: left;
-    }
-
-    .audits-table thead tr {
-        background: #f8f9fa;
-        border-bottom: 2px solid #dee2e6;
-    }
-
-    .audits-table tbody tr {
-        border-bottom: 1px solid #dee2e6;
-    }
-
-    .audits-table tbody tr:hover {
-        background-color: var(--color-gray-50);
-        box-shadow: var(--shadow-sm);
-    }
-
-    .status-badge {
-        padding: 6px 12px;
-        border-radius: var(--border-radius-sm);
-        font-weight: 600;
-        font-size: var(--font-size-xs);
-        text-transform: uppercase;
-        display: inline-block;
-        background: var(--color-gray-100);
-        color: var(--color-gray-600);
-    }
-
-    .status-planned { background: #e3f2fd; color: #1976d2; }
-    .status-in_progress { background: #fff3cd; color: #856404; }
-    .status-completed { background: var(--color-success-light); color: var(--color-success); }
-    .status-cancelled { background: #f8d7da; color: var(--color-danger); }
-
-    .action-links {
-        display: flex;
-        gap: var(--spacing-sm);
-    }
-
-    .action-links .btn {
-        padding: 6px 12px;
-        font-size: var(--font-size-xs);
-        border-radius: var(--border-radius-sm);
-        box-shadow: var(--shadow-sm);
-        transition: var(--transition);
-    }
-
-    .action-links .btn:hover {
-        transform: translateY(-1px);
-        box-shadow: var(--shadow-md);
-    }
-
-    .empty-state {
-        color: var(--color-gray-600);
-        text-align: center;
-        padding: 3rem;
-    }
-
-    @media (max-width: 1024px) {
-        .filter-form {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-
-    @media (max-width: 640px) {
-        .filter-form {
-            grid-template-columns: 1fr;
-        }
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="audits-header">
-    <div>
-        <h1>🧪 Auditorias Internas</h1>
-        <div class="text-muted">Organizacion: {{ organization.name }}</div>
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100">🧪 Auditorías Internas</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Organización: {{ organization.name }}</p>
+        </div>
+        {% if can_edit %}
+        <a class="btn-primary" href="{% url 'core:audit_new' %}">+ Nueva</a>
+        {% endif %}
     </div>
-    {% if can_edit %}
-    <a class="btn btn-primary" href="{% url 'core:audit_new' %}">+ Nueva</a>
-    {% endif %}
-</div>
 
-<form method="get" class="filter-card" hx-get="{% url 'core:audit_list' %}" hx-target="#results" hx-push-url="true" hx-trigger="change delay:300ms, submit">
-    <div class="filter-form">
-        <div>
-            <label for="status">Estado</label>
-            <select id="status" name="status">
-                <option value="">Todos</option>
-                {% for value, label in status_choices %}
-                <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-            </select>
+    <!-- Filters Card -->
+    <form method="get" class="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl p-6 shadow-sm" hx-get="{% url 'core:audit_list' %}" hx-target="#results" hx-push-url="true" hx-trigger="change delay:300ms, submit">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+            <div>
+                <label for="status" class="block text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300 mb-2">Estado</label>
+                <select id="status" name="status" class="w-full rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-900/50 px-3 py-2 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                    <option value="">Todos</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="process_id" class="block text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300 mb-2">Proceso</label>
+                <select id="process_id" name="process_id" class="w-full rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-900/50 px-3 py-2 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                    <option value="">Todos</option>
+                    {% for process in processes %}
+                    <option value="{{ process.id }}" {% if selected_process_id == process.id|stringformat:"s" %}selected{% endif %}>{{ process }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="date_from" class="block text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300 mb-2">Desde</label>
+                <input id="date_from" name="date_from" type="date" value="{{ selected_date_from }}" class="w-full rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-900/50 px-3 py-2 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+            </div>
+            <div>
+                <label for="date_to" class="block text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300 mb-2">Hasta</label>
+                <input id="date_to" name="date_to" type="date" value="{{ selected_date_to }}" class="w-full rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-900/50 px-3 py-2 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+            </div>
         </div>
-        <div>
-            <label for="process_id">Proceso</label>
-            <select id="process_id" name="process_id">
-                <option value="">Todos</option>
-                {% for process in processes %}
-                <option value="{{ process.id }}" {% if selected_process_id == process.id|stringformat:"s" %}selected{% endif %}>{{ process }}</option>
-                {% endfor %}
-            </select>
+        <div class="flex justify-end gap-3 mt-4 pt-4 border-t border-slate-200 dark:border-white/10">
+            <a class="btn-secondary" href="{% url 'core:audit_list' %}">Limpiar</a>
         </div>
-        <div>
-            <label for="date_from">Desde</label>
-            <input id="date_from" name="date_from" type="date" value="{{ selected_date_from }}">
-        </div>
-        <div>
-            <label for="date_to">Hasta</label>
-            <input id="date_to" name="date_to" type="date" value="{{ selected_date_to }}">
-        </div>
-        <div class="filter-actions">
-            <a class="btn btn-secondary" href="{% url 'core:audit_list' %}">Limpiar</a>
-        </div>
+    </form>
+
+    <!-- Results -->
+    <div id="results">
+        {% include "core/audits/_list_results.html" %}
     </div>
-</form>
-
-<div id="results">
-    {% include "core/audits/_list_results.html" %}
 </div>
 {% endblock %}

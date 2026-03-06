@@ -2,118 +2,41 @@
 
 {% block title %}{{ document.code }} - ISO 9001 MVP{% endblock %}
 
-{% block extra_css %}
-<style>
-    .document-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: var(--spacing-xl);
-    }
-    
-    .document-header a {
-        color: var(--color-gray-600);
-        text-decoration: none;
-        transition: var(--transition);
-    }
-    
-    .document-header a:hover {
-        color: var(--color-primary);
-        text-decoration: underline;
-    }
-    
-    .document-info-card {
-        background: var(--color-white);
-        border: 2px solid var(--color-primary-light);
-        border-radius: var(--border-radius-lg);
-        padding: var(--spacing-lg);
-        margin-bottom: var(--spacing-xl);
-        box-shadow: var(--shadow-sm);
-    }
-    
-    .document-info-card h1 {
-        margin-bottom: var(--spacing-lg);
-        color: var(--color-primary);
-    }
-    
-    .info-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: var(--spacing-lg);
-    }
-    
-    .info-item strong {
-        color: var(--color-dark);
-        display: block;
-        margin-bottom: var(--spacing-sm);
-    }
-    
-    .version-badge-card {
-        background: linear-gradient(135deg, var(--color-success-light) 0%, var(--color-white) 100%);
-        border: 2px solid var(--color-success);
-        padding: var(--spacing-lg);
-        border-radius: var(--border-radius-lg);
-        margin-bottom: var(--spacing-xl);
-        box-shadow: var(--shadow-sm);
-    }
-    
-    .section-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: var(--spacing-lg);
-        padding-bottom: var(--spacing-md);
-        border-bottom: 2px solid var(--color-primary);
-    }
-    
-    @media (max-width: 768px) {
-        .document-header {
-            flex-direction: column;
-            gap: var(--spacing-md);
-        }
-        
-        .info-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="document-header">
-    <a href="{% url 'docs:docs_list' %}">← 📄 Volver a Documentos</a>
+<div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <a href="{% url 'docs:docs_list' %}" class="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">← 📄 Volver a Documentos</a>
     {% if can_edit %}
     <a href="{% url 'docs:docs_edit' pk=document.id %}" class="btn btn-primary">✏️ Editar documento</a>
     {% endif %}
 </div>
 
-<div class="document-info-card">
-    <h1>{{ document.code }} - {{ document.title }}</h1>
-    <div class="info-grid">
+<div class="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+    <h1 class="mb-6 text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">{{ document.code }} - {{ document.title }}</h1>
+    <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
         <div>
-            <strong>📋 Tipo de Documento</strong>
+            <strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">📋 Tipo de Documento</strong>
             <span class="badge badge-primary">{{ document.get_doc_type_display }}</span>
         </div>
         <div>
-            <strong>🔗 Procesos Asociados</strong>
+            <strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">🔗 Procesos Asociados</strong>
             {% if document.processes.all %}
-            <div style="margin-top: var(--spacing-sm);">
+            <div class="mt-2 flex flex-wrap gap-1.5">
                 {% for process in document.processes.all %}
-                <div class="badge badge-info" style="display: inline-block; margin: var(--spacing-xs) var(--spacing-xs) var(--spacing-xs) 0;">
+                <div class="badge badge-info">
                     {{ process.code }} - {{ process.name }}
                 </div>
                 {% endfor %}
             </div>
             {% else %}
-            <span style="color: var(--color-gray-600);">Sin procesos asociados</span>
+            <span class="text-sm text-slate-500 dark:text-slate-400">Sin procesos asociados</span>
             {% endif %}
         </div>
         <div>
-            <strong>👤 Responsable</strong>
-            <span style="color: var(--color-dark);">{{ document.owner.username }}</span>
+            <strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">👤 Responsable</strong>
+            <span class="text-sm text-slate-900 dark:text-slate-100">{{ document.owner.username }}</span>
         </div>
         <div>
-            <strong>✅ Estado</strong>
+            <strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">✅ Estado</strong>
             <span class="badge {% if document.is_active %}badge-success{% else %}badge-secondary{% endif %}">
                 {% if document.is_active %}Activo{% else %}Inactivo{% endif %}
             </span>
@@ -122,16 +45,16 @@
 </div>
 
 {% if current_version %}
-<div class="version-badge-card">
-    <strong style="color: var(--color-success); font-size: var(--font-size-lg);">✅ Versión Vigente</strong>
-    <div style="margin-top: var(--spacing-md); color: var(--color-dark);">
+<div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm dark:border-emerald-800 dark:bg-emerald-950/30">
+    <strong class="text-base font-semibold text-emerald-700 dark:text-emerald-300">✅ Versión Vigente</strong>
+    <div class="mt-2 text-sm text-slate-900 dark:text-slate-100">
         v{{ current_version.version_number }} — Vigente desde {{ current_version.effective_date|date:"d/m/Y" }}
     </div>
 </div>
 {% endif %}
 
-<div class="section-header">
-    <h2>📚 Historial de Versiones</h2>
+<div class="mb-4 flex flex-col gap-3 border-b border-slate-200 pb-3 sm:flex-row sm:items-center sm:justify-between dark:border-slate-700">
+    <h2 class="text-lg font-semibold text-slate-900 dark:text-white">📚 Historial de Versiones</h2>
     <a href="{% url 'docs:docs_version_new' document.pk %}" class="btn btn-primary btn-sm">+ Nueva Versión</a>
 </div>
 

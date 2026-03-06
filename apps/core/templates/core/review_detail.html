@@ -93,6 +93,16 @@
         margin-left: var(--spacing-sm);
     }
 
+    .download-wrap {
+        margin-top: var(--spacing-sm);
+    }
+
+    .empty-note {
+        text-align: center;
+        padding: var(--spacing-lg);
+        color: var(--color-gray-600);
+    }
+
     @media (max-width: 768px) {
         .detail-header {
             flex-direction: column;
@@ -148,7 +158,7 @@
     {% if review.meeting_minutes_file %}
     <div class="text-section">
         <strong>Acta de Reunión</strong>
-        <div style="margin-top: var(--spacing-sm);">
+        <div class="download-wrap">
             <a href="{{ review.meeting_minutes_file.url }}" class="btn btn-secondary">📥 Descargar Acta</a>
         </div>
     </div>
@@ -208,7 +218,7 @@
     {% endif %}
 
     {% if not review.audit_results_summary and not review.customer_feedback_summary and not review.process_performance_summary and not review.nonconformities_status_summary and not review.risk_opportunity_status_summary and not review.supplier_performance_summary and not review.resource_adequacy_summary %}
-    <div style="text-align: center; padding: var(--spacing-lg); color: var(--color-gray-600);">
+    <div class="empty-note">
         <em>No se han registrado entradas para esta revisión</em>
     </div>
     {% endif %}
@@ -239,7 +249,7 @@
     {% endif %}
 
     {% if not review.improvement_actions and not review.changes_to_qms and not review.resource_needs %}
-    <div style="text-align: center; padding: var(--spacing-lg); color: var(--color-gray-600);">
+    <div class="empty-note">
         <em>No se han registrado salidas para esta revisión</em>
     </div>
     {% endif %}

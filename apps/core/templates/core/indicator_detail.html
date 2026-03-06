@@ -179,6 +179,19 @@
         border-radius: var(--border-radius-md);
     }
 
+    .status-wrap {
+        margin-top: var(--spacing-sm);
+    }
+
+    .empty-icon {
+        font-size: 2rem;
+        margin-bottom: var(--spacing-md);
+    }
+
+    .empty-action {
+        margin-top: var(--spacing-md);
+    }
+
     @media (max-width: 1024px) {
         .detail-grid {
             grid-template-columns: repeat(2, 1fr);
@@ -248,7 +261,7 @@
         </div>
         <div class="detail-item">
             <strong>Estado Actual</strong>
-            <div style="margin-top: var(--spacing-sm);">
+            <div class="status-wrap">
                 {% with status=indicator.get_status %}
                 {% if status == "OK" %}
                     <span class="status-badge ok">✓ OK</span>
@@ -308,10 +321,10 @@
         </table>
     {% else %}
         <div class="empty-measurements">
-            <div style="font-size: 2rem; margin-bottom: var(--spacing-md);">📊</div>
+            <div class="empty-icon">📊</div>
             No hay mediciones registradas aún.
             {% if can_edit %}
-            <div style="margin-top: var(--spacing-md);">
+            <div class="empty-action">
                 <a href="{% url 'core:measurement_new' indicator.pk %}" class="btn btn-primary">Registrar Primera Medición</a>
             </div>
             {% endif %}

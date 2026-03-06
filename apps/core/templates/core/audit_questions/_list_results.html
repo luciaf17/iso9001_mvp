@@ -1,44 +1,50 @@
 {% if questions %}
-<table class="questions-table">
-    <thead>
-        <tr>
-            <th>Pregunta</th>
-            <th>Proceso</th>
-            <th>Orden</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for question in questions %}
-        <tr>
-            <td>{{ question.text }}</td>
-            <td>{% if question.process_type %}{{ question.get_process_type_display }}{% else %}General{% endif %}</td>
-            <td>{{ question.ordering }}</td>
-            <td>
-                {% if question.is_active %}
-                <span class="badge badge-active">Activa</span>
-                {% else %}
-                <span class="badge badge-inactive">Inactiva</span>
-                {% endif %}
-            </td>
-            <td>
-                <div class="action-links">
-                    <a class="btn btn-secondary" href="{% url 'core:audit_question_edit' question.pk %}">Editar</a>
-                    <form method="post" action="{% url 'core:audit_question_toggle' question.pk %}">
-                        {% csrf_token %}
-                        {% if question.is_active %}
-                        <button type="submit" class="btn btn-secondary">Desactivar</button>
-                        {% else %}
-                        <button type="submit" class="btn btn-primary">Activar</button>
-                        {% endif %}
-                    </form>
-                </div>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10 shadow-sm">
+    <table class="min-w-full divide-y divide-slate-200 dark:divide-white/10">
+        <thead class="bg-slate-100 dark:bg-slate-800/70">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Pregunta</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Proceso</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Orden</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Estado</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Acciones</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200 dark:divide-white/10">
+            {% for question in questions %}
+            <tr class="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                <td class="px-6 py-4 text-sm text-slate-800 dark:text-slate-200">{{ question.text }}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{% if question.process_type %}{{ question.get_process_type_display }}{% else %}General{% endif %}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ question.ordering }}</td>
+                <td class="px-6 py-4 text-sm">
+                    {% if question.is_active %}
+                    <span class="badge-success">Activa</span>
+                    {% else %}
+                    <span class="badge-neutral">Inactiva</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 text-sm">
+                    <div class="flex items-center gap-2">
+                        <a class="btn-secondary" href="{% url 'core:audit_question_edit' question.pk %}">Editar</a>
+                        <form method="post" action="{% url 'core:audit_question_toggle' question.pk %}">
+                            {% csrf_token %}
+                            {% if question.is_active %}
+                            <button type="submit" class="btn-secondary">Desactivar</button>
+                            {% else %}
+                            <button type="submit" class="btn-primary">Activar</button>
+                            {% endif %}
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% else %}
-<div class="empty-state">No hay preguntas registradas.</div>
+<div class="rounded-xl border-2 border-dashed border-slate-300 dark:border-white/10 p-8 text-center">
+    <div class="text-5xl mb-4">🧠</div>
+    <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">No hay preguntas registradas</h3>
+    <p class="text-sm text-slate-600 dark:text-slate-400">Agregá preguntas para estructurar las auditorías internas.</p>
+</div>
 {% endif %}

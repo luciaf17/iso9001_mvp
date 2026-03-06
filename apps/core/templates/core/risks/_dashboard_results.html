@@ -8,7 +8,7 @@
         <table class="matrix-table">
             <thead>
                 <tr>
-                    <th style="width: 80px;">Prob/Imp</th>
+                    <th class="w-20">Prob/Imp</th>
                     {% for i in "12345" %}
                     <th>{{ i }}</th>
                     {% endfor %}
@@ -24,7 +24,7 @@
                             <div class="cell-count">{{ cell.count }}</div>
                             <div class="cell-coords">({{ cell.probability }},{{ cell.impact }})</div>
                         {% else %}
-                            <div style="opacity: 0.3;">-</div>
+                            <div class="opacity-30">-</div>
                         {% endif %}
                     </td>
                     {% endfor %}
@@ -40,19 +40,19 @@
         <h3>🚦 Resumen por Nivel</h3>
         <div class="summary-item">
             <span class="summary-item-label">
-                <span class="badge" style="background: var(--color-success-light); color: var(--color-success);">Bajo</span>
+                <span class="badge">Bajo</span>
             </span>
             <span class="summary-item-count">{{ level_summary.LOW|default:0 }}</span>
         </div>
         <div class="summary-item">
             <span class="summary-item-label">
-                <span class="badge" style="background: #fff3cd; color: #856404;">Medio</span>
+                <span class="badge badge-warning">Medio</span>
             </span>
             <span class="summary-item-count">{{ level_summary.MEDIUM|default:0 }}</span>
         </div>
         <div class="summary-item">
             <span class="summary-item-label">
-                <span class="badge" style="background: #f8d7da; color: var(--color-danger);">Alto</span>
+                <span class="badge badge-danger">Alto</span>
             </span>
             <span class="summary-item-count">{{ level_summary.HIGH|default:0 }}</span>
         </div>

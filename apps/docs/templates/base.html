@@ -8,56 +8,765 @@
     <meta name="htmx-config" content='{"getCacheBusterParam": true}'>
     <title>{% block title %}ISO 9001 MVP{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
+    <script>
+        (function() {
+            function setTheme(theme) {
+                const html = document.documentElement;
+                html.setAttribute('data-theme', theme);
+                html.classList.remove('dark');
+                if (theme === 'dark') {
+                    html.classList.add('dark');
+                }
+                localStorage.setItem('theme', theme);
+            }
+
+            try {
+                let theme = localStorage.getItem('theme') || 'light';
+                theme = String(theme).toLowerCase().replace(/['"]/g, '');
+                if (theme !== 'dark' && theme !== 'light') {
+                    theme = 'light';
+                }
+                setTheme(theme);
+            } catch (e) {
+                try {
+                    localStorage.clear();
+                } catch (ex) {}
+                setTheme('light');
+            }
+        })();
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        html, body {
+            font-family: 'DM Sans', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        }
+
+        .layout-shell {
+            min-height: 100vh;
+        }
+
+        .sidebar-collapsed .sidebar-label {
+            display: none;
+        }
+
+        .sidebar-collapsed .sidebar-link {
+            justify-content: center;
+        }
+
+        .sidebar-collapsed #appSidebar {
+            width: 88px;
+        }
+
+        html[data-theme='light'] #appSidebar,
+        html[data-theme='light'] #appSidebar * {
+            background: transparent !important;
+            background-color: inherit !important;
+        }
+
+        html[data-theme='light'] #appSidebar {
+            background-color: #ffffff !important;
+            border-color: #e2e8f0 !important;
+        }
+
+        html[data-theme='dark'] #appSidebar {
+            background-color: #1e293b !important;
+            border-color: rgba(255, 255, 255, 0.12) !important;
+        }
+
+        html[data-theme='light'] .bg-white\/90,
+        html[data-theme='light'] #appSidebar .dark\:border-white\/10 {
+            background-color: #ffffff !important;
+        }
+
+        html[data-theme='light'] .dark\:text-slate-300,
+        html[data-theme='light'] .dark\:bg-slate-800\/50,
+        html[data-theme='light'] .dark\:hover\:bg-slate-700\/60 {
+            background-color: transparent !important;
+        }
+
+        #appSidebar .sidebar-link,
+        #appSidebar .sidebar-link:visited {
+            color: #334155 !important;
+            background-color: transparent !important;
+        }
+
+        html[data-theme='light'] #appSidebar .sidebar-link,
+        html[data-theme='light'] #appSidebar .sidebar-link:visited,
+        html[data-theme='light'] #appSidebar .text-slate-700 {
+            color: #334155 !important;
+            background: transparent !important;
+        }
+
+        html[data-theme='dark'] #appSidebar .sidebar-link,
+        html[data-theme='dark'] #appSidebar .sidebar-link:visited {
+            color: #e2e8f0 !important;
+        }
+
+        #appSidebar .sidebar-link * {
+            color: inherit !important;
+        }
+
+        #appSidebar .sidebar-link:hover,
+        #appSidebar .sidebar-link:focus-visible {
+            background-color: #e2e8f0 !important;
+            color: #0f172a !important;
+        }
+
+        html[data-theme='dark'] #appSidebar .sidebar-link:hover,
+        html[data-theme='dark'] #appSidebar .sidebar-link:focus-visible {
+            background-color: #334155 !important;
+            color: #f8fafc !important;
+        }
+
+        #appSidebar .sidebar-link-active,
+        #appSidebar .sidebar-link-active:visited {
+            background-color: #cbd5e1 !important;
+            color: #0f172a !important;
+            font-weight: 600;
+        }
+
+        html[data-theme='dark'] #appSidebar .sidebar-link-active,
+        html[data-theme='dark'] #appSidebar .sidebar-link-active:visited {
+            background-color: #475569 !important;
+            color: #f8fafc !important;
+        }
+
+        .page-header,
+        .map-header,
+        .questions-header,
+        .objectives-header,
+        .stakeholders-header,
+        .risks-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .page-header h1,
+        .map-header h1,
+        .questions-header h1,
+        .objectives-header h1,
+        .stakeholders-header h1,
+        .risks-header h1 {
+            font-size: 1.5rem;
+            line-height: 2rem;
+            font-weight: 700;
+            color: rgb(15 23 42);
+            margin: 0;
+        }
+
+        .dark .page-header h1,
+        .dark .map-header h1,
+        .dark .questions-header h1,
+        .dark .objectives-header h1,
+        .dark .stakeholders-header h1,
+        .dark .risks-header h1 {
+            color: rgb(248 250 252);
+        }
+
+        .card,
+        .form-card,
+        .detail-card,
+        .filter-card,
+        .review-card,
+        .stakeholder-card {
+            background: rgb(255 255 255);
+            border: 1px solid rgb(226 232 240);
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 2px 0 rgb(15 23 42 / 0.06);
+            padding: 1.5rem;
+        }
+
+        .dark .card,
+        .dark .form-card,
+        .dark .detail-card,
+        .dark .filter-card,
+        .dark .review-card,
+        .dark .stakeholder-card {
+            background: rgb(30 41 59 / 0.5);
+            border-color: rgb(255 255 255 / 0.10);
+        }
+
+        .review-card:hover,
+        .stakeholder-card:hover {
+            box-shadow: 0 4px 10px -2px rgb(15 23 42 / 0.15);
+        }
+
+        .filter-form,
+        .form-grid,
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(1, minmax(0, 1fr));
+            gap: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            .filter-form,
+            .form-grid,
+            .details-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 1.5rem;
+            }
+        }
+
+        .filter-form label,
+        .form-card label,
+        .field label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.75rem;
+            line-height: 1rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: rgb(100 116 139);
+            font-weight: 600;
+        }
+
+        .dark .filter-form label,
+        .dark .form-card label,
+        .dark .field label {
+            color: rgb(148 163 184);
+        }
+
+        .filter-form input:not([type='checkbox']):not([type='radio']),
+        .filter-form select,
+        .filter-form textarea,
+        .form-card input:not([type='checkbox']):not([type='radio']),
+        .form-card select,
+        .form-card textarea,
+        form input:not([type='checkbox']):not([type='radio']),
+        form select,
+        form textarea {
+            width: 100%;
+            border-radius: 0.5rem;
+            border: 1px solid rgb(203 213 225);
+            background: rgb(255 255 255);
+            color: rgb(15 23 42);
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+        }
+
+        .dark .filter-form input:not([type='checkbox']):not([type='radio']),
+        .dark .filter-form select,
+        .dark .filter-form textarea,
+        .dark .form-card input:not([type='checkbox']):not([type='radio']),
+        .dark .form-card select,
+        .dark .form-card textarea,
+        .dark form input:not([type='checkbox']):not([type='radio']),
+        .dark form select,
+        .dark form textarea {
+            border-color: rgb(255 255 255 / 0.10);
+            background: rgb(15 23 42 / 0.5);
+            color: rgb(241 245 249);
+        }
+
+        .filter-form input:focus,
+        .filter-form select:focus,
+        .filter-form textarea:focus,
+        .form-card input:focus,
+        .form-card select:focus,
+        .form-card textarea:focus,
+        form input:focus,
+        form select:focus,
+        form textarea:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgb(59 130 246 / 0.35);
+            border-color: rgb(59 130 246);
+        }
+
+        textarea {
+            min-height: 6rem;
+            resize: vertical;
+        }
+
+        .helptext,
+        .form-text,
+        .text-muted {
+            font-size: 0.75rem;
+            color: rgb(100 116 139);
+        }
+
+        .dark .helptext,
+        .dark .form-text,
+        .dark .text-muted {
+            color: rgb(148 163 184);
+        }
+
+        .errorlist,
+        .field-error,
+        .invalid-feedback,
+        .text-danger {
+            font-size: 0.75rem;
+            color: rgb(239 68 68);
+            margin-top: 0.25rem;
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            transition: all 0.15s ease;
+            text-decoration: none;
+        }
+
+        .btn-primary,
+        .btn.btn-primary {
+            background: rgb(37 99 235);
+            color: rgb(255 255 255);
+        }
+
+        .btn-primary:hover,
+        .btn.btn-primary:hover {
+            background: rgb(29 78 216);
+        }
+
+        .btn-secondary,
+        .btn.btn-secondary,
+        .btn-outline-secondary,
+        .btn.btn-outline-secondary {
+            background: transparent;
+            color: rgb(51 65 85);
+            border: 1px solid rgb(203 213 225);
+        }
+
+        .btn-secondary:hover,
+        .btn.btn-secondary:hover,
+        .btn-outline-secondary:hover,
+        .btn.btn-outline-secondary:hover {
+            background: rgb(241 245 249);
+        }
+
+        .dark .btn-secondary,
+        .dark .btn.btn-secondary,
+        .dark .btn-outline-secondary,
+        .dark .btn.btn-outline-secondary {
+            color: rgb(226 232 240);
+            border-color: rgb(255 255 255 / 0.10);
+        }
+
+        .dark .btn-secondary:hover,
+        .dark .btn.btn-secondary:hover,
+        .dark .btn-outline-secondary:hover,
+        .dark .btn.btn-outline-secondary:hover {
+            background: rgb(255 255 255 / 0.05);
+        }
+
+        .btn-danger,
+        .btn.btn-danger {
+            background: rgb(220 38 38);
+            color: rgb(255 255 255);
+        }
+
+        .btn-danger:hover,
+        .btn.btn-danger:hover {
+            background: rgb(185 28 28);
+        }
+
+        .btn-success,
+        .btn.btn-success {
+            background: rgb(5 150 105);
+            color: rgb(255 255 255);
+        }
+
+        .btn-sm,
+        .btn.btn-sm,
+        .btn-small {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+        }
+
+        .badge,
+        .status-badge,
+        .level-badge {
+            display: inline-block;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            line-height: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            padding: 0.25rem 0.625rem;
+            background: rgb(226 232 240);
+            color: rgb(51 65 85);
+        }
+
+        .badge-open,
+        .badge-active,
+        .status-open,
+        .status-active,
+        .status-planned,
+        .badge-info {
+            background: rgb(219 234 254);
+            color: rgb(30 64 175);
+        }
+
+        .badge-in-treatment,
+        .badge-pending,
+        .status-in_progress,
+        .status-pending,
+        .status-overdue,
+        .level-medium,
+        .badge-warning {
+            background: rgb(254 243 199);
+            color: rgb(180 83 9);
+        }
+
+        .badge-critical,
+        .status-overdue,
+        .status-danger,
+        .level-high,
+        .badge-danger {
+            background: rgb(254 226 226);
+            color: rgb(185 28 28);
+        }
+
+        .badge-closed,
+        .badge-achieved,
+        .badge-approved,
+        .status-closed,
+        .status-achieved,
+        .status-approved,
+        .level-low,
+        .badge-success {
+            background: rgb(209 250 229);
+            color: rgb(6 95 70);
+        }
+
+        .badge-neutral,
+        .status-no_data,
+        .status-inactive,
+        .badge-inactive {
+            background: rgb(226 232 240);
+            color: rgb(71 85 105);
+        }
+
+        .dark .badge,
+        .dark .status-badge,
+        .dark .level-badge {
+            background: rgb(51 65 85);
+            color: rgb(203 213 225);
+        }
+
+        .dark .badge-open,
+        .dark .badge-active,
+        .dark .status-open,
+        .dark .status-active,
+        .dark .status-planned,
+        .dark .badge-info {
+            background: rgb(30 58 138 / 0.35);
+            color: rgb(147 197 253);
+        }
+
+        .dark .badge-in-treatment,
+        .dark .badge-pending,
+        .dark .status-in_progress,
+        .dark .status-pending,
+        .dark .status-overdue,
+        .dark .level-medium,
+        .dark .badge-warning {
+            background: rgb(146 64 14 / 0.35);
+            color: rgb(252 211 77);
+        }
+
+        .dark .badge-critical,
+        .dark .status-danger,
+        .dark .level-high,
+        .dark .badge-danger {
+            background: rgb(127 29 29 / 0.35);
+            color: rgb(252 165 165);
+        }
+
+        .dark .badge-closed,
+        .dark .badge-achieved,
+        .dark .badge-approved,
+        .dark .status-closed,
+        .dark .status-achieved,
+        .dark .status-approved,
+        .dark .level-low,
+        .dark .badge-success {
+            background: rgb(6 78 59 / 0.35);
+            color: rgb(110 231 183);
+        }
+
+        .dark .badge-neutral,
+        .dark .status-no_data,
+        .dark .status-inactive,
+        .dark .badge-inactive {
+            background: rgb(51 65 85);
+            color: rgb(148 163 184);
+        }
+
+        .table-responsive,
+        .table-wrap,
+        .results-table {
+            overflow-x: auto;
+            border-radius: 0.75rem;
+            border: 1px solid rgb(226 232 240);
+            box-shadow: 0 1px 2px 0 rgb(15 23 42 / 0.06);
+        }
+
+        .dark .table-responsive,
+        .dark .table-wrap,
+        .dark .results-table {
+            border-color: rgb(255 255 255 / 0.10);
+        }
+
+        .nc-table,
+        .pnc-table,
+        .questions-table,
+        .risks-table,
+        .objectives-table,
+        .audit-table {
+            width: 100%;
+            min-width: 100%;
+            border-collapse: collapse;
+        }
+
+        .nc-table thead,
+        .pnc-table thead,
+        .questions-table thead,
+        .risks-table thead,
+        .objectives-table thead,
+        .audit-table thead {
+            background: rgb(241 245 249);
+        }
+
+        .dark .nc-table thead,
+        .dark .pnc-table thead,
+        .dark .questions-table thead,
+        .dark .risks-table thead,
+        .dark .objectives-table thead,
+        .dark .audit-table thead {
+            background: rgb(51 65 85 / 0.70);
+        }
+
+        .nc-table th,
+        .pnc-table th,
+        .questions-table th,
+        .risks-table th,
+        .objectives-table th,
+        .audit-table th {
+            text-align: left;
+            font-size: 0.75rem;
+            line-height: 1rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: rgb(51 65 85);
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgb(226 232 240);
+        }
+
+        .dark .nc-table th,
+        .dark .pnc-table th,
+        .dark .questions-table th,
+        .dark .risks-table th,
+        .dark .objectives-table th,
+        .dark .audit-table th {
+            color: rgb(203 213 225);
+            border-bottom-color: rgb(255 255 255 / 0.10);
+        }
+
+        .nc-table td,
+        .pnc-table td,
+        .questions-table td,
+        .risks-table td,
+        .objectives-table td,
+        .audit-table td {
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+            color: rgb(71 85 105);
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgb(226 232 240);
+        }
+
+        .dark .nc-table td,
+        .dark .pnc-table td,
+        .dark .questions-table td,
+        .dark .risks-table td,
+        .dark .objectives-table td,
+        .dark .audit-table td {
+            color: rgb(148 163 184);
+            border-bottom-color: rgb(255 255 255 / 0.10);
+        }
+
+        .nc-table tbody tr:hover,
+        .pnc-table tbody tr:hover,
+        .questions-table tbody tr:hover,
+        .risks-table tbody tr:hover,
+        .objectives-table tbody tr:hover,
+        .audit-table tbody tr:hover {
+            background: rgb(248 250 252);
+        }
+
+        .dark .nc-table tbody tr:hover,
+        .dark .pnc-table tbody tr:hover,
+        .dark .questions-table tbody tr:hover,
+        .dark .risks-table tbody tr:hover,
+        .dark .objectives-table tbody tr:hover,
+        .dark .audit-table tbody tr:hover {
+            background: rgb(255 255 255 / 0.05);
+        }
+
+        .action-links,
+        .process-actions,
+        .form-actions,
+        .filter-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .empty-state,
+        .empty {
+            text-align: center;
+            border-radius: 0.75rem;
+            border: 2px dashed rgb(203 213 225);
+            padding: 2rem;
+            color: rgb(100 116 139);
+            background: rgb(255 255 255 / 0.70);
+        }
+
+        .dark .empty-state,
+        .dark .empty {
+            border-color: rgb(255 255 255 / 0.10);
+            color: rgb(148 163 184);
+            background: rgb(30 41 59 / 0.35);
+        }
+    </style>
     {% block extra_css %}{% endblock %}
 </head>
-<body>
-    <nav>
-        <div class="nav-bar">
-            <ul>
-                <li><a href="{% url 'home' %}">🏠 Inicio</a></li>
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100 transition-colors duration-200">
+    <div id="layoutRoot" class="layout-shell flex">
+        <aside id="appSidebar" class="hidden lg:flex lg:w-[240px] lg:flex-col border-r border-slate-200 bg-white/90 backdrop-blur transition-all duration-200">
+            <div class="h-16 px-4 flex items-center justify-between border-b border-slate-200">
+                <a href="{% url 'home' %}" class="text-sm font-semibold tracking-wide text-slate-800 dark:text-slate-100">
+                    <span class="sidebar-label">ISO 9001 MVP</span>
+                    <span class="hidden sidebar-collapsed:inline">ISO</span>
+                </a>
+                <button id="sidebarToggle" type="button" class="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700" aria-label="Colapsar sidebar">
+                    ☰
+                </button>
+            </div>
+            <nav class="px-3 py-4 space-y-1 overflow-y-auto">
+                <a href="{% url 'home' %}" class="sidebar-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100">
+                    <span>🏠</span><span class="sidebar-label">Inicio</span>
+                </a>
                 {% if request.user.is_authenticated %}
-                <li><a href="{% url 'core:dashboard_home' %}">📊 Dashboard</a></li>
+                <a href="{% url 'core:dashboard_home' %}" class="sidebar-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100">
+                    <span>📊</span><span class="sidebar-label">Dashboard</span>
+                </a>
                 {% endif %}
-                <li><a href="{% url 'core:context_detail' %}">📋 Contexto</a></li>
-                <li><a href="{% url 'core:stakeholder_list' %}">🤝 Partes Interesadas</a></li>
-                <li><a href="{% url 'core:risk_list' %}">⚠️ Riesgos y Oportunidades</a></li>
-                <li><a href="{% url 'core:nc_list' %}">🚨 No Conformidades</a></li>
+                <a href="{% url 'core:context_detail' %}" class="sidebar-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100">
+                    <span>📋</span><span class="sidebar-label">Contexto</span>
+                </a>
+                <a href="{% url 'core:stakeholder_list' %}" class="sidebar-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100">
+                    <span>🤝</span><span class="sidebar-label">Partes Interesadas</span>
+                </a>
+                <a href="{% url 'core:risk_list' %}" class="sidebar-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100">
+                    <span>⚠️</span><span class="sidebar-label">Riesgos y Oportunidades</span>
+                </a>
+                <a href="{% url 'core:nc_list' %}" class="sidebar-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100">
+                    <span>🚨</span><span class="sidebar-label">No Conformidades</span>
+                </a>
                 {% if request.user.is_authenticated %}
                     {% if request.user.is_superuser or request.user|has_group:"Admin" or request.user|has_group:"Calidad" %}
-                    <li><a href="{% url 'core:audit_question_list' %}">🧪 Preguntas Auditoria</a></li>
+                    <a href="{% url 'core:audit_question_list' %}" class="sidebar-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100">
+                        <span>🧪</span><span class="sidebar-label">Preguntas Auditoría</span>
+                    </a>
                     {% endif %}
                 {% endif %}
-                <li><a href="{% url 'docs:docs_list' %}">📄 Documentos</a></li>
-                <li><a href="{% url 'docs:docs_library' %}">📚 Biblioteca</a></li>
-                <li><a href="{% url 'org:process_map' %}">🗺️ Mapa de Procesos</a></li>
-                <li><a href="/admin/">⚙️ Admin</a></li>
-            </ul>
-            <div class="nav-auth">
-                {% if request.user.is_authenticated %}
-                <span class="user">👤 {{ request.user.get_username }}</span>
-                <form method="post" action="{% url 'logout' %}">
-                    {% csrf_token %}
-                    <button type="submit">Cerrar sesión</button>
-                </form>
-                {% else %}
-                <a href="{% url 'login' %}">Iniciar sesión</a>
-                {% endif %}
-            </div>
-        </div>
-    </nav>
+                <a href="{% url 'docs:docs_list' %}" class="sidebar-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100">
+                    <span>📄</span><span class="sidebar-label">Documentos</span>
+                </a>
+                <a href="{% url 'docs:docs_library' %}" class="sidebar-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100">
+                    <span>📚</span><span class="sidebar-label">Biblioteca</span>
+                </a>
+                <a href="{% url 'org:process_map' %}" class="sidebar-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100">
+                    <span>🗺️</span><span class="sidebar-label">Mapa de Procesos</span>
+                </a>
+                <a href="/admin/" class="sidebar-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100">
+                    <span>⚙️</span><span class="sidebar-label">Admin</span>
+                </a>
+            </nav>
+        </aside>
 
-    <div class="container">
-        {% if messages %}
-        <div class="messages">
-            {% for message in messages %}
-            <div class="message {{ message.tags }}">
-                {{ message }}
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
+        <div class="flex-1 min-w-0 flex flex-col">
+            <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur dark:border-white/10 dark:bg-slate-800/50">
+                <div class="h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+                    <div class="min-w-0">
+                        <p class="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">ISO 9001</p>
+                        <h1 class="text-sm sm:text-base font-semibold truncate">{% block page_title %}Panel de gestión{% endblock %}</h1>
+                    </div>
 
-        {% block content %}{% endblock %}
+                    <div class="hidden md:flex items-center flex-1 max-w-md">
+                        <input
+                            type="text"
+                            placeholder="Buscar..."
+                            class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 placeholder-slate-400 focus:outline-none dark:border-white/10 dark:bg-slate-900/50 dark:text-slate-200 dark:placeholder-slate-500"
+                            aria-label="Busqueda"
+                        >
+                    </div>
+
+                    <div class="flex items-center gap-2 sm:gap-3">
+                        <button id="themeToggle" type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700" aria-label="Cambiar tema">
+                            <span id="themeIcon">🌙</span>
+                        </button>
+
+                        {% if request.user.is_authenticated %}
+                        <div class="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 dark:border-white/10 dark:bg-slate-800">
+                            <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+                                {{ request.user.get_username|first|upper }}
+                            </span>
+                            <span class="hidden sm:inline text-sm text-slate-700 dark:text-slate-200">{{ request.user.get_username }}</span>
+                        </div>
+                        <form method="post" action="{% url 'logout' %}" class="hidden sm:block">
+                            {% csrf_token %}
+                            <button type="submit" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">Salir</button>
+                        </form>
+                        {% else %}
+                        <a href="{% url 'login' %}" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">Iniciar sesión</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </header>
+
+            <main class="flex-1 px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+                <div class="max-w-7xl mx-auto">
+                    {% if messages %}
+                    <div class="mb-6 space-y-2">
+                        {% for message in messages %}
+                        <div class="rounded-xl border border-slate-200 bg-white/90 px-4 py-3 text-sm text-slate-700 shadow-sm dark:border-white/10 dark:bg-slate-800/50 dark:text-slate-200">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
+        </div>
     </div>
 
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
@@ -80,6 +789,72 @@
         document.body.addEventListener('htmx:configRequest', function (event) {
             event.detail.headers['X-CSRFToken'] = getCookie('csrftoken');
         });
+
+        (function() {
+            const html = document.documentElement;
+            const themeToggle = document.getElementById('themeToggle');
+            const themeIcon = document.getElementById('themeIcon');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const layoutRoot = document.getElementById('layoutRoot');
+            const sidebarLinks = document.querySelectorAll('#appSidebar .sidebar-link');
+
+            function applyTheme(theme) {
+                const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
+                html.setAttribute('data-theme', resolvedTheme);
+                html.classList.toggle('dark', resolvedTheme === 'dark');
+                localStorage.setItem('theme', resolvedTheme);
+            }
+
+            function updateThemeIcon() {
+                if (!themeIcon) return;
+                themeIcon.textContent = html.classList.contains('dark') ? '🌙' : '☀️';
+            }
+
+            if (themeToggle) {
+                themeToggle.addEventListener('click', function() {
+                    const currentTheme = html.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                    applyTheme(newTheme);
+                    updateThemeIcon();
+                });
+            }
+
+            if (sidebarToggle && layoutRoot) {
+                sidebarToggle.addEventListener('click', function() {
+                    layoutRoot.classList.toggle('sidebar-collapsed');
+                });
+            }
+
+            if (sidebarLinks.length) {
+                const currentPath = window.location.pathname;
+                let matchedLink = null;
+                let longestMatchLength = 0;
+
+                sidebarLinks.forEach(function(link) {
+                    const href = link.getAttribute('href');
+                    if (!href || href.startsWith('http')) return;
+
+                    if (href === '/' && currentPath === '/') {
+                        matchedLink = link;
+                        longestMatchLength = href.length;
+                        return;
+                    }
+
+                    if (href !== '/' && currentPath.startsWith(href) && href.length > longestMatchLength) {
+                        matchedLink = link;
+                        longestMatchLength = href.length;
+                    }
+                });
+
+                if (matchedLink) {
+                    matchedLink.classList.add('sidebar-link-active');
+                }
+            }
+
+            applyTheme(html.getAttribute('data-theme'));
+            
+            updateThemeIcon();
+        })();
     </script>
 
     {% block extra_js %}{% endblock %}

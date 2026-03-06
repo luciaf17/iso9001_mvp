@@ -1,43 +1,55 @@
 {% if audits %}
-<table class="audits-table">
-    <thead>
-        <tr>
-            <th>Titulo</th>
-            <th>Fecha</th>
-            <th>Auditor</th>
-            <th>Procesos</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for audit in audits %}
-        <tr>
-            <td>{{ audit.title }}</td>
-            <td>{{ audit.audit_date|date:"d/m/Y" }}</td>
-            <td>{% if audit.auditor %}{{ audit.auditor.get_username }}{% else %}-{% endif %}</td>
-            <td>
-                {% for process in audit.related_processes.all %}
-                    {{ process }}{% if not forloop.last %}, {% endif %}
-                {% empty %}
-                    -
-                {% endfor %}
-            </td>
-            <td>
-                <span class="status-badge status-{{ audit.status|lower }}">{{ audit.get_status_display }}</span>
-            </td>
-            <td>
-                <div class="action-links">
-                    <a class="btn btn-secondary" href="{% url 'core:audit_detail' audit.pk %}">Ver</a>
-                    {% if can_edit %}
-                    <a class="btn btn-primary" href="{% url 'core:audit_edit' audit.pk %}">Editar</a>
+<div class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-900/60">
+    <table class="min-w-full divide-y divide-slate-200 bg-white dark:divide-white/10 dark:bg-transparent">
+        <thead class="bg-slate-100 dark:bg-slate-800/70">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Título</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Fecha</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Auditor</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Procesos</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Estado</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Acciones</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200 bg-white dark:divide-white/10 dark:bg-transparent">
+            {% for audit in audits %}
+            <tr class="bg-white transition-colors hover:bg-slate-50 dark:bg-transparent dark:hover:bg-white/5">
+                <td class="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-slate-200">{{ audit.title }}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ audit.audit_date|date:"d/m/Y" }}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{% if audit.auditor %}{{ audit.auditor.get_username }}{% else %}-{% endif %}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
+                    {% for process in audit.related_processes.all %}
+                        {{ process }}{% if not forloop.last %}, {% endif %}
+                    {% empty %}
+                        -
+                    {% endfor %}
+                </td>
+                <td class="px-6 py-4 text-sm">
+                    {% if audit.status|lower == "planned" %}
+                    <span class="badge-info">{{ audit.get_status_display }}</span>
+                    {% elif audit.status|lower == "in_progress" %}
+                    <span class="badge-warning">{{ audit.get_status_display }}</span>
+                    {% elif audit.status|lower == "completed" %}
+                    <span class="badge-success">{{ audit.get_status_display }}</span>
+                    {% else %}
+                    <span class="badge-danger">{{ audit.get_status_display }}</span>
                     {% endif %}
-                </div>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+                </td>
+                <td class="px-6 py-4 text-sm">
+                    <div class="flex gap-2">
+                        <a class="inline-flex items-center gap-2 border border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-200 bg-transparent hover:bg-slate-100 dark:hover:bg-white/5 font-semibold px-3 py-1.5 rounded-lg transition-all duration-150 text-sm" href="{% url 'core:audit_detail' audit.pk %}">Ver</a>
+                        {% if can_edit %}
+                        <a class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:shadow-md transition-all duration-150 text-sm" href="{% url 'core:audit_edit' audit.pk %}">Editar</a>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% else %}
-<div class="empty-state">No hay auditorias internas registradas.</div>
+<div class="rounded-xl border-2 border-dashed border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-slate-800/30 px-6 py-12 text-center">
+    <p class="text-slate-600 dark:text-slate-400">No hay auditorías internas registradas.</p>
+</div>
 {% endif %}

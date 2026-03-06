@@ -1,33 +1,29 @@
-<tr style="border-bottom: 1px solid var(--color-gray-200); transition: var(--transition);" onmouseover="this.style.backgroundColor='var(--color-gray-50)'" onmouseout="this.style.backgroundColor=''">
-    <td style="padding: var(--spacing-md);"><strong style="color: var(--color-primary);">v{{ version.version_number }}</strong></td>
-    <td style="padding: var(--spacing-md);">
-        <span style="padding: var(--spacing-xs) var(--spacing-sm); border-radius: var(--border-radius-sm); font-size: var(--font-size-xs); font-weight: 600; 
-            {% if version.status == 'APPROVED' %}background: var(--color-success-light); color: var(--color-success);
-            {% elif version.status == 'DRAFT' %}background: var(--color-warning-light); color: var(--color-warning);
-            {% elif version.status == 'OBSOLETE' %}background: var(--color-danger-light); color: var(--color-danger);
-            {% else %}background: var(--color-info-light); color: var(--color-info);{% endif %}">
+<tr class="border-b border-slate-200 transition-colors hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/5">
+    <td class="px-4 py-3"><strong class="text-blue-600 dark:text-blue-400">v{{ version.version_number }}</strong></td>
+    <td class="px-4 py-3">
+        <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-semibold {% if version.status == 'APPROVED' %}bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300{% elif version.status == 'DRAFT' %}bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300{% elif version.status == 'OBSOLETE' %}bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300{% else %}bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300{% endif %}">
             {% if version.status == 'APPROVED' %}✅{% elif version.status == 'DRAFT' %}📝{% elif version.status == 'OBSOLETE' %}🗑️{% else %}⏳{% endif %} {{ version.get_status_display }}
         </span>
     </td>
-    <td style="padding: var(--spacing-md); font-size: var(--font-size-sm);">{{ version.effective_date|date:"d/m/Y" }}</td>
-    <td style="padding: var(--spacing-md); font-size: var(--font-size-sm);">{{ version.created_at|date:"d/m/Y H:i" }}</td>
-    <td style="padding: var(--spacing-md);">
+    <td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">{{ version.effective_date|date:"d/m/Y" }}</td>
+    <td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">{{ version.created_at|date:"d/m/Y H:i" }}</td>
+    <td class="px-4 py-3">
         {% if version.file %}
-        <a href="{{ version.file.url }}" target="_blank" class="btn btn-sm btn-info">⬇️ Descargar</a>
-        {% else %}<span style="color: var(--color-gray-500);">-</span>{% endif %}
+        <a href="{{ version.file.url }}" target="_blank" class="inline-flex items-center rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5">⬇️ Descargar</a>
+        {% else %}<span class="text-sm text-slate-400 dark:text-slate-500">-</span>{% endif %}
     </td>
-    <td style="padding: var(--spacing-md);">
+    <td class="px-4 py-3">
         {% if can_approve and version.status != 'APPROVED' %}
-        <form method="post" action="{% url 'docs:docs_version_approve' version.pk %}" style="display: inline;">
+        <form method="post" action="{% url 'docs:docs_version_approve' version.pk %}" class="inline">
             {% csrf_token %}
-            <button type="submit" 
+            <button type="submit"
                 hx-post="{% url 'docs:docs_version_approve' version.pk %}"
                 hx-target="#version-list"
                 hx-swap="outerHTML"
-                class="btn btn-sm btn-success">
+                class="inline-flex items-center rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-emerald-700">
                 ✅ Aprobar
             </button>
         </form>
-        {% else %}<span style="color: var(--color-gray-500); font-size: var(--font-size-sm);">-</span>{% endif %}
+        {% else %}<span class="text-sm text-slate-400 dark:text-slate-500">-</span>{% endif %}
     </td>
 </tr>

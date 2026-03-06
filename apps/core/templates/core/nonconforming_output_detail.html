@@ -125,6 +125,32 @@
         text-decoration: underline;
     }
 
+    .header-actions {
+        display: flex;
+        gap: var(--spacing-md);
+    }
+
+    .section-title {
+        color: var(--color-primary);
+        margin-bottom: var(--spacing-md);
+    }
+
+    .section-spacing {
+        margin-top: var(--spacing-lg);
+    }
+
+    .closed-banner {
+        margin-top: var(--spacing-lg);
+        padding: var(--spacing-md);
+        background: #c8e6c9;
+        border-radius: var(--border-radius-md);
+    }
+
+    .evidence-link {
+        color: var(--color-primary);
+        text-decoration: none;
+    }
+
     @media (max-width: 1024px) {
         .detail-grid {
             grid-template-columns: repeat(2, 1fr);
@@ -155,7 +181,7 @@
 {% block content %}
 <div class="detail-header">
     <a href="{% url 'core:nonconforming_output_list' %}">← Volver a PNC</a>
-    <div style="display: flex; gap: var(--spacing-md);">
+    <div class="header-actions">
         {% if can_edit %}
         <a href="{% url 'core:nonconforming_output_edit' output.pk %}" class="btn btn-primary">Editar</a>
         {% endif %}
@@ -204,12 +230,12 @@
         </div>
     </div>
 
-    <h3 style="color: var(--color-primary); margin-bottom: var(--spacing-md);">Descripción del No Cumplimiento</h3>
+    <h3 class="section-title">Descripción del No Cumplimiento</h3>
     <div class="description">{{ output.description }}</div>
 
     {% if output.disposition %}
-    <div style="margin-top: var(--spacing-lg);">
-        <h3 style="color: var(--color-primary); margin-bottom: var(--spacing-md);">Disposición</h3>
+    <div class="section-spacing">
+        <h3 class="section-title">Disposición</h3>
         <p><strong>Tipo:</strong> {{ output.get_disposition_display }}</p>
         {% if output.disposition_notes %}
         <div class="description">
@@ -221,7 +247,7 @@
     {% endif %}
 
     {% if output.closed_at %}
-    <div style="margin-top: var(--spacing-lg); padding: var(--spacing-md); background: #c8e6c9; border-radius: var(--border-radius-md);">
+    <div class="closed-banner">
         <strong>✓ Cerrado el {{ output.closed_at|date:"d/m/Y" }}</strong>
     </div>
     {% endif %}
@@ -230,7 +256,7 @@
     <div class="evidence-section">
         <strong>Archivo de Evidencia:</strong>
         <br>
-        <a href="{{ output.evidence_file.url }}" target="_blank" style="color: var(--color-primary); text-decoration: none;">
+        <a href="{{ output.evidence_file.url }}" target="_blank" class="evidence-link">
             📎 Descargar {{ output.evidence_file.name|truncatechars:30 }}
         </a>
     </div>

@@ -83,6 +83,25 @@
         margin-top: var(--spacing-lg);
     }
 
+    .info-list-single {
+        grid-template-columns: 1fr;
+    }
+
+    .card-header-split {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: var(--spacing-md);
+    }
+
+    .card-header-split h3 {
+        margin: 0;
+    }
+
+    .table-scroll {
+        overflow-x: auto;
+    }
+
     @media (max-width: 1024px) {
         .summary-grid {
             grid-template-columns: 1fr;
@@ -185,7 +204,7 @@
                 <h3>Contacto</h3>
             </div>
             <div class="card-body">
-                <div class="info-list" style="grid-template-columns: 1fr;">
+                <div class="info-list info-list-single">
                     {% if supplier.contact_name %}
                     <div class="info-item"><strong>Contacto</strong><span>{{ supplier.contact_name }}</span></div>
                     {% endif %}
@@ -208,8 +227,8 @@
     </div>
 
     <div class="card">
-        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;gap:var(--spacing-md);">
-            <h3 style="margin:0;">Evaluaciones</h3>
+        <div class="card-header card-header-split">
+            <h3>Evaluaciones</h3>
             {% if can_edit %}
             <a href="{% url 'core:supplier_evaluation_new' supplier.pk %}" class="btn btn-sm btn-primary">➕ Nueva Evaluación</a>
             {% endif %}
@@ -227,7 +246,7 @@
         {% endif %}
 
         <!-- Tabla de evaluaciones -->
-        <div style="overflow-x:auto;">
+        <div class="table-scroll">
             <table class="evaluation-table">
                 <thead>
                     <tr>
