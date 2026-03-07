@@ -1421,7 +1421,7 @@ class NoConformityAutoGenerationTests(TestCase):
         
         # closed_date se llenó automáticamente
         self.assertIsNotNone(nc.closed_date)
-        self.assertEqual(nc.closed_date, date.today())
+        self.assertEqual(nc.closed_date, timezone.now().date())
 
 
 class NoConformityCAPACrossValidationTests(TestCase):
@@ -2166,7 +2166,7 @@ class ManagementReviewTests(TestCase):
         
         initial_count = AuditEvent.objects.count()
         
-        response = self.client.post(reverse("core:review_new"), review_data)
+        response = self.client.post(reverse("core:management_review_new"), review_data)
         
         self.assertEqual(response.status_code, 302)  # Redirect after success
         self.assertEqual(ManagementReview.objects.count(), 1)
@@ -2188,10 +2188,10 @@ class ManagementReviewTests(TestCase):
             "attendees": "Test",
         }
         
-        response = self.client.post(reverse("core:review_new"), review_data)
+        response = self.client.post(reverse("core:management_review_new"), review_data)
         
-        # Usuario sin permisos es redirigido
-        self.assertEqual(response.status_code, 302)
+        # Usuario sin permisos recibe 403 Forbidden
+        self.assertEqual(response.status_code, 403)
         self.assertEqual(ManagementReview.objects.count(), 0)
 
     def test_review_list_renders(self):
@@ -2203,7 +2203,7 @@ class ManagementReviewTests(TestCase):
         )
         
         self.client.login(username="admin", password="admin123")
-        response = self.client.get(reverse("core:review_list"))
+        response = self.client.get(reverse("core:management_review_list"))
         
         self.assertEqual(response.status_code, 200)
         self.assertIn("reviews", response.context)
@@ -2220,7 +2220,7 @@ class ManagementReviewTests(TestCase):
         )
         
         self.client.login(username="admin", password="admin123")
-        response = self.client.get(reverse("core:review_detail", args=[review.pk]))
+        response = self.client.get(reverse("core:management_review_detail", args=[review.pk]))
         
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["review"], review)
@@ -2498,7 +2498,7 @@ class NonconformingOutputTests(TestCase):
         )
 
         self.assertIsNotNone(pnc.closed_at)
-        self.assertEqual(pnc.closed_at, date.today())
+        self.assertEqual(pnc.closed_at, timezone.now().date())
 
     def test_concession_requires_notes(self):
         """Verifica que CONCESIÓN requiere notas obligatoriamente."""

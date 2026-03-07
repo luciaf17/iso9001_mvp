@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator, MaxValueValidator
 from datetime import date, timedelta
 
 
@@ -1985,14 +1986,17 @@ class SupplierEvaluation(models.Model):
         verbose_name="Evaluador",
     )
     quality_score = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
         verbose_name="Puntuación Calidad (1-5)",
         help_text="Calidad de productos/servicios (1=Muy malo, 5=Excelente)",
     )
     delivery_score = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
         verbose_name="Puntuación Entrega (1-5)",
         help_text="Cumplimiento de plazos de entrega (1=Muy malo, 5=Excelente)",
     )
     price_score = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
         verbose_name="Puntuación Precio (1-5)",
         help_text="Relación precio-calidad (1=Muy caro, 5=Muy competitivo)",
     )

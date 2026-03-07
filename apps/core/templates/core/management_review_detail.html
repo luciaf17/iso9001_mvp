@@ -7,7 +7,7 @@
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div>
             <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100">📋 Revisión de Gestión</h1>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ review.review_date|date:"d de F de Y" }}</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ review.review_date|date:"d/m/Y" }}</p>
         </div>
         {% if can_edit %}
         <a href="{% url 'core:management_review_edit' review.pk %}" class="btn btn-primary">✏️ Editar</a>
@@ -37,52 +37,52 @@
     <div class="rounded-xl border border-slate-200 dark:border-white/10 p-6 mb-6">
         <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">📥 Entradas para la reunión</h2>
         <div class="space-y-6">
-            {% if review.input_performance %}
+            {% if review.audit_results_summary %}
             <div>
-                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Desempeño del SGC</p>
-                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.input_performance }}</p>
+                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Resultados de auditorías</p>
+                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.audit_results_summary }}</p>
             </div>
             {% endif %}
 
-            {% if review.input_compliance %}
+            {% if review.customer_feedback_summary %}
             <div>
-                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Cumplimiento Legal</p>
-                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.input_compliance }}</p>
+                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Retroalimentación del cliente</p>
+                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.customer_feedback_summary }}</p>
             </div>
             {% endif %}
 
-            {% if review.input_risks_opportunities %}
+            {% if review.process_performance_summary %}
             <div>
-                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Riesgos y Oportunidades</p>
-                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.input_risks_opportunities }}</p>
+                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Desempeño de procesos</p>
+                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.process_performance_summary }}</p>
             </div>
             {% endif %}
 
-            {% if review.input_changes %}
+            {% if review.nonconformities_status_summary %}
             <div>
-                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Cambios Relevantes</p>
-                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.input_changes }}</p>
+                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Estado de no conformidades</p>
+                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.nonconformities_status_summary }}</p>
             </div>
             {% endif %}
 
-            {% if review.input_external_factors %}
+            {% if review.risk_opportunity_status_summary %}
             <div>
-                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Factores Externos</p>
-                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.input_external_factors }}</p>
+                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Estado de riesgos y oportunidades</p>
+                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.risk_opportunity_status_summary }}</p>
             </div>
             {% endif %}
 
-            {% if review.input_customer_feedback %}
+            {% if review.supplier_performance_summary %}
             <div>
-                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Retroalimentación de Clientes</p>
-                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.input_customer_feedback }}</p>
+                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Desempeño de proveedores</p>
+                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.supplier_performance_summary }}</p>
             </div>
             {% endif %}
 
-            {% if review.input_resource_adequacy %}
+            {% if review.resource_adequacy_summary %}
             <div>
-                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Adecuación de Recursos</p>
-                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.input_resource_adequacy }}</p>
+                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Adecuación de recursos</p>
+                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.resource_adequacy_summary }}</p>
             </div>
             {% endif %}
         </div>
@@ -92,24 +92,24 @@
     <div class="rounded-xl border border-slate-200 dark:border-white/10 p-6 mb-6">
         <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">📤 Salidas de la reunión</h2>
         <div class="space-y-6">
-            {% if review.output_effectiveness %}
+            {% if review.improvement_actions %}
             <div>
-                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Evaluación de Efectividad</p>
-                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.output_effectiveness }}</p>
+                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Oportunidades de mejora</p>
+                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.improvement_actions }}</p>
             </div>
             {% endif %}
 
-            {% if review.output_improvement_opportunities %}
+            {% if review.changes_to_qms %}
             <div>
-                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Oportunidades de Mejora</p>
-                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.output_improvement_opportunities }}</p>
+                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Cambios al SGC</p>
+                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.changes_to_qms }}</p>
             </div>
             {% endif %}
 
-            {% if review.output_resource_needs %}
+            {% if review.resource_needs %}
             <div>
-                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Necesidades de Recursos</p>
-                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.output_resource_needs }}</p>
+                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Necesidades de recursos</p>
+                <p class="text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ review.resource_needs }}</p>
             </div>
             {% endif %}
         </div>
