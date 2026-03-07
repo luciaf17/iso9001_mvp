@@ -108,8 +108,6 @@ REST_FRAMEWORK = {
 # Security for production
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
 
-# Static files (whitenoise)
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Allow Railway host
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"])
