@@ -10,6 +10,7 @@ urlpatterns = [
     path("accounts/logout/", LogoutAllowGetView.as_view(), name="logout"),
     path("accounts/", include("django.contrib.auth.urls")),
     path("", include(("apps.core.urls", "core"), namespace="core")),
+    path("api/", include("apps.api.urls", namespace="api")),
     path("admin/", admin.site.urls),
     path("docs/", include("apps.docs.urls", namespace="docs")),
     path("org/", include(("apps.org.urls", "org"), namespace="org")),
