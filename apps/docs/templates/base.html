@@ -658,8 +658,11 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body class="bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100 transition-colors duration-200">
+    {% if request.user.is_authenticated %}
     <div id="mobileSidebarBackdrop" class="fixed inset-0 z-40 hidden bg-slate-900/40 lg:hidden"></div>
+    {% endif %}
     <div id="layoutRoot" class="layout-shell flex">
+        {% if request.user.is_authenticated %}
         <aside id="appSidebar" class="fixed inset-y-0 left-0 z-50 flex w-[280px] -translate-x-full flex-col border-r border-slate-200 bg-white/90 backdrop-blur transition-transform duration-200 lg:static lg:z-auto lg:w-[240px] lg:translate-x-0 lg:transition-all">
             <div class="h-16 px-4 flex items-center justify-between border-b border-slate-200">
                 <a href="{% url 'home' %}" class="text-sm font-semibold tracking-wide text-slate-800 dark:text-slate-100">
@@ -744,14 +747,17 @@
                 </a>
             </nav>
         </aside>
+        {% endif %}
 
         <div class="flex-1 min-w-0 flex flex-col">
             <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur dark:border-white/10 dark:bg-slate-800/50">
                 <div class="h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
                     <div class="min-w-0 flex items-center gap-3">
+                        {% if request.user.is_authenticated %}
                         <button id="mobileSidebarOpen" type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 lg:hidden" aria-label="Abrir menú">
                             ☰
                         </button>
+                        {% endif %}
                         <div class="min-w-0">
                         <a href="{% url 'home' %}" class="text-xs uppercase tracking-wide text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300">Gestión Documental ISO 9001</a>
                         <h1 class="text-sm sm:text-base font-semibold truncate">{% block page_title %}Panel de gestión{% endblock %}</h1>
