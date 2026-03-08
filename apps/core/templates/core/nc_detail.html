@@ -2,450 +2,82 @@
 
 {% block title %}Detalle No Conformidad{% endblock %}
 
-{% block extra_css %}
-<style>
-    .detail-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: var(--spacing-xl);
-    }
-
-    .detail-header a {
-        color: var(--color-gray-600);
-        text-decoration: none;
-        transition: var(--transition);
-    }
-
-    .detail-header a:hover {
-        color: var(--color-primary);
-        text-decoration: underline;
-    }
-
-    .detail-card {
-        background: var(--color-white);
-        border: 2px solid var(--color-primary-light);
-        border-radius: var(--border-radius-lg);
-        padding: var(--spacing-lg);
-        margin-bottom: var(--spacing-xl);
-        box-shadow: var(--shadow-sm);
-    }
-
-    .detail-card h1 {
-        margin-bottom: var(--spacing-lg);
-        color: var(--color-primary);
-    }
-
-    .detail-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: var(--spacing-lg);
-    }
-
-    .detail-item strong {
-        color: var(--color-dark);
-        display: block;
-        margin-bottom: var(--spacing-sm);
-    }
-
-    .detail-item-full {
-        grid-column: 1 / -1;
-    }
-
-    .severity-badge {
-        padding: 4px 8px;
-        border-radius: var(--border-radius-sm);
-        font-weight: 600;
-        font-size: var(--font-size-xs);
-        text-transform: uppercase;
-    }
-
-    .severity-minor {
-        background: var(--color-success-light);
-        color: var(--color-success);
-    }
-
-    .severity-major {
-        background: #fff3cd;
-        color: #856404;
-    }
-
-    .severity-critical {
-        background: #f8d7da;
-        color: var(--color-danger);
-    }
-
-    .status-badge {
-        padding: 4px 8px;
-        border-radius: var(--border-radius-sm);
-        font-weight: 600;
-        font-size: var(--font-size-xs);
-        text-transform: uppercase;
-        background: var(--color-gray-100);
-        color: var(--color-gray-600);
-    }
-
-    .section-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: var(--spacing-md);
-    }
-
-    .capa-list {
-        display: flex;
-        flex-direction: column;
-        gap: var(--spacing-md);
-    }
-
-    .capa-item {
-        border: 1px solid var(--color-gray-200);
-        border-radius: var(--border-radius-md);
-        padding: var(--spacing-md);
-        background: var(--color-white);
-    }
-
-    .capa-item.capa-done {
-        background: var(--color-success-light);
-        border-color: var(--color-success);
-    }
-
-    .capa-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: var(--spacing-sm);
-    }
-
-    .capa-title {
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-sm);
-    }
-
-    .capa-type-badge {
-        padding: 4px 8px;
-        border-radius: var(--border-radius-sm);
-        font-size: var(--font-size-xs);
-        font-weight: 600;
-        text-transform: uppercase;
-    }
-
-    .capa-type-corrective {
-        background: #e3f2fd;
-        color: #1976d2;
-    }
-
-    .capa-type-containment {
-        background: #fff3e0;
-        color: #f57c00;
-    }
-
-    .capa-type-preventive {
-        background: #f3e5f5;
-        color: #7b1fa2;
-    }
-
-    .capa-description {
-        margin: var(--spacing-sm) 0;
-        color: var(--color-gray-600);
-    }
-
-    .capa-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--spacing-md);
-        font-size: var(--font-size-sm);
-        color: var(--color-gray-600);
-        margin-top: var(--spacing-sm);
-    }
-
-    .capa-actions {
-        margin-top: var(--spacing-sm);
-        padding-top: var(--spacing-sm);
-        border-top: 1px solid var(--color-gray-200);
-    }
-
-    .status-done {
-        background: var(--color-success);
-        color: var(--color-white);
-    }
-
-    .status-in_progress {
-        background: #2196f3;
-        color: var(--color-white);
-    }
-
-    .status-open {
-        background: var(--color-gray-300);
-        color: var(--color-dark);
-    }
-
-    .alert {
-        padding: var(--spacing-sm) var(--spacing-md);
-        border-radius: var(--border-radius-md);
-        margin-top: var(--spacing-md);
-    }
-
-    .alert-warning {
-        background: #fff3cd;
-        border: 1px solid #ffc107;
-        color: #856404;
-    }
-
-    .alert-info {
-        background: #d1ecf1;
-        border: 1px solid #17a2b8;
-        color: #0c5460;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: var(--spacing-xl);
-        color: var(--color-gray-600);
-    }
-
-    @media (max-width: 768px) {
-        .detail-header {
-            flex-direction: column;
-            gap: var(--spacing-md);
-        }
-
-        .detail-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    html.dark .detail-card,
-    [data-theme="dark"] .detail-card {
-        background: rgba(15, 23, 42, 0.8);
-        border-color: rgba(148, 163, 184, 0.25);
-    }
-
-    html.dark .detail-card h1,
-    html.dark .section-header h2,
-    [data-theme="dark"] .detail-card h1,
-    [data-theme="dark"] .section-header h2 {
-        color: #e2e8f0;
-    }
-
-    html.dark .detail-item strong,
-    html.dark .detail-item span,
-    [data-theme="dark"] .detail-item strong,
-    [data-theme="dark"] .detail-item span {
-        color: #cbd5e1;
-    }
-
-    html.dark .capa-item,
-    [data-theme="dark"] .capa-item {
-        background: rgba(15, 23, 42, 0.55);
-        border-color: rgba(148, 163, 184, 0.25);
-    }
-
-    html.dark .capa-item.capa-done,
-    [data-theme="dark"] .capa-item.capa-done {
-        background: rgba(5, 150, 105, 0.14);
-        border-color: rgba(16, 185, 129, 0.4);
-    }
-
-    html.dark .capa-description,
-    html.dark .capa-meta,
-    [data-theme="dark"] .capa-description,
-    [data-theme="dark"] .capa-meta {
-        color: #cbd5e1;
-    }
-
-    html.dark .capa-actions,
-    [data-theme="dark"] .capa-actions {
-        border-top-color: rgba(148, 163, 184, 0.25);
-    }
-
-    html.dark .btn-link,
-    [data-theme="dark"] .btn-link {
-        color: #93c5fd;
-    }
-
-    html.dark .capa-type-corrective,
-    [data-theme="dark"] .capa-type-corrective {
-        background: rgba(59, 130, 246, 0.2);
-        color: #bfdbfe;
-    }
-
-    html.dark .capa-type-containment,
-    [data-theme="dark"] .capa-type-containment {
-        background: rgba(245, 158, 11, 0.2);
-        color: #fcd34d;
-    }
-
-    html.dark .capa-type-preventive,
-    [data-theme="dark"] .capa-type-preventive {
-        background: rgba(168, 85, 247, 0.2);
-        color: #ddd6fe;
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="detail-header">
-    <a href="{% url 'core:nc_list' %}">← 🚨 Volver a No Conformidades</a>
-    {% if can_edit %}
-    <a href="{% url 'core:nc_edit' nc.pk %}" class="btn btn-primary">✏️ Editar</a>
-    {% endif %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; gap:12px; flex-wrap:wrap;">
+    <a href="{% url 'core:nc_list' %}">← Volver</a>
+    <div style="display:flex; gap:12px;">
+        <a href="{% url 'core:nc_pdf' nc.pk %}" class="btn btn-secondary">📄 Descargar PDF</a>
+        {% if can_edit %}<a href="{% url 'core:nc_edit' nc.pk %}" class="btn btn-primary">Editar</a>{% endif %}
+    </div>
 </div>
 
-<div class="detail-card">
-    <div class="section-header">
-        <h2>📋 Plan de Acciones CAPA</h2>
-        {% if can_edit %}
-        <a href="{% url 'core:capa_action_create' nc.pk %}" class="btn btn-primary">➕ Nueva Acción</a>
-        {% endif %}
+<div class="form-section" style="border:2px solid #2563eb; border-radius:8px; padding:20px; margin-bottom:20px;">
+    <h3 style="color:#2563eb; border-bottom:2px solid #2563eb; padding-bottom:8px; margin-bottom:16px;">📋 A ser completado por el Responsable de Sector</h3>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div><strong>Fecha de Detección:</strong> {{ nc.detected_at|date:"d/m/Y"|default:"-" }}</div>
+        <div><strong>Sector / Proceso:</strong> {{ nc.related_process|default:"-" }}</div>
+        <div><strong>Orden de Trabajo:</strong> {{ nc.work_order|default:"-" }}</div>
+        <div><strong>Sede:</strong> {{ nc.site|default:"-" }}</div>
+        <div><strong>NC observada durante:</strong> {{ nc.observed_during|default:"-" }}</div>
+        <div><strong>Norma y Cláusula:</strong> {{ nc.norm_clause|default:"-" }}</div>
+        <div style="grid-column:1 / -1;"><strong>Descripción de la Evidencia Objetiva:</strong> {{ nc.description|default:"-" }}</div>
+        <div><strong>Categoría / Origen:</strong> {{ nc.get_origin_display|default:"-" }}</div>
+        <div><strong>Severidad:</strong> {{ nc.get_severity_display|default:"-" }}</div>
+        <div><strong>Responsable:</strong> {% if nc.owner %}{{ nc.owner.get_full_name|default:nc.owner.username }}{% else %}-{% endif %}</div>
+        <div><strong>Detectado por / Auditor:</strong> {% if nc.detected_by %}{{ nc.detected_by.get_full_name|default:nc.detected_by.username }}{% else %}-{% endif %}</div>
+        <div><strong>Representante de la Organización:</strong> {% if nc.organization_representative %}{{ nc.organization_representative.get_full_name|default:nc.organization_representative.username }}{% else %}-{% endif %}</div>
+        <div><strong>Fecha Límite:</strong> {{ nc.due_date|date:"d/m/Y"|default:"-" }}</div>
     </div>
+</div>
 
+<div class="form-section" style="border:2px solid #d97706; border-radius:8px; padding:20px; margin-bottom:20px;">
+    <h3 style="color:#d97706; border-bottom:2px solid #d97706; padding-bottom:8px; margin-bottom:16px;">🏭 A ser completado por la Organización</h3>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div style="grid-column:1 / -1;"><strong>Análisis de la Causa Raíz (¿Qué falló en el sistema para permitir que ocurra esta NC?):</strong> {{ nc.root_cause_analysis|default:"-" }}</div>
+        <div style="grid-column:1 / -1;"><strong>Corrección y Acción Correctiva (Que se hizo para resolver este problema y prevenir la recurrencia):</strong> {{ nc.corrective_action|default:"-" }}</div>
+        <div><strong>Fecha de Terminación:</strong> {{ nc.closed_date|date:"d/m/Y"|default:"-" }}</div>
+        <div><strong>Cerrada por:</strong> {% if nc.closed_by %}{{ nc.closed_by.get_full_name|default:nc.closed_by.username }}{% else %}-{% endif %}</div>
+        <div><strong>Representante:</strong> {% if nc.verification_representative %}{{ nc.verification_representative.get_full_name|default:nc.verification_representative.username }}{% else %}-{% endif %}</div>
+        <div><strong>Documento Evidencia:</strong> {{ nc.evidence_document|default:"-" }}</div>
+    </div>
+</div>
+
+<div class="form-section" style="border:2px solid #059669; border-radius:8px; padding:20px; margin-bottom:20px;">
+    <h3 style="color:#059669; border-bottom:2px solid #059669; padding-bottom:8px; margin-bottom:16px;">🔍 A ser completado por el Auditor</h3>
+    <h4 style="margin: 0 0 12px 0;">Verificación de las Acciones Correctivas</h4>
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+        <div><strong>Fecha:</strong> {{ nc.verification_date|date:"d/m/Y"|default:"-" }}</div>
+        <div><strong>Estado:</strong> {{ nc.get_status_display|default:"-" }}</div>
+        <div><strong>Acción Efectiva:</strong> {% if nc.is_effective %}Sí{% else %}No{% endif %}</div>
+    </div>
+    <div style="margin-top:10px;"><strong>Comentarios del Auditor:</strong> {{ nc.verification_notes|default:"-" }}</div>
+</div>
+
+<div class="form-section" style="border:2px solid #7c3aed; border-radius:8px; padding:20px; margin-bottom:20px;">
+    <h3 style="color:#7c3aed; border-bottom:2px solid #7c3aed; padding-bottom:8px; margin-bottom:16px;">⚙️ A ser completado por el Responsable de Sistemas</h3>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div style="grid-column:1 / -1;"><strong>Descripción del problema o hallazgo:</strong> {{ nc.title|default:"-" }}</div>
+        <div style="grid-column:1 / -1;"><strong>Detectado en proceso o procedimiento:</strong> {{ nc.observed_during|default:"-" }}</div>
+        <div><strong>Clasificación:</strong> {{ nc.get_classification_display|default:"-" }}</div>
+        <div><strong>Impacta en el Procedimiento:</strong> {% if nc.impacts_procedure %}Sí{% else %}No{% endif %}</div>
+        <div><strong>Impacta en el Sistema:</strong> {% if nc.impacts_system %}Sí{% else %}No{% endif %}</div>
+        <div><strong>Activo:</strong> {% if nc.is_active %}Sí{% else %}No{% endif %}</div>
+    </div>
+</div>
+
+<div class="form-section" style="border:2px solid #e5e7eb; border-radius:8px; padding:20px; margin-bottom:20px;">
+    <h3 style="margin-bottom:12px;">📋 Plan de Acciones CAPA</h3>
     {% if capa_actions %}
-    <div class="capa-list">
-        {% for capa in capa_actions %}
-        <div class="capa-item {% if capa.status == 'DONE' %}capa-done{% endif %}">
-            <div class="capa-header">
-                <div class="capa-title">
-                    <span class="capa-type-badge capa-type-{{ capa.action_type|lower }}">
-                        {{ capa.get_action_type_display }}
-                    </span>
-                    <strong>{{ capa.title }}</strong>
-                </div>
-                <span class="status-badge status-{{ capa.status|lower }}">
-                    {{ capa.get_status_display }}
-                </span>
-            </div>
-
-            {% if capa.description %}
-            <p class="capa-description">{{ capa.description }}</p>
-            {% endif %}
-
-            <div class="capa-meta">
-                <span>👤 {{ capa.owner|default:"Sin asignar" }}</span>
-                <span>📅 {{ capa.due_date|date:"d/m/Y"|default:"Sin fecha" }}</span>
-                {% if capa.completed_at %}
-                <span>✅ Completada: {{ capa.completed_at|date:"d/m/Y H:i" }}</span>
-                {% endif %}
-            </div>
-
-            {% if can_edit %}
-            <div class="capa-actions">
-                <a href="{% url 'core:capa_action_edit' capa.pk %}" class="btn-link">✏️ Editar</a>
-            </div>
-            {% endif %}
-        </div>
-        {% endfor %}
-    </div>
-
-    {% if nc.status == 'IN_TREATMENT' %}
-        {% if capa_done_count == 0 %}
-        <div class="alert alert-warning">
-            ⚠️ La NC esta en tratamiento pero no hay acciones completadas aun.
-        </div>
-        {% elif capa_all_done %}
-        <div class="alert alert-info">
-            ℹ️ Todas las acciones estan completadas. Considere mover la NC a VERIFICATION.
-        </div>
-        {% endif %}
-    {% endif %}
+        <ul style="margin:0; padding-left:20px;">
+            {% for capa in capa_actions %}
+                <li><strong>{{ capa.title }}</strong> — {{ capa.get_status_display }}</li>
+            {% endfor %}
+        </ul>
     {% else %}
-    <div class="empty-state">
         <p>No hay acciones CAPA definidas para esta NC.</p>
-        {% if nc.status == 'IN_TREATMENT' %}
-        <div class="alert alert-warning">
-            ⚠️ Defina las acciones necesarias para resolver esta NC.
-        </div>
-        {% endif %}
-    </div>
     {% endif %}
-</div>
-
-<div class="detail-card">
-    <h1>{{ nc.title }}</h1>
-    <div class="detail-grid">
-        <div class="detail-item">
-            <strong>🏷️ Codigo</strong>
-            <span>{{ nc.code|default:"-" }}</span>
-        </div>
-        <div class="detail-item">
-            <strong>📋 Origen</strong>
-            <span>{{ nc.get_origin_display }}</span>
-        </div>
-        <div class="detail-item">
-            <strong>🚦 Severidad</strong>
-            <span class="severity-badge {% if nc.severity == 'MINOR' %}severity-minor{% elif nc.severity == 'MAJOR' %}severity-major{% else %}severity-critical{% endif %}">
-                {{ nc.get_severity_display }}
-            </span>
-        </div>
-        <div class="detail-item">
-            <strong>📌 Estado</strong>
-            <span class="status-badge">{{ nc.get_status_display }}</span>
-        </div>
-        <div class="detail-item">
-            <strong>🔗 Proceso</strong>
-            <span>{% if nc.related_process %}{{ nc.related_process }}{% else %}-{% endif %}</span>
-        </div>
-        <div class="detail-item">
-            <strong>🏢 Sitio</strong>
-            <span>{% if nc.site %}{{ nc.site }}{% else %}-{% endif %}</span>
-        </div>
-        <div class="detail-item">
-            <strong>📄 Documento relacionado</strong>
-            <span>{% if nc.related_document %}{{ nc.related_document }}{% else %}-{% endif %}</span>
-        </div>
-        <div class="detail-item">
-            <strong>📅 Fecha detección</strong>
-            <span>{% if nc.detected_at %}{{ nc.detected_at|date:"d/m/Y" }}{% else %}-{% endif %}</span>
-        </div>
-        <div class="detail-item">
-            <strong>🔍 Detectado por</strong>
-            <span>{% if nc.detected_by %}{{ nc.detected_by.get_username }}{% else %}-{% endif %}</span>
-        </div>
-        <div class="detail-item">
-            <strong>👤 Responsable</strong>
-            <span>{% if nc.owner %}{{ nc.owner.get_username }}{% else %}-{% endif %}</span>
-        </div>
-        <div class="detail-item">
-            <strong>📅 Fecha limite</strong>
-            <span>{% if nc.due_date %}{{ nc.due_date|date:"d/m/Y" }}{% else %}-{% endif %}</span>
-        </div>
-        <div class="detail-item">
-            <strong>📄 Evidencia</strong>
-            <span>{% if nc.evidence_document %}{{ nc.evidence_document }}{% else %}-{% endif %}</span>
-        </div>
-        <div class="detail-item">
-            <strong>📅 Fecha verificacion</strong>
-            <span>{% if nc.verification_date %}{{ nc.verification_date|date:"d/m/Y" }}{% else %}-{% endif %}</span>
-        </div>
-        <div class="detail-item">
-            <strong>✅ Accion efectiva</strong>
-            <span>{% if nc.is_effective %}Si{% else %}No{% endif %}</span>
-        </div>
-        <div class="detail-item">
-            <strong>📅 Fecha cierre</strong>
-            <span>{% if nc.closed_date %}{{ nc.closed_date|date:"d/m/Y" }}{% else %}-{% endif %}</span>
-        </div>
-        <div class="detail-item">
-            <strong>👤 Cerrada por</strong>
-            <span>{% if nc.closed_by %}{{ nc.closed_by.get_username }}{% else %}-{% endif %}</span>
-        </div>
-        <div class="detail-item detail-item-full">
-            <strong>📝 Descripción</strong>
-            <span>{{ nc.description }}</span>
-        </div>
-        <div class="detail-item detail-item-full">
-            <strong>🔎 Análisis de causa raíz</strong>
-            <span>{% if nc.root_cause_analysis %}{{ nc.root_cause_analysis }}{% else %}-{% endif %}</span>
-        </div>
-        <div class="detail-item detail-item-full">
-            <strong>✅ Acciones correctivas</strong>
-            <span>{% if nc.corrective_action %}{{ nc.corrective_action }}{% else %}-{% endif %}</span>
-        </div>
-        <div class="detail-item detail-item-full">
-            <strong>🧪 Notas de verificacion</strong>
-            <span>{% if nc.verification_notes %}{{ nc.verification_notes }}{% else %}-{% endif %}</span>
-        </div>
-    </div>
+    {% if can_edit %}
+        <a href="{% url 'core:capa_action_create' nc.pk %}" class="btn btn-primary" style="margin-top:12px;">➕ Nueva Acción</a>
+    {% endif %}
 </div>
 {% endblock %}

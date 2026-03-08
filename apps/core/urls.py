@@ -8,6 +8,7 @@ from apps.core.views import (
     capa_action_edit,
     nc_create,
     nc_detail,
+        nc_pdf,
     nc_edit,
     nc_list,
     risk_create,
@@ -46,6 +47,7 @@ from apps.core.views import (
     measurement_create,
     nonconforming_output_list,
     nonconforming_output_detail,
+    pnc_pdf,
     nonconforming_output_create,
     nonconforming_output_edit,
     nonconforming_output_create_nc,
@@ -120,6 +122,7 @@ urlpatterns = [
     path("nc/new/", nc_create, name="nc_new"),
     path("nc/<int:pk>/", nc_detail, name="nc_detail"),
     path("nc/<int:pk>/edit/", nc_edit, name="nc_edit"),
+        path("nc/<int:pk>/pdf/", nc_pdf, name="nc_pdf"),
     path("nc/<int:nc_id>/actions/new/", capa_action_create, name="capa_action_create"),
     path("capa/<int:action_id>/edit/", capa_action_edit, name="capa_action_edit"),
     path("objectives/", quality_objective_list, name="quality_objective_list"),
@@ -158,6 +161,7 @@ urlpatterns = [
     path("pnc/new/", nonconforming_output_create, name="nonconforming_output_new"),
     path("pnc/<int:pk>/", nonconforming_output_detail, name="nonconforming_output_detail"),
     path("pnc/<int:pk>/edit/", nonconforming_output_edit, name="nonconforming_output_edit"),
+    path("pnc/<int:pk>/pdf/", pnc_pdf, name="pnc_pdf"),
     path("pnc/<int:pk>/create-nc/", nonconforming_output_create_nc, name="nonconforming_output_create_nc"),
     
     # Supplier (ISO 8.4)

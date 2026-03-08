@@ -548,6 +548,10 @@ class NoConformity(models.Model):
         TELEGRAM_TEXT = "TELEGRAM_TEXT", "Telegram texto"
         TELEGRAM_AUDIO = "TELEGRAM_AUDIO", "Telegram audio"
 
+    class Classification(models.TextChoices):
+        PROBLEM = "PROBLEM", "Problema"
+        FINDING = "FINDING", "Hallazgo"
+
     organization = models.ForeignKey(
         Organization,
         on_delete=models.PROTECT,
@@ -577,6 +581,39 @@ class NoConformity(models.Model):
         blank=True,
         related_name="nonconformities_as_related",
         verbose_name="Documento relacionado",
+    )
+    work_order = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Orden de Trabajo",
+        help_text="Ej: Plan Nº 53, OT-2026-001",
+    )
+    observed_during = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Observada durante",
+        help_text="Ej: Control Dimensional, Inspección Final, Auditoría Interna",
+    )
+    norm_clause = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Norma y Cláusula",
+        help_text="Ej: ISO 9001:2015 - 8.4, Procedimiento FP-09",
+    )
+    classification = models.CharField(
+        max_length=20,
+        choices=Classification.choices,
+        blank=True,
+        verbose_name="Clasificación",
+        help_text="Problema o Hallazgo",
+    )
+    impacts_procedure = models.BooleanField(
+        default=False,
+        verbose_name="Impacta en el Procedimiento",
+    )
+    impacts_system = models.BooleanField(
+        default=False,
+        verbose_name="Impacta en el Sistema",
     )
     code = models.CharField(
         max_length=20,
@@ -620,6 +657,24 @@ class NoConformity(models.Model):
         related_name="detected_nonconformities",
         verbose_name="Detectado por",
         help_text="Usuario que detecto la no conformidad",
+    )
+    organization_representative = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="%(class)s_as_org_representative",
+        verbose_name="Representante de la Organización",
+        help_text="Persona que representa a la organización en este registro",
+    )
+    verification_representative = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="%(class)s_as_verif_representative",
+        verbose_name="Representante de Verificación",
+        help_text="Persona que representa la verificación de acciones correctivas",
     )
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -1682,6 +1737,10 @@ class NonconformingOutput(models.Model):
         TELEGRAM_TEXT = "TELEGRAM_TEXT", "Telegram texto"
         TELEGRAM_AUDIO = "TELEGRAM_AUDIO", "Telegram audio"
 
+    class Classification(models.TextChoices):
+        PROBLEM = "PROBLEM", "Problema"
+        FINDING = "FINDING", "Hallazgo"
+
     organization = models.ForeignKey(
         Organization,
         on_delete=models.PROTECT,
@@ -1704,6 +1763,39 @@ class NonconformingOutput(models.Model):
         related_name="nonconforming_outputs",
         verbose_name="Proceso relacionado",
     )
+    work_order = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Orden de Trabajo",
+        help_text="Ej: Plan Nº 53, OT-2026-001",
+    )
+    observed_during = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Observada durante",
+        help_text="Ej: Control Dimensional, Inspección Final, Auditoría Interna",
+    )
+    norm_clause = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Norma y Cláusula",
+        help_text="Ej: ISO 9001:2015 - 8.4, Procedimiento FP-09",
+    )
+    classification = models.CharField(
+        max_length=20,
+        choices=Classification.choices,
+        blank=True,
+        verbose_name="Clasificación",
+        help_text="Problema o Hallazgo",
+    )
+    impacts_procedure = models.BooleanField(
+        default=False,
+        verbose_name="Impacta en el Procedimiento",
+    )
+    impacts_system = models.BooleanField(
+        default=False,
+        verbose_name="Impacta en el Sistema",
+    )
     code = models.CharField(
         max_length=20,
         unique=True,
@@ -1722,10 +1814,43 @@ class NonconformingOutput(models.Model):
         related_name="detected_nonconforming_outputs",
         verbose_name="Detectado por",
     )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="owned_nonconforming_outputs",
+        verbose_name="Responsable",
+        help_text="Responsable asignado al registro R-05-01",
+    )
+    organization_representative = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="%(class)s_as_org_representative",
+        verbose_name="Representante de la Organización",
+        help_text="Persona que representa a la organización en este registro",
+    )
+    verification_representative = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="%(class)s_as_verif_representative",
+        verbose_name="Representante de Verificación",
+        help_text="Persona que representa la verificación de acciones correctivas",
+    )
     product_or_service = models.CharField(
         max_length=200,
         verbose_name="Producto/Servicio",
         help_text="Ejemplo: Tolva 26tn, Servicio postventa",
+    )
+    title = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name="Descripción del problema o hallazgo",
+        help_text="Resumen breve del problema o hallazgo",
     )
     description = models.TextField(
         verbose_name="Descripción del no cumplimiento",
@@ -1756,6 +1881,16 @@ class NonconformingOutput(models.Model):
         verbose_name="Notas sobre disposición",
         help_text="Detalles y evidencia de la disposición (obligatorio para CONCESSION)",
     )
+    root_cause_analysis = models.TextField(
+        blank=True,
+        verbose_name="Análisis de causa raíz",
+        help_text="¿Qué falló en el sistema para permitir que ocurra este PNC?",
+    )
+    corrective_action = models.TextField(
+        blank=True,
+        verbose_name="Acción correctiva",
+        help_text="Que se hizo para resolver este problema y prevenir la recurrencia",
+    )
     responsible = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -1763,6 +1898,15 @@ class NonconformingOutput(models.Model):
         blank=True,
         related_name="treated_nonconforming_outputs",
         verbose_name="Responsable del tratamiento",
+    )
+    verification_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de verificación",
+    )
+    verification_notes = models.TextField(
+        blank=True,
+        verbose_name="Comentarios del auditor",
     )
     status = models.CharField(
         max_length=20,
