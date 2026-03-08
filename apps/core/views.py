@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LogoutView
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.shortcuts import redirect, render, get_object_or_404
@@ -113,6 +113,33 @@ def context_detail(request):
 			"can_edit": can_edit,
 		},
 	)
+
+
+@login_required
+def nc_pdf(request, pk):
+	"""Generate and download PDF for a no conformity."""
+	from django.http import HttpResponse
+	from apps.core.pdf_generator import generate_nc_pdf
+	
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+	
+	nc = get_object_or_404(
+		NoConformity,
+		pk=pk,
+		organization=organization,
+	)
+	
+	# Generate PDF
+	pdf_buffer = generate_nc_pdf(nc)
+	
+	# Return as HTTP response
+	response = HttpResponse(pdf_buffer.getvalue(), content_type="application/pdf")
+	filename = f"R-05-01_{nc.code}.pdf"
+	response["Content-Disposition"] = f'attachment; filename="{filename}"'
+	return response
 
 
 @login_required
@@ -693,18 +720,52 @@ def risk_dashboard(request):
 def _configure_nc_form(form, organization):
 	"""Configure NoConformity form with organization-filtered querysets."""
 	User = get_user_model()
-	form.fields["site"].queryset = Site.objects.filter(organization=organization, is_active=True)
-	form.fields["related_process"].queryset = Process.objects.filter(
-		organization=organization,
-		is_active=True,
-	).order_by("code")
-	form.fields["related_document"].queryset = Document.objects.filter(is_active=True)
-	form.fields["evidence_document"].queryset = Document.objects.filter(is_active=True)
-	form.fields["owner"].queryset = User.objects.filter(is_active=True)
+	if "site" in form.fields:
+		form.fields["site"].queryset = Site.objects.filter(organization=organization, is_active=True)
+	if "related_process" in form.fields:
+		form.fields["related_process"].queryset = Process.objects.filter(
+			organization=organization,
+			is_active=True,
+		).order_by("code")
+	if "related_document" in form.fields:
+		form.fields["related_document"].queryset = Document.objects.filter(is_active=True)
+	if "evidence_document" in form.fields:
+		form.fields["evidence_document"].queryset = Document.objects.filter(is_active=True)
+	if "owner" in form.fields:
+		form.fields["owner"].queryset = User.objects.filter(is_active=True)
 	if "detected_by" in form.fields:
 		form.fields["detected_by"].queryset = User.objects.filter(is_active=True)
+	if "organization_representative" in form.fields:
+		form.fields["organization_representative"].queryset = User.objects.filter(is_active=True)
+	if "verification_representative" in form.fields:
+		form.fields["verification_representative"].queryset = User.objects.filter(is_active=True)
 	if "closed_by" in form.fields:
 		form.fields["closed_by"].queryset = User.objects.filter(is_active=True)
+
+
+def _configure_nonconforming_output_form(form, organization):
+	"""Configure NonconformingOutput form with organization-filtered querysets."""
+	User = get_user_model()
+	if "site" in form.fields:
+		form.fields["site"].queryset = Site.objects.filter(organization=organization, is_active=True)
+	if "related_process" in form.fields:
+		form.fields["related_process"].queryset = Process.objects.filter(
+			organization=organization,
+			is_active=True,
+		).order_by("code")
+	for user_field in [
+		"owner",
+		"detected_by",
+		"responsible",
+		"organization_representative",
+		"verification_representative",
+	]:
+		if user_field in form.fields:
+			form.fields[user_field].queryset = User.objects.filter(is_active=True)
+	if "linked_nc" in form.fields:
+		form.fields["linked_nc"].queryset = NoConformity.objects.filter(
+			organization=organization,
+		).order_by("-detected_at")
 
 
 @login_required
@@ -2518,15 +2579,43 @@ def nonconforming_output_detail(request, pk):
 
 
 @login_required
+def pnc_pdf(request, pk):
+	"""Generate and download PDF for a nonconforming output."""
+	from django.http import HttpResponse
+	from apps.core.pdf_generator import generate_pnc_pdf
+
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	output = get_object_or_404(
+		NonconformingOutput,
+		pk=pk,
+		organization=organization,
+	)
+
+	pdf_buffer = generate_pnc_pdf(output)
+	response = HttpResponse(pdf_buffer.getvalue(), content_type="application/pdf")
+	filename = f"R-05-01-PNC_{output.code}.pdf"
+	response["Content-Disposition"] = f'attachment; filename="{filename}"'
+	return response
+
+
+@login_required
 def nonconforming_output_create(request):
 	"""Crear Producto/Servicio No Conforme."""
 	if not can_edit_nonconforming_output(request.user):
 		raise PermissionDenied()
 
-	organization = Organization.objects.filter(is_active=True).first() or Organization.objects.first()
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
 
 	if request.method == "POST":
 		form = NonconformingOutputForm(request.POST, request.FILES)
+		_configure_nonconforming_output_form(form, organization)
 		if form.is_valid():
 			output = form.save(commit=False)
 			output.organization = organization
@@ -2547,6 +2636,7 @@ def nonconforming_output_create(request):
 			return redirect("core:nonconforming_output_detail", pk=output.pk)
 	else:
 		form = NonconformingOutputForm()
+		_configure_nonconforming_output_form(form, organization)
 
 	return render(
 		request,
@@ -2565,7 +2655,10 @@ def nonconforming_output_edit(request, pk):
 	if not can_edit_nonconforming_output(request.user):
 		raise PermissionDenied()
 
-	organization = Organization.objects.filter(is_active=True).first() or Organization.objects.first()
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
 	output = get_object_or_404(
 		NonconformingOutput,
 		pk=pk,
@@ -2574,6 +2667,7 @@ def nonconforming_output_edit(request, pk):
 
 	if request.method == "POST":
 		form = NonconformingOutputForm(request.POST, request.FILES, instance=output)
+		_configure_nonconforming_output_form(form, organization)
 		if form.is_valid():
 			output = form.save()
 			
@@ -2591,6 +2685,7 @@ def nonconforming_output_edit(request, pk):
 			return redirect("core:nonconforming_output_detail", pk=output.pk)
 	else:
 		form = NonconformingOutputForm(instance=output)
+		_configure_nonconforming_output_form(form, organization)
 
 	return render(
 		request,

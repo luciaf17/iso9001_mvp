@@ -218,6 +218,20 @@ class NoConformityAdmin(admin.ModelAdmin):
             {"fields": ("related_process", "related_document")},
         ),
         (
+            "Registro R-05-01",
+            {
+                "fields": (
+                    "work_order",
+                    "observed_during",
+                    "norm_clause",
+                    "classification",
+                    "impacts_procedure",
+                    "impacts_system",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+        (
             "Análisis y Acciones",
             {
                 "fields": ("root_cause_analysis", "corrective_action"),
@@ -470,6 +484,62 @@ class NonconformingOutputAdmin(admin.ModelAdmin):
     list_filter = ("organization", "severity", "disposition", "status", "is_active")
     search_fields = ("code", "product_or_service", "description")
     readonly_fields = ("code", "created_at", "updated_at")
+    
+    fieldsets = (
+        (
+            "Identificación",
+            {
+                "fields": (
+                    "organization",
+                    "site",
+                    "code",
+                    "product_or_service",
+                    "description",
+                )
+            },
+        ),
+        (
+            "Detección",
+            {"fields": ("detected_at", "detected_by", "quantity")},
+        ),
+        (
+            "Clasificación",
+            {"fields": ("severity", "related_process")},
+        ),
+        (
+            "Disposición",
+            {"fields": ("disposition", "disposition_notes", "responsible")},
+        ),
+        (
+            "Estado",
+            {"fields": ("status", "closed_at")},
+        ),
+        (
+            "Registro R-05-01",
+            {
+                "fields": (
+                    "work_order",
+                    "observed_during",
+                    "norm_clause",
+                    "classification",
+                    "impacts_procedure",
+                    "impacts_system",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "Evidencia y Enlaces",
+            {"fields": ("evidence_file", "linked_nc")},
+        ),
+        (
+            "Metadata",
+            {
+                "fields": ("is_active", "created_at", "updated_at"),
+                "classes": ("collapse",),
+            },
+        ),
+    )
 
 
 @admin.register(Supplier)

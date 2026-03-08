@@ -123,26 +123,14 @@ class NoConformityForm(forms.ModelForm):
     class Meta:
         model = NoConformity
         fields = [
-            "site",
-            "related_process",
-            "related_document",
-            "title",
-            "description",
-            "origin",
-            "severity",
-            "detected_at",
-            "detected_by",
-            "owner",
+            "detected_at", "related_process", "work_order", "site",
+            "observed_during", "norm_clause", "description", "origin",
+            "severity", "owner", "detected_by", "organization_representative",
             "due_date",
-            "status",
-            "root_cause_analysis",
-            "corrective_action",
-            "verification_date",
-            "is_effective",
-            "verification_notes",
-            "evidence_document",
-            "closed_date",
-            "closed_by",
+            "root_cause_analysis", "corrective_action", "closed_date",
+            "closed_by", "verification_representative", "evidence_document",
+            "verification_date", "status", "is_effective", "verification_notes",
+            "title", "classification", "impacts_procedure", "impacts_system",
             "is_active",
         ]
         widgets = {
@@ -154,6 +142,11 @@ class NoConformityForm(forms.ModelForm):
             "verification_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
             "verification_notes": forms.Textarea(attrs={"rows": 4}),
             "closed_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "work_order": forms.TextInput(attrs={"placeholder": "Ej: Plan Nº 53, OT-2026-001"}),
+            "observed_during": forms.TextInput(attrs={"placeholder": "Ej: Control Dimensional, Inspección Final"}),
+            "norm_clause": forms.TextInput(attrs={"placeholder": "Ej: ISO 9001:2015 - 8.4"}),
+            "impacts_procedure": forms.CheckboxInput(),
+            "impacts_system": forms.CheckboxInput(),
         }
     
     def __init__(self, *args, **kwargs):
@@ -460,30 +453,38 @@ class NonconformingOutputForm(forms.ModelForm):
     class Meta:
         model = NonconformingOutput
         fields = [
-            "detected_at",
-            "detected_by",
-            "site",
-            "related_process",
-            "product_or_service",
-            "description",
-            "quantity",
-            "severity",
-            "disposition",
-            "disposition_notes",
-            "responsible",
-            "status",
-            "evidence_file",
+            "detected_at", "related_process", "work_order", "site",
+            "observed_during", "norm_clause", "description", "product_or_service",
+            "severity", "owner", "detected_by", "organization_representative",
+            "root_cause_analysis", "corrective_action",
+            "quantity", "disposition", "disposition_notes", "responsible",
+            "closed_at", "verification_representative", "evidence_file", "linked_nc",
+            "verification_date", "status", "verification_notes",
+            "title", "classification", "impacts_procedure", "impacts_system",
+            "is_active",
         ]
         widgets = {
             "detected_at": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "closed_at": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "verification_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
             "description": forms.Textarea(attrs={"rows": 4}),
+            "root_cause_analysis": forms.Textarea(attrs={"rows": 4}),
+            "corrective_action": forms.Textarea(attrs={"rows": 4}),
+            "verification_notes": forms.Textarea(attrs={"rows": 4}),
             "disposition_notes": forms.Textarea(attrs={"rows": 3}),
             "quantity": forms.NumberInput(attrs={"step": "0.01"}),
+            "work_order": forms.TextInput(attrs={"placeholder": "Ej: Plan Nº 53, OT-2026-001"}),
+            "observed_during": forms.TextInput(attrs={"placeholder": "Ej: Control Dimensional, Inspección Final"}),
+            "norm_clause": forms.TextInput(attrs={"placeholder": "Ej: ISO 9001:2015 - 8.4"}),
+            "impacts_procedure": forms.CheckboxInput(),
+            "impacts_system": forms.CheckboxInput(),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["detected_at"].input_formats = ["%Y-%m-%d"]
+        self.fields["closed_at"].input_formats = ["%Y-%m-%d"]
+        self.fields["verification_date"].input_formats = ["%Y-%m-%d"]
 
 
 class SupplierForm(forms.ModelForm):
