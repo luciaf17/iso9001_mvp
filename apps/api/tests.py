@@ -1,9 +1,11 @@
+from decimal import Decimal
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
-from apps.core.models import NoConformity, Organization, Process, Site
+from apps.core.models import NoConformity, NonconformingOutput, Organization, Process, Site
 
 User = get_user_model()
 
@@ -72,6 +74,66 @@ class APITestCase(TestCase):
     def test_nc_list(self):
         response = self.client.get("/api/nc/")
         self.assertEqual(response.status_code, 200)
+
+    def test_create_pnc(self):
+        response = self.client.post(
+            "/api/pnc/create/",
+            {
+                "product_or_service": "Tolva 26tn",
+                "description": "Soldadura fuera de especificación",
+                "detected_at": "2026-03-02",
+                "severity": "MAJOR",
+                "related_process": self.process.id,
+                "site": self.site.id,
+            },
+        )
+        self.assertEqual(response.status_code, 201)
+        pnc = NonconformingOutput.objects.get(product_or_service="Tolva 26tn")
+        self.assertTrue(pnc.code.startswith("PNC-"))
+
+    def test_pnc_list(self):
+        active_org = Organization.objects.filter(is_active=True).first()
+        active_site = Site.objects.create(organization=active_org, name="Planta API PNC")
+        active_process = Process.objects.create(
+            organization=active_org,
+            site=active_site,
+            code="11",
+            name="Calidad",
+            process_type="SUPPORT",
+            level=1,
+        )
+
+        pnc = NonconformingOutput.objects.create(
+            organization=active_org,
+            site=active_site,
+            related_process=active_process,
+            detected_at="2026-03-03",
+            product_or_service="Servicio postventa",
+            description="Tiempo de respuesta fuera de SLA",
+            severity="MINOR",
+        )
+
+        response = self.client.get("/api/pnc/")
+        self.assertEqual(response.status_code, 200)
+
+        payload = response.data.get("results", response.data)
+        codes = [item["code"] for item in payload]
+        self.assertIn(pnc.code, codes)
+
+    def test_create_pnc_with_quantity(self):
+        response = self.client.post(
+            "/api/pnc/create/",
+            {
+                "product_or_service": "Lote de tornillos",
+                "description": "Cantidad fuera de tolerancia",
+                "detected_at": "2026-03-04",
+                "severity": "MINOR",
+                "quantity": "12.50",
+            },
+        )
+        self.assertEqual(response.status_code, 201)
+        pnc = NonconformingOutput.objects.get(product_or_service="Lote de tornillos")
+        self.assertEqual(pnc.quantity, Decimal("12.50"))
 
     def test_unauthenticated(self):
         client = APIClient()

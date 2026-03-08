@@ -543,6 +543,11 @@ class NoConformity(models.Model):
         VERIFICATION = "VERIFICATION", "En verificacion"
         CLOSED = "CLOSED", "Cerrada"
 
+    class Source(models.TextChoices):
+        WEB = "WEB", "Web"
+        TELEGRAM_TEXT = "TELEGRAM_TEXT", "Telegram texto"
+        TELEGRAM_AUDIO = "TELEGRAM_AUDIO", "Telegram audio"
+
     organization = models.ForeignKey(
         Organization,
         on_delete=models.PROTECT,
@@ -634,6 +639,12 @@ class NoConformity(models.Model):
         choices=Status.choices,
         default=Status.OPEN,
         verbose_name="Estado",
+    )
+    source = models.CharField(
+        max_length=20,
+        choices=Source.choices,
+        default=Source.WEB,
+        verbose_name="Origen de carga",
     )
     root_cause_analysis = models.TextField(
         blank=True,
@@ -1666,6 +1677,11 @@ class NonconformingOutput(models.Model):
         IN_TREATMENT = "IN_TREATMENT", "En tratamiento"
         CLOSED = "CLOSED", "Cerrada"
 
+    class Source(models.TextChoices):
+        WEB = "WEB", "Web"
+        TELEGRAM_TEXT = "TELEGRAM_TEXT", "Telegram texto"
+        TELEGRAM_AUDIO = "TELEGRAM_AUDIO", "Telegram audio"
+
     organization = models.ForeignKey(
         Organization,
         on_delete=models.PROTECT,
@@ -1753,6 +1769,12 @@ class NonconformingOutput(models.Model):
         choices=Status.choices,
         default=Status.OPEN,
         verbose_name="Estado",
+    )
+    source = models.CharField(
+        max_length=20,
+        choices=Source.choices,
+        default=Source.WEB,
+        verbose_name="Origen de carga",
     )
     closed_at = models.DateField(
         null=True,
