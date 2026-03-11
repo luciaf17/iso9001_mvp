@@ -144,6 +144,8 @@ class OrganizationContextAdmin(admin.ModelAdmin):
 class StakeholderAdmin(admin.ModelAdmin):
     list_display = (
         "name",
+        "cuit",
+        "phone",
         "stakeholder_type",
         "organization",
         "related_process",
@@ -151,7 +153,7 @@ class StakeholderAdmin(admin.ModelAdmin):
         "is_active",
     )
     list_filter = ("stakeholder_type", "organization", "is_active")
-    search_fields = ("name", "expectations")
+    search_fields = ("name", "cuit", "phone", "expectations")
 
 
 @admin.register(RiskOpportunity)
