@@ -12,7 +12,7 @@
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Gestión de proveedores (ISO 8.4)</p>
         </div>
         {% if can_edit %}
-        <a href="{% url 'core:supplier_new' %}" class="btn-primary">➕ Nuevo Proveedor</a>
+        <a href="{% url 'core:supplier_new' %}" class="btn btn-success">➕ Nuevo Proveedor</a>
         {% endif %}
     </div>
 
@@ -47,7 +47,7 @@
                 </select>
             </div>
             <div class="flex gap-2">
-                <a class="btn-secondary btn-small" href="{% url 'core:supplier_list' %}">Limpiar</a>
+                <a class="btn btn-secondary btn-sm" href="{% url 'core:supplier_list' %}">Limpiar</a>
             </div>
         </div>
     </form>

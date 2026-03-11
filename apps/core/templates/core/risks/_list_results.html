@@ -43,9 +43,9 @@
                 <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{% if risk.due_date %}{{ risk.due_date|date:"d/m/Y" }}{% else %}<span class="text-slate-400 dark:text-slate-600">—</span>{% endif %}</td>
                 <td class="px-6 py-4 text-sm">
                     <div class="flex gap-2">
-                        <a class="btn-secondary" href="{% url 'core:risk_detail' risk.pk %}">Ver</a>
+                        <a class="btn btn-outline btn-sm" href="{% url 'core:risk_detail' risk.pk %}">Ver</a>
                         {% if can_edit %}
-                        <a class="btn-primary" href="{% url 'core:risk_edit' risk.pk %}">Editar</a>
+                        <a class="btn btn-warning btn-sm" href="{% url 'core:risk_edit' risk.pk %}">Editar</a>
                         {% endif %}
                     </div>
                 </td>

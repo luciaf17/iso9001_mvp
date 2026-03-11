@@ -46,9 +46,9 @@
                 </td>
                 <td class="px-6 py-4 text-sm">
                     <div class="flex gap-2">
-                        <a href="{% url 'core:supplier_detail' item.supplier.pk %}" class="inline-flex items-center gap-2 border border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-200 bg-transparent hover:bg-slate-100 dark:hover:bg-white/5 font-semibold px-3 py-1.5 rounded-lg transition-all duration-150 text-sm">Ver</a>
+                        <a href="{% url 'core:supplier_detail' item.supplier.pk %}" class="btn btn-outline btn-sm">Ver</a>
                         {% if can_edit %}
-                        <a href="{% url 'core:supplier_edit' item.supplier.pk %}" class="inline-flex items-center gap-2 border border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-200 bg-transparent hover:bg-slate-100 dark:hover:bg-white/5 font-semibold px-3 py-1.5 rounded-lg transition-all duration-150 text-sm">Editar</a>
+                        <a href="{% url 'core:supplier_edit' item.supplier.pk %}" class="btn btn-warning btn-sm">Editar</a>
                         {% endif %}
                     </div>
                 </td>
@@ -62,7 +62,7 @@
     <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">No hay proveedores registrados.</h3>
     <p class="text-slate-600 dark:text-slate-400 mb-6">Crea el primer proveedor para comenzar la evaluación y seguimiento.</p>
     {% if can_edit %}
-    <a href="{% url 'core:supplier_new' %}" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-150">Crear proveedor</a>
+    <a href="{% url 'core:supplier_new' %}" class="btn btn-success">Crear proveedor</a>
     {% endif %}
 </div>
 {% endif %}

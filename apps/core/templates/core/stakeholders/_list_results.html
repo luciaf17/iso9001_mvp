@@ -21,9 +21,9 @@
                 </div>
             </div>
             <div class="flex gap-2 md:ml-4">
-                <a class="btn-secondary" href="{% url 'core:stakeholder_detail' stakeholder.pk %}">Ver</a>
+                <a class="btn btn-outline btn-sm" href="{% url 'core:stakeholder_detail' stakeholder.pk %}">Ver</a>
                 {% if can_edit %}
-                <a class="btn-primary" href="{% url 'core:stakeholder_edit' stakeholder.pk %}">Editar</a>
+                <a class="btn btn-warning btn-sm" href="{% url 'core:stakeholder_edit' stakeholder.pk %}">Editar</a>
                 {% endif %}
             </div>
         </div>

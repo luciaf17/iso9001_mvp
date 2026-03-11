@@ -11,8 +11,8 @@
         </div>
         {% if can_edit %}
         <div class="flex gap-2">
-            <a href="{% url 'core:training_attendance_create' %}" class="btn btn-secondary">➕ Registrar Asistencia</a>
-            <a href="{% url 'core:training_create' %}" class="btn-primary">➕ Nueva Capacitación</a>
+            <a href="{% url 'core:training_attendance_create' %}" class="btn btn-info">➕ Registrar Asistencia</a>
+            <a href="{% url 'core:training_create' %}" class="btn btn-success">➕ Nueva Capacitación</a>
         </div>
         {% endif %}
     </div>
@@ -55,9 +55,9 @@
                     <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{% if training.expiration_date %}{{ training.expiration_date|date:"d/m/Y" }}{% else %}-{% endif %}</td>
                     <td class="px-6 py-4 text-sm">
                         <div class="flex gap-2">
-                            <a class="btn-secondary" href="{% url 'core:training_detail' training.pk %}">Ver</a>
+                            <a class="btn btn-outline btn-sm" href="{% url 'core:training_detail' training.pk %}">Ver</a>
                             {% if can_edit %}
-                            <a class="btn-primary" href="{% url 'core:training_edit' training.pk %}">Editar</a>
+                            <a class="btn btn-warning btn-sm" href="{% url 'core:training_edit' training.pk %}">Editar</a>
                             {% endif %}
                         </div>
                     </td>

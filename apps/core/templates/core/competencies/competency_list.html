@@ -10,7 +10,7 @@
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Definición de competencias requeridas por puesto</p>
         </div>
         {% if can_edit %}
-        <a href="{% url 'core:competency_create' %}" class="btn-primary">➕ Nueva Competencia</a>
+        <a href="{% url 'core:competency_create' %}" class="btn btn-success">➕ Nueva Competencia</a>
         {% endif %}
     </div>
 
@@ -50,7 +50,7 @@
                     <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ competency.description|default:"-"|truncatechars:120 }}</td>
                     <td class="px-6 py-4 text-sm">
                         {% if can_edit %}
-                        <a class="btn-primary" href="{% url 'core:competency_edit' competency.pk %}">Editar</a>
+                        <a class="btn btn-warning btn-sm" href="{% url 'core:competency_edit' competency.pk %}">Editar</a>
                         {% endif %}
                     </td>
                 </tr>

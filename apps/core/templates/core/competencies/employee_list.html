@@ -10,7 +10,7 @@
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Gestión de competencias y capacitación (ISO 9001 7.2)</p>
         </div>
         {% if can_edit %}
-        <a href="{% url 'core:employee_create' %}" class="btn-primary">➕ Nuevo Empleado</a>
+        <a href="{% url 'core:employee_create' %}" class="btn btn-success">➕ Nuevo Empleado</a>
         {% endif %}
     </div>
 
@@ -68,9 +68,9 @@
                     </td>
                     <td class="px-6 py-4 text-sm">
                         <div class="flex gap-2">
-                            <a class="btn-secondary" href="{% url 'core:employee_detail' employee.pk %}">Ver</a>
+                            <a class="btn btn-outline btn-sm" href="{% url 'core:employee_detail' employee.pk %}">Ver</a>
                             {% if can_edit %}
-                            <a class="btn-primary" href="{% url 'core:employee_edit' employee.pk %}">Editar</a>
+                            <a class="btn btn-warning btn-sm" href="{% url 'core:employee_edit' employee.pk %}">Editar</a>
                             {% endif %}
                         </div>
                     </td>

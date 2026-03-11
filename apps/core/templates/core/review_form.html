@@ -260,8 +260,8 @@
         </div>
 
         <div class="mt-8 flex flex-wrap gap-3 border-t border-slate-200 pt-6 dark:border-slate-700">
-            <button type="submit" class="btn-primary">💾 Guardar</button>
-            <a href="{% if is_edit %}{% url 'core:review_detail' review.pk %}{% else %}{% url 'core:review_list' %}{% endif %}" class="btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-success">💾 Guardar</button>
+            <a href="{% if is_edit %}{% url 'core:review_detail' review.pk %}{% else %}{% url 'core:review_list' %}{% endif %}" class="btn btn-secondary">Cancelar</a>
         </div>
 
         {% if form.non_field_errors %}

@@ -151,10 +151,10 @@
 
 {% block content %}
 <div class="detail-header">
-    <a href="{% url 'core:review_list' %}">← Volver a Revisiones</a>
+    <a href="{% url 'core:review_list' %}" class="btn btn-secondary">← Volver a Revisiones</a>
     <div>
         {% if can_edit %}
-        <a href="{% url 'core:review_edit' review.pk %}" class="btn-primary">Editar</a>
+        <a href="{% url 'core:review_edit' review.pk %}" class="btn btn-warning">Editar</a>
         {% endif %}
     </div>
 </div>
@@ -192,7 +192,7 @@
     <div class="text-section">
         <strong>Acta de Reunión</strong>
         <div class="download-wrap">
-            <a href="{{ review.meeting_minutes_file.url }}" class="btn-secondary">📥 Descargar Acta</a>
+            <a href="{{ review.meeting_minutes_file.url }}" class="btn btn-info">📥 Descargar Acta</a>
         </div>
     </div>
     {% endif %}

@@ -11,9 +11,9 @@
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Organizacion: {{ organization.name }}</p>
         </div>
         <div class="flex flex-wrap gap-3">
-            <a class="btn-secondary" href="{% url 'core:risk_dashboard' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">📊 Dashboard</a>
+            <a class="btn btn-info" href="{% url 'core:risk_dashboard' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">📊 Dashboard</a>
             {% if can_edit %}
-            <a class="btn-primary" href="{% url 'core:risk_new' %}">+ Nuevo Riesgo</a>
+            <a class="btn btn-success" href="{% url 'core:risk_new' %}">+ Nuevo Riesgo</a>
             {% endif %}
         </div>
     </div>
@@ -76,7 +76,7 @@
             </div>
         </div>
         <div class="flex justify-end mt-4 pt-4 border-t border-slate-200 dark:border-white/10">
-            <a class="btn-secondary" href="{% url 'core:risk_list' %}">Limpiar</a>
+            <a class="btn btn-secondary" href="{% url 'core:risk_list' %}">Limpiar</a>
         </div>
     </form>
 
