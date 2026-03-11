@@ -134,6 +134,11 @@
       <div class="spinner">Cargando Proveedores...</div>
     </div>
 
+    <!-- Interactions Card -->
+    <div class="dashboard-card card-indicator" id="card-interactions" hx-get="{% url 'core:dashboard_card_interactions' %}" hx-include="#filters" hx-trigger="load, change from:#filters delay:300ms" hx-target="this" hx-swap="innerHTML">
+      <div class="spinner">Cargando Interacciones...</div>
+    </div>
+
     <!-- Competencies Card -->
     <div class="dashboard-card card-indicator" id="card-competencies" hx-get="{% url 'core:dashboard_card_competencies' %}" hx-include="#filters" hx-trigger="load, change from:#filters delay:300ms" hx-target="this" hx-swap="innerHTML">
       <div class="spinner">Cargando Competencias...</div>

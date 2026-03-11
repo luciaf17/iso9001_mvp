@@ -138,7 +138,7 @@ def _draw_multiline(c, x, y, text, max_width, font=FONT, size=8, leading=10, max
         # Truncar líneas muy largas
         while len(line) > 0:
             # Estimar chars por ancho
-            chars = int(max_width / (size * 0.5))
+            chars = int(max_width / (size * 0.45))
             if len(line) <= chars:
                 t.textLine(line)
                 break
@@ -151,6 +151,21 @@ def _draw_multiline(c, x, y, text, max_width, font=FONT, size=8, leading=10, max
 
     c.drawText(t)
     return t.getY()
+
+
+def _calc_text_height(text, max_width, font_size=8, leading=10, min_h=12 * mm, padding=8 * mm):
+    """Calcula altura necesaria para un bloque de texto."""
+    if not text or str(text).strip() in ("", "-"):
+        return min_h
+    text = str(text)
+    lines = 0
+    for line in text.split("\n"):
+        chars_per_line = int(max_width / (font_size * 0.45))
+        if chars_per_line <= 0:
+            chars_per_line = 40
+        lines += max(1, -(-len(line) // chars_per_line))
+    height = (lines * leading) + padding
+    return max(height, min_h)
 
 
 # ============================================================
@@ -220,25 +235,7 @@ def generate_nc_pdf(nc):
 
     content_start_y = y
 
-    fixed_h = (5 + 6.5 + 5 + 5 + 5 + 5 + 6.5 + 10) * mm
-    flex_base = {
-        "desc_h": 28 * mm,
-        "rca_h": 25 * mm,
-        "ca_h": 25 * mm,
-        "comments_h": 22 * mm,
-        "sys_h": 40 * mm,
-    }
-    available_h = content_start_y - MARGIN_B
-    flex_base_total = sum(flex_base.values())
-    scale = 1.0
-    if flex_base_total > 0 and available_h > fixed_h:
-        scale = max((available_h - fixed_h) / flex_base_total, 1.0)
-
-    desc_h = flex_base["desc_h"] * scale
-    rca_h = flex_base["rca_h"] * scale
-    ca_h = flex_base["ca_h"] * scale
-    comments_h = flex_base["comments_h"] * scale
-    sys_h = flex_base["sys_h"] * scale
+    sys_h = 40 * mm
 
     # Tracking de posiciones para franjas laterales
     sections = {}
@@ -322,6 +319,7 @@ def generate_nc_pdf(nc):
     y -= row_h
 
     # Descripción
+    desc_h = _calc_text_height(nc.description, CONTENT_W - 6 * mm, min_h=22 * mm)
     c.rect(CONTENT_L, y - desc_h, CONTENT_W, desc_h)
     c.setFont(FONT_B, 7)
     c.drawString(CONTENT_L + 2 * mm, y - 4 * mm, "No Conformidad – Descripción de la Evidencia Objetiva:")
@@ -370,6 +368,7 @@ def generate_nc_pdf(nc):
     s2_top = y
 
     # Análisis de Causa Raíz
+    rca_h = _calc_text_height(nc.root_cause_analysis, CONTENT_W - 6 * mm, min_h=20 * mm)
     c.rect(CONTENT_L, y - rca_h, CONTENT_W, rca_h)
     c.setFillColor(colors.HexColor("#f0f0f0"))
     c.rect(CONTENT_L, y - 6 * mm, CONTENT_W, 6 * mm, fill=1, stroke=1)
@@ -381,6 +380,7 @@ def generate_nc_pdf(nc):
     y -= rca_h
 
     # Corrección y Acción Correctiva
+    ca_h = _calc_text_height(nc.corrective_action, CONTENT_W - 6 * mm, min_h=20 * mm)
     c.rect(CONTENT_L, y - ca_h, CONTENT_W, ca_h)
     c.setFillColor(colors.HexColor("#f0f0f0"))
     c.rect(CONTENT_L, y - 6 * mm, CONTENT_W, 6 * mm, fill=1, stroke=1)
@@ -477,6 +477,7 @@ def generate_nc_pdf(nc):
     y -= verif_block_h
 
     # Comentarios del Auditor
+    comments_h = _calc_text_height(nc.verification_notes, CONTENT_W - 6 * mm, min_h=18 * mm)
     c.rect(CONTENT_L, y - comments_h, CONTENT_W, comments_h)
     c.setFont(FONT_B, 7)
     c.drawString(CONTENT_L + 2 * mm, y - 4 * mm, "Comentarios del Auditor")
@@ -607,27 +608,7 @@ def generate_pnc_pdf(pnc):
 
     content_start_y = y
 
-    fixed_h = (5 + 6.5 + 5 + 5 + 5 + 5 + 6.5 + 6 + 12) * mm
-    flex_base = {
-        "desc_h": 25 * mm,
-        "rca_h": 25 * mm,
-        "ca_h": 25 * mm,
-        "notes_h": 16 * mm,
-        "comments_h": 22 * mm,
-        "sys_h": 40 * mm,
-    }
-    available_h = content_start_y - MARGIN_B
-    flex_base_total = sum(flex_base.values())
-    scale = 1.0
-    if flex_base_total > 0 and available_h > fixed_h:
-        scale = max((available_h - fixed_h) / flex_base_total, 1.0)
-
-    desc_h = flex_base["desc_h"] * scale
-    rca_h = flex_base["rca_h"] * scale
-    ca_h = flex_base["ca_h"] * scale
-    notes_h = flex_base["notes_h"] * scale
-    comments_h = flex_base["comments_h"] * scale
-    sys_h = flex_base["sys_h"] * scale
+    sys_h = 40 * mm
 
     sections = {}
 
@@ -710,6 +691,7 @@ def generate_pnc_pdf(pnc):
     y -= row_h
 
     # Descripción del No Cumplimiento
+    desc_h = _calc_text_height(pnc.description, CONTENT_W - 6 * mm, min_h=20 * mm)
     c.rect(CONTENT_L, y - desc_h, CONTENT_W, desc_h)
     c.setFont(FONT_B, 7)
     c.drawString(CONTENT_L + 2 * mm, y - 4 * mm, "Descripción del No Cumplimiento:")
@@ -725,6 +707,8 @@ def generate_pnc_pdf(pnc):
     s2_top = y
 
     # Análisis de Causa Raíz
+    rca_text = _safe(pnc.root_cause_analysis, "") if hasattr(pnc, 'root_cause_analysis') else ""
+    rca_h = _calc_text_height(rca_text, CONTENT_W - 6 * mm, min_h=20 * mm)
     c.rect(CONTENT_L, y - rca_h, CONTENT_W, rca_h)
     c.setFillColor(colors.HexColor("#f0f0f0"))
     c.rect(CONTENT_L, y - 6 * mm, CONTENT_W, 6 * mm, fill=1, stroke=1)
@@ -732,11 +716,12 @@ def generate_pnc_pdf(pnc):
     c.setFont(FONT_B, 7)
     c.drawString(CONTENT_L + 2 * mm, y - 4 * mm,
                  "Análisis de la Causa Raíz (¿Qué falló en el sistema para permitir que ocurra este PNC?)")
-    rca_text = _safe(pnc.root_cause_analysis, "") if hasattr(pnc, 'root_cause_analysis') else ""
     _draw_multiline(c, CONTENT_L + 3 * mm, y - 10 * mm, rca_text, CONTENT_W - 6 * mm)
     y -= rca_h
 
     # Corrección y Acción Correctiva
+    ca_text = _safe(pnc.corrective_action, "") if hasattr(pnc, 'corrective_action') else ""
+    ca_h = _calc_text_height(ca_text, CONTENT_W - 6 * mm, min_h=20 * mm)
     c.rect(CONTENT_L, y - ca_h, CONTENT_W, ca_h)
     c.setFillColor(colors.HexColor("#f0f0f0"))
     c.rect(CONTENT_L, y - 6 * mm, CONTENT_W, 6 * mm, fill=1, stroke=1)
@@ -744,7 +729,6 @@ def generate_pnc_pdf(pnc):
     c.setFont(FONT_B, 7)
     c.drawString(CONTENT_L + 2 * mm, y - 4 * mm,
                  "Corrección y Acción Correctiva (Que se hizo para resolver este problema y prevenir la recurrencia)")
-    ca_text = _safe(pnc.corrective_action, "") if hasattr(pnc, 'corrective_action') else ""
     _draw_multiline(c, CONTENT_L + 3 * mm, y - 10 * mm, ca_text, CONTENT_W - 6 * mm)
     y -= ca_h
 
@@ -782,6 +766,7 @@ def generate_pnc_pdf(pnc):
     y -= data_h
 
     # Notas sobre Disposición
+    notes_h = _calc_text_height(pnc.disposition_notes, CONTENT_W - 6 * mm, min_h=14 * mm)
     c.rect(CONTENT_L, y - notes_h, CONTENT_W, notes_h)
     c.setFont(FONT_B, 7)
     c.drawString(CONTENT_L + 2 * mm, y - 4 * mm, "Notas sobre Disposición")
@@ -861,10 +846,11 @@ def generate_pnc_pdf(pnc):
     y -= verif_block_h
 
     # Comentarios del Auditor
+    v_notes = _safe(pnc.verification_notes, "") if hasattr(pnc, 'verification_notes') else ""
+    comments_h = _calc_text_height(v_notes, CONTENT_W - 6 * mm, min_h=18 * mm)
     c.rect(CONTENT_L, y - comments_h, CONTENT_W, comments_h)
     c.setFont(FONT_B, 7)
     c.drawString(CONTENT_L + 2 * mm, y - 4 * mm, "Comentarios del Auditor")
-    v_notes = _safe(pnc.verification_notes, "") if hasattr(pnc, 'verification_notes') else ""
     _draw_multiline(c, CONTENT_L + 3 * mm, y - 8 * mm, v_notes, CONTENT_W - 6 * mm, max_lines=5)
     y -= comments_h
 
@@ -968,6 +954,504 @@ def generate_pnc_pdf(pnc):
     # Borde exterior
     c.setLineWidth(1)
     c.rect(MARGIN_L, s4_bot, PAGE_W - MARGIN_L - MARGIN_R, s1_top - s4_bot)
+
+    c.save()
+    buffer.seek(0)
+    return buffer
+
+
+def generate_interaction_pdf(interaction):
+    """Genera PDF formato R-07-02 para una Interacción con Cliente."""
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=A4)
+    c.setTitle(f"R-07-02_{interaction.code}")
+
+    y_top = PAGE_H - MARGIN_T
+    h = 18 * mm
+    y_bot = y_top - h
+
+    c.setStrokeColor(colors.black)
+    c.setLineWidth(1)
+    c.rect(MARGIN_L, y_bot, PAGE_W - MARGIN_L - MARGIN_R, h)
+
+    col2_x = MARGIN_L + 38 * mm
+    c.setLineWidth(0.5)
+    c.line(col2_x, y_bot, col2_x, y_top)
+
+    logo = _get_logo_path()
+    if logo:
+        try:
+            c.drawImage(
+                logo,
+                MARGIN_L + 2 * mm,
+                y_bot + 2 * mm,
+                width=34 * mm,
+                height=14 * mm,
+                preserveAspectRatio=True,
+                mask="auto",
+            )
+        except Exception:
+            c.setFont(FONT_B, 14)
+            c.drawString(MARGIN_L + 5 * mm, y_bot + 7 * mm, "CEIBO")
+
+    c.setFont(FONT, 7)
+    c.drawString(col2_x + 3 * mm, y_top - 5 * mm, "Registro: Comunicaciones con Clientes")
+    c.drawString(col2_x + 3 * mm, y_top - 9 * mm, "Código: R-07-02")
+    c.drawString(col2_x + 3 * mm, y_top - 13 * mm, "Versión: Rev.02")
+
+    rx = PAGE_W - MARGIN_R - 55 * mm
+    c.drawString(rx, y_top - 5 * mm, "Responsable: Gerente de Ventas")
+    c.drawString(rx, y_top - 9 * mm, "Fecha de Aprobación: 22/05/2024")
+    c.drawString(rx, y_top - 13 * mm, "Página: 1 de 1")
+
+    y = y_bot - 4 * mm
+
+    full_w = PAGE_W - MARGIN_L - MARGIN_R
+    left = MARGIN_L
+    row_h = 6 * mm
+    section_h = 7 * mm
+    text_block_h = 18 * mm
+
+    c.setFillColor(colors.HexColor("#f0f0f0"))
+    c.rect(left, y - section_h, full_w, section_h, fill=1, stroke=1)
+    c.setFillColor(colors.black)
+    c.setFont(FONT_B, 9)
+    c.drawCentredString(left + full_w * 0.45, y - 5 * mm, "Información de la Comunicación")
+    c.drawString(left + full_w * 0.85, y - 5 * mm, f"Nº {_safe(interaction.code)}")
+    y -= section_h
+
+    c.rect(left, y - row_h, full_w, row_h)
+    c.line(left + 35 * mm, y, left + 35 * mm, y - row_h)
+    c.setFont(FONT_B, 8)
+    c.drawString(left + 3 * mm, y - row_h + 2 * mm, "Medio")
+    c.setFont(FONT, 8)
+    c.drawString(left + 37 * mm, y - row_h + 2 * mm, interaction.get_channel_display() if interaction.channel else "-")
+    y -= row_h
+
+    c.rect(left, y - row_h, full_w, row_h)
+    c.line(left + 35 * mm, y, left + 35 * mm, y - row_h)
+    c.setFont(FONT_B, 8)
+    c.drawString(left + 3 * mm, y - row_h + 2 * mm, "Representante")
+    c.setFont(FONT, 8)
+    c.drawString(left + 37 * mm, y - row_h + 2 * mm, interaction.get_responsible_display() if interaction.responsible else "-")
+    y -= row_h
+
+    c.rect(left, y - row_h, full_w, row_h)
+    c.line(left + 35 * mm, y, left + 35 * mm, y - row_h)
+    c.setFont(FONT_B, 8)
+    c.drawString(left + 3 * mm, y - row_h + 2 * mm, "Fecha y hora")
+    c.setFont(FONT, 8)
+    c.drawString(left + 37 * mm, y - row_h + 2 * mm, _fmt_date(interaction.date))
+    y -= row_h
+
+    c.setFillColor(colors.HexColor("#f0f0f0"))
+    c.rect(left, y - section_h, full_w, section_h, fill=1, stroke=1)
+    c.setFillColor(colors.black)
+    c.setFont(FONT_B, 9)
+    c.drawCentredString(left + full_w / 2, y - 5 * mm, "Información del Cliente")
+    y -= section_h
+
+    customer_name = interaction.get_customer_display()
+    customer_type = ""
+    customer_address = ""
+    customer_phone = ""
+
+    if interaction.customer:
+        customer_type = interaction.customer.get_stakeholder_type_display()
+        customer_address = getattr(interaction.customer, "address", "") or ""
+        customer_phone = getattr(interaction.customer, "phone", "") or ""
+
+    client_fields = [
+        ("Empresa", customer_name),
+        ("Tipo Empresa", customer_type),
+        ("Dirección", customer_address),
+        ("Teléfono", customer_phone),
+        ("Contacto", _safe(interaction.contact_person)),
+    ]
+
+    for label, value in client_fields:
+        c.rect(left, y - row_h, full_w, row_h)
+        c.line(left + 35 * mm, y, left + 35 * mm, y - row_h)
+        c.setFont(FONT_B, 8)
+        c.drawString(left + 3 * mm, y - row_h + 2 * mm, label)
+        c.setFont(FONT, 8)
+        c.drawString(left + 37 * mm, y - row_h + 2 * mm, _safe(value)[:60])
+        y -= row_h
+
+    c.setFillColor(colors.HexColor("#f0f0f0"))
+    c.rect(left, y - section_h, full_w, section_h, fill=1, stroke=1)
+    c.setFillColor(colors.black)
+    c.setFont(FONT_B, 9)
+    c.drawCentredString(left + full_w / 2, y - 5 * mm, "Objetivo de la Comunicación")
+    y -= section_h
+
+    c.rect(left, y - text_block_h, full_w, text_block_h)
+    _draw_multiline(c, left + 3 * mm, y - 4 * mm, interaction.communication_objective, full_w - 6 * mm)
+    y -= text_block_h
+
+    c.setFillColor(colors.HexColor("#f0f0f0"))
+    c.rect(left, y - section_h, full_w, section_h, fill=1, stroke=1)
+    c.setFillColor(colors.black)
+    c.setFont(FONT_B, 9)
+    c.drawCentredString(left + full_w / 2, y - 5 * mm, "Propuestas Realizadas")
+    y -= section_h
+
+    c.rect(left, y - text_block_h, full_w, text_block_h)
+    _draw_multiline(c, left + 3 * mm, y - 4 * mm, interaction.proposals, full_w - 6 * mm)
+    y -= text_block_h
+
+    c.rect(left, y - row_h, full_w, row_h)
+    c.line(left + 35 * mm, y, left + 35 * mm, y - row_h)
+    c.setFont(FONT_B, 8)
+    c.drawString(left + 3 * mm, y - row_h + 2 * mm, "Fecha y Hora")
+    c.setFont(FONT, 8)
+    c.drawString(left + 37 * mm, y - row_h + 2 * mm, _fmt_date(interaction.date))
+    y -= row_h
+
+    c.setFillColor(colors.HexColor("#f0f0f0"))
+    c.rect(left, y - section_h, full_w, section_h, fill=1, stroke=1)
+    c.setFillColor(colors.black)
+    c.setFont(FONT_B, 9)
+    c.drawCentredString(left + full_w / 2, y - 5 * mm, "Objeciones del Cliente")
+    y -= section_h
+
+    c.rect(left, y - text_block_h, full_w, text_block_h)
+    _draw_multiline(c, left + 3 * mm, y - 4 * mm, interaction.client_objections, full_w - 6 * mm)
+    y -= text_block_h
+
+    c.setFillColor(colors.HexColor("#f0f0f0"))
+    c.rect(left, y - section_h, full_w, section_h, fill=1, stroke=1)
+    c.setFillColor(colors.black)
+    c.setFont(FONT_B, 9)
+    c.drawCentredString(left + full_w / 2, y - 5 * mm, "Tareas a Realizar")
+    y -= section_h
+
+    c.rect(left, y - text_block_h, full_w, text_block_h)
+    _draw_multiline(c, left + 3 * mm, y - 4 * mm, interaction.tasks_to_do, full_w - 6 * mm)
+    y -= text_block_h
+
+    c.setFillColor(colors.HexColor("#f0f0f0"))
+    c.rect(left, y - section_h, full_w, section_h, fill=1, stroke=1)
+    c.setFillColor(colors.black)
+    c.setFont(FONT_B, 9)
+    c.drawCentredString(left + full_w / 2, y - 5 * mm, "Próxima Comunicación")
+    y -= section_h
+
+    c.rect(left, y - row_h, full_w, row_h)
+    c.line(left + 35 * mm, y, left + 35 * mm, y - row_h)
+    c.setFont(FONT_B, 8)
+    c.drawString(left + 3 * mm, y - row_h + 2 * mm, "Fecha y Hora")
+    c.setFont(FONT, 8)
+    next_date = ""
+    if interaction.next_communication_date:
+        next_date = interaction.next_communication_date.strftime("%d/%m/%Y %H:%M")
+    c.drawString(left + 37 * mm, y - row_h + 2 * mm, next_date or "-")
+    y -= row_h
+
+    c.rect(left, y - row_h, full_w, row_h)
+    c.line(left + 35 * mm, y, left + 35 * mm, y - row_h)
+    c.setFont(FONT_B, 8)
+    c.drawString(left + 3 * mm, y - row_h + 2 * mm, "Responsable")
+    c.setFont(FONT, 8)
+    c.drawString(left + 37 * mm, y - row_h + 2 * mm, _safe(interaction.next_communication_responsible))
+    y -= row_h
+
+    c.setFillColor(colors.HexColor("#f0f0f0"))
+    c.rect(left, y - section_h, full_w, section_h, fill=1, stroke=1)
+    c.setFillColor(colors.black)
+    c.setFont(FONT_B, 9)
+    c.drawCentredString(left + full_w / 2, y - 5 * mm, "Conclusión Final")
+    y -= section_h
+
+    remaining_h = y - MARGIN_B
+    if remaining_h < 10 * mm:
+        remaining_h = 10 * mm
+    c.rect(left, y - remaining_h, full_w, remaining_h)
+    _draw_multiline(c, left + 3 * mm, y - 4 * mm, interaction.conclusion, full_w - 6 * mm)
+
+    c.save()
+    buffer.seek(0)
+    return buffer
+
+
+def generate_satisfaction_report_pdf(report):
+    """Genera PDF formato R-15-02 para un informe de satisfacción del cliente."""
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=A4)
+    c.setTitle(f"R-15-02_{report.code}")
+
+    def _draw_report_header(page_number=1):
+        y_top = PAGE_H - MARGIN_T
+        h = 18 * mm
+        y_bot = y_top - h
+
+        c.setStrokeColor(colors.black)
+        c.setLineWidth(1)
+        c.rect(MARGIN_L, y_bot, PAGE_W - MARGIN_L - MARGIN_R, h)
+
+        col2_x = MARGIN_L + 38 * mm
+        col3_x = PAGE_W - MARGIN_R - 58 * mm
+        c.setLineWidth(0.5)
+        c.line(col2_x, y_bot, col2_x, y_top)
+        c.line(col3_x, y_bot, col3_x, y_top)
+
+        logo = _get_logo_path()
+        if logo:
+            try:
+                c.drawImage(
+                    logo,
+                    MARGIN_L + 2 * mm,
+                    y_bot + 2 * mm,
+                    width=34 * mm,
+                    height=14 * mm,
+                    preserveAspectRatio=True,
+                    mask="auto",
+                )
+            except Exception:
+                c.setFont(FONT_B, 14)
+                c.drawString(MARGIN_L + 5 * mm, y_bot + 7 * mm, "CEIBO")
+
+        c.setFont(FONT_B, 9)
+        c.drawString(col2_x + 3 * mm, y_top - 6 * mm, "Evaluación de la Satisfacción al Cliente")
+        c.setFont(FONT, 7)
+        c.drawString(col2_x + 3 * mm, y_top - 11 * mm, "Código: R-15-02")
+        c.drawString(col2_x + 3 * mm, y_top - 15 * mm, "Versión: REV.00")
+
+        c.setFont(FONT, 7)
+        c.drawString(col3_x + 3 * mm, y_top - 6 * mm, f"Informe: {_safe(report.code)}")
+        c.drawString(col3_x + 3 * mm, y_top - 11 * mm, f"Fecha: {_fmt_date(report.report_date)}")
+        c.drawString(col3_x + 3 * mm, y_top - 15 * mm, f"Página: {page_number}")
+
+        return y_bot - 4 * mm
+
+    def _new_page(page_number):
+        c.showPage()
+        return _draw_report_header(page_number)
+
+    def _section_title(y, index, title):
+        h = 7 * mm
+        c.setFillColor(colors.HexColor("#f0f0f0"))
+        c.rect(MARGIN_L, y - h, PAGE_W - MARGIN_L - MARGIN_R, h, fill=1, stroke=1)
+        c.setFillColor(colors.black)
+        c.setFont(FONT_B, 9)
+        c.drawString(MARGIN_L + 3 * mm, y - 5 * mm, f"{index}. {title}")
+        return y - h
+
+    def _text_block(y, label, value, min_h=14 * mm):
+        block_h = min_h
+        c.rect(MARGIN_L, y - block_h, PAGE_W - MARGIN_L - MARGIN_R, block_h)
+        c.setFont(FONT_B, 8)
+        c.drawString(MARGIN_L + 2 * mm, y - 4 * mm, label)
+        _draw_multiline(c, MARGIN_L + 3 * mm, y - 8 * mm, _safe(value, ""), PAGE_W - MARGIN_L - MARGIN_R - 6 * mm, max_lines=8)
+        return y - block_h
+
+    page_number = 1
+    y = _draw_report_header(page_number)
+
+    full_w = PAGE_W - MARGIN_L - MARGIN_R
+    row_h = 6 * mm
+
+    y = _section_title(y, 1, "Datos del Informe")
+    if y < MARGIN_B + 60 * mm:
+        page_number += 1
+        y = _new_page(page_number)
+        y = _section_title(y, 1, "Datos del Informe")
+
+    rows = [
+        ("Código", _safe(report.code)),
+        ("Fecha del Informe", _fmt_date(report.report_date)),
+        ("Período", f"{_fmt_date(report.period_start)} a {_fmt_date(report.period_end)}"),
+        ("Período Evaluado", _safe(report.period_label)),
+        ("Total de Registros", str(report.total_interactions)),
+    ]
+    for label, value in rows:
+        c.rect(MARGIN_L, y - row_h, full_w, row_h)
+        c.line(MARGIN_L + 45 * mm, y, MARGIN_L + 45 * mm, y - row_h)
+        c.setFont(FONT_B, 8)
+        c.drawString(MARGIN_L + 2 * mm, y - row_h + 2 * mm, label)
+        c.setFont(FONT, 8)
+        c.drawString(MARGIN_L + 47 * mm, y - row_h + 2 * mm, _safe(value)[:80])
+        y -= row_h
+
+    y = _section_title(y, 2, "Objetivo")
+    y = _text_block(y, "", "Evaluar el nivel de satisfacción del cliente en el período definido, analizando comunicaciones, tendencias, desvíos y oportunidades de mejora para la toma de decisiones del SGC.")
+
+    y = _section_title(y, 3, "Documentos Referenciados")
+    y = _text_block(y, "", "ISO 9001:2015 (9.1.2), Registro R-07-02 Comunicaciones con Clientes, y registros internos del SGC aplicables.")
+
+    y = _section_title(y, 4, "Alcance")
+    y = _text_block(y, "", "Incluye todas las interacciones activas con clientes registradas durante el período evaluado para la organización.")
+
+    if y < MARGIN_B + 70 * mm:
+        page_number += 1
+        y = _new_page(page_number)
+
+    y = _section_title(y, 5, "Resumen")
+    summary_rows = [
+        ("Consultas", report.count_query),
+        ("Reclamos", report.count_claim),
+        ("Sugerencias", report.count_suggestion),
+        ("Felicitaciones", report.count_compliment),
+        ("Postventa", report.count_after_sales),
+        ("Menciones", report.count_mention),
+        ("WhatsApp", report.count_whatsapp),
+        ("Mail", report.count_mail),
+        ("Llamada", report.count_phone),
+        ("Presencial", report.count_in_person),
+        ("Redes Sociales", report.count_social),
+        ("Percepción Positiva", report.count_positive),
+        ("Percepción Neutra", report.count_neutral),
+        ("Percepción Negativa", report.count_negative),
+        ("Impacto Alto", report.count_high_impact),
+        ("Impacto Medio", report.count_medium_impact),
+        ("Impacto Bajo", report.count_low_impact),
+    ]
+    c.rect(MARGIN_L, y - row_h, full_w, row_h)
+    c.line(MARGIN_L + 90 * mm, y, MARGIN_L + 90 * mm, y - row_h)
+    c.setFont(FONT_B, 8)
+    c.drawString(MARGIN_L + 2 * mm, y - row_h + 2 * mm, "Categoría")
+    c.drawString(MARGIN_L + 92 * mm, y - row_h + 2 * mm, "Cantidad")
+    y -= row_h
+    for label, value in summary_rows:
+        if y < MARGIN_B + 15 * mm:
+            page_number += 1
+            y = _new_page(page_number)
+            y = _section_title(y, 5, "Resumen (continuación)")
+        c.rect(MARGIN_L, y - row_h, full_w, row_h)
+        c.line(MARGIN_L + 90 * mm, y, MARGIN_L + 90 * mm, y - row_h)
+        c.setFont(FONT, 8)
+        c.drawString(MARGIN_L + 2 * mm, y - row_h + 2 * mm, str(label))
+        c.drawString(MARGIN_L + 92 * mm, y - row_h + 2 * mm, str(value))
+        y -= row_h
+
+    if y < MARGIN_B + 100 * mm:
+        page_number += 1
+        y = _new_page(page_number)
+
+    y = _section_title(y, 6, "Análisis de las Entradas")
+
+    section6_fields = [
+        ("Estado General", report.general_status),
+        ("Tendencia vs Período Anterior", report.trend_vs_previous),
+        ("Situación General", report.general_situation),
+    ]
+    for label, value in section6_fields:
+        block_h = _calc_text_height(value, full_w - 6 * mm)
+        if y - block_h < MARGIN_B + 8 * mm:
+            page_number += 1
+            y = _new_page(page_number)
+            y = _section_title(y, 6, "Análisis de las Entradas (continuación)")
+        c.rect(MARGIN_L, y - block_h, full_w, block_h)
+        c.setFont(FONT_B, 8)
+        c.drawString(MARGIN_L + 2 * mm, y - 4 * mm, label)
+        _draw_multiline(c, MARGIN_L + 3 * mm, y - 8 * mm, _safe(value, ""), full_w - 6 * mm)
+        y -= block_h
+
+    y = _section_title(y, 7, "Indicadores de Satisfacción")
+    indicators = [
+        ("Índice Global de Satisfacción", f"{report.satisfaction_index}%"),
+        ("% Reclamos sobre Total", f"{report.claim_percentage}%"),
+        ("Tiempo Promedio Resolución", f"{report.avg_resolution_days} días"),
+    ]
+    for label, value in indicators:
+        c.rect(MARGIN_L, y - row_h, full_w, row_h)
+        c.line(MARGIN_L + 70 * mm, y, MARGIN_L + 70 * mm, y - row_h)
+        c.setFont(FONT_B, 8)
+        c.drawString(MARGIN_L + 2 * mm, y - row_h + 2 * mm, label)
+        c.setFont(FONT, 8)
+        c.drawString(MARGIN_L + 72 * mm, y - row_h + 2 * mm, value)
+        y -= row_h
+
+    if y < MARGIN_B + 95 * mm:
+        page_number += 1
+        y = _new_page(page_number)
+
+    y = _section_title(y, 8, "Análisis y Evaluación")
+
+    section8_fields = [
+        ("Tendencias Observadas", report.observed_trends),
+        ("Comparación con Períodos Anteriores", report.comparison_previous),
+        ("Identificación de Desvíos", report.deviations),
+        ("Oportunidades de Mejora", report.improvement_opportunities),
+    ]
+    for label, value in section8_fields:
+        block_h = _calc_text_height(value, full_w - 6 * mm)
+        if y - block_h < MARGIN_B + 8 * mm:
+            page_number += 1
+            y = _new_page(page_number)
+            y = _section_title(y, 8, "Análisis y Evaluación (continuación)")
+        c.rect(MARGIN_L, y - block_h, full_w, block_h)
+        c.setFont(FONT_B, 8)
+        c.drawString(MARGIN_L + 2 * mm, y - 4 * mm, label)
+        _draw_multiline(c, MARGIN_L + 3 * mm, y - 8 * mm, _safe(value, ""), full_w - 6 * mm)
+        y -= block_h
+
+    y = _section_title(y, 9, "Conclusión")
+    y = _text_block(y, "Resultado de Satisfacción", report.get_satisfaction_result_display() if report.satisfaction_result else "-")
+    block_h = _calc_text_height(report.justification, full_w - 6 * mm)
+    if y - block_h < MARGIN_B + 8 * mm:
+        page_number += 1
+        y = _new_page(page_number)
+        y = _section_title(y, 9, "Conclusión (continuación)")
+    c.rect(MARGIN_L, y - block_h, full_w, block_h)
+    c.setFont(FONT_B, 8)
+    c.drawString(MARGIN_L + 2 * mm, y - 4 * mm, "Justificación")
+    _draw_multiline(c, MARGIN_L + 3 * mm, y - 8 * mm, _safe(report.justification, ""), full_w - 6 * mm)
+    y -= block_h
+
+    y = _section_title(y, 10, "Acciones Derivadas")
+    c.rect(MARGIN_L, y - 10 * mm, full_w, 10 * mm)
+    ax = MARGIN_L + 3 * mm
+    ay = y - 7 * mm
+    _draw_checkbox(c, ax, ay, checked=report.action_required == report.ActionRequired.NONE)
+    c.setFont(FONT, 8)
+    c.drawString(ax + 11, ay + 1, "No se requieren acciones")
+    _draw_checkbox(c, ax + 65 * mm, ay, checked=report.action_required == report.ActionRequired.PREVENTIVE)
+    c.drawString(ax + 65 * mm + 11, ay + 1, "Acciones preventivas")
+    _draw_checkbox(c, ax + 120 * mm, ay, checked=report.action_required == report.ActionRequired.CORRECTIVE)
+    c.drawString(ax + 120 * mm + 11, ay + 1, "Acciones correctivas")
+    y -= 10 * mm
+    block_h = _calc_text_height(report.actions_description, full_w - 6 * mm)
+    if y - block_h < MARGIN_B + 8 * mm:
+        page_number += 1
+        y = _new_page(page_number)
+        y = _section_title(y, 10, "Acciones Derivadas (continuación)")
+    c.rect(MARGIN_L, y - block_h, full_w, block_h)
+    c.setFont(FONT_B, 8)
+    c.drawString(MARGIN_L + 2 * mm, y - 4 * mm, "Descripción de Acciones")
+    _draw_multiline(c, MARGIN_L + 3 * mm, y - 8 * mm, _safe(report.actions_description, ""), full_w - 6 * mm)
+    y -= block_h
+
+    if y < MARGIN_B + 55 * mm:
+        page_number += 1
+        y = _new_page(page_number)
+
+    y = _section_title(y, 11, "Aprobación")
+    approved_name = _user_name(report.approved_by)
+    c.rect(MARGIN_L, y - 16 * mm, full_w, 16 * mm)
+    c.line(MARGIN_L + 55 * mm, y, MARGIN_L + 55 * mm, y - 16 * mm)
+    c.setFont(FONT_B, 8)
+    c.drawString(MARGIN_L + 2 * mm, y - 6 * mm, "Aprobado por")
+    c.setFont(FONT, 8)
+    c.drawString(MARGIN_L + 57 * mm, y - 6 * mm, approved_name)
+    c.setFont(FONT_B, 8)
+    c.drawString(MARGIN_L + 2 * mm, y - 12 * mm, "Fecha de aprobación")
+    c.setFont(FONT, 8)
+    c.drawString(MARGIN_L + 57 * mm, y - 12 * mm, _fmt_date(report.approval_date))
+    c.line(MARGIN_L + 120 * mm, y - 13 * mm, MARGIN_L + full_w - 5 * mm, y - 13 * mm)
+    c.setFont(FONT, 7)
+    c.drawString(MARGIN_L + 135 * mm, y - 15.5 * mm, "Firma")
+    y -= 16 * mm
+
+    y = _section_title(y, 12, "Observaciones")
+    block_h = _calc_text_height(report.observations, full_w - 6 * mm)
+    if y - block_h < MARGIN_B + 8 * mm:
+        page_number += 1
+        y = _new_page(page_number)
+        y = _section_title(y, 12, "Observaciones (continuación)")
+    c.rect(MARGIN_L, y - block_h, full_w, block_h)
+    _draw_multiline(c, MARGIN_L + 3 * mm, y - 4 * mm, _safe(report.observations, ""), full_w - 6 * mm, max_lines=12)
+    y -= block_h
 
     c.save()
     buffer.seek(0)

@@ -113,3 +113,6 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Allow Railway host
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"])
+
+# OpenAI API Key para análisis IA
+OPENAI_API_KEY = env("OPENAI_API_KEY", default=None)

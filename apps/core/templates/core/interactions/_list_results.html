@@ -1,0 +1,59 @@
+{% if interactions %}
+<div class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-900/60">
+    <table class="min-w-full divide-y divide-slate-200 bg-white dark:divide-white/10 dark:bg-transparent">
+        <thead class="bg-slate-100 dark:bg-slate-800/70">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Código</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Fecha</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Cliente</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Tipo</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Canal</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Percepción</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Estado</th>
+                <th class="px-6 py-3 text-left text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300">Acciones</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200 bg-white dark:divide-white/10 dark:bg-transparent">
+            {% for interaction in interactions %}
+            <tr class="bg-white transition-colors hover:bg-slate-50 dark:bg-transparent dark:hover:bg-white/5">
+                <td class="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-slate-200">{{ interaction.code }}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ interaction.date|date:"d/m/Y" }}</td>
+                <td class="px-6 py-4 text-sm text-slate-900 dark:text-slate-200">{{ interaction.get_customer_display }}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ interaction.get_interaction_type_display }}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ interaction.get_channel_display }}</td>
+                <td class="px-6 py-4 text-sm">
+                    {% if interaction.perception == 'POSITIVE' %}
+                    <span class="badge-success">{{ interaction.get_perception_display }}</span>
+                    {% elif interaction.perception == 'NEUTRAL' %}
+                    <span class="badge-neutral">{{ interaction.get_perception_display }}</span>
+                    {% else %}
+                    <span class="badge-danger">{{ interaction.get_perception_display }}</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 text-sm">
+                    {% if interaction.status == 'OPEN' %}
+                    <span class="badge-info">{{ interaction.get_status_display }}</span>
+                    {% elif interaction.status == 'FOLLOW_UP' %}
+                    <span class="badge-warning">{{ interaction.get_status_display }}</span>
+                    {% else %}
+                    <span class="badge-success">{{ interaction.get_status_display }}</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 text-sm">
+                    <div class="flex gap-2">
+                        <a href="{% url 'core:interaction_detail' interaction.pk %}" class="btn btn-outline btn-sm">Ver</a>
+                        {% if can_edit %}
+                        <a href="{% url 'core:interaction_edit' interaction.pk %}" class="btn btn-warning btn-sm">Editar</a>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-800/30 px-6 py-12 text-center">
+    <p class="text-slate-600 dark:text-slate-400">📭 No se encontraron interacciones con clientes.</p>
+</div>
+{% endif %}

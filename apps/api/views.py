@@ -6,6 +6,7 @@ from rest_framework.response import Response
 
 from apps.core.models import (
     CAPAAction,
+    CustomerInteraction,
     NoConformity,
     NonconformingOutput,
     Organization,
@@ -15,6 +16,8 @@ from apps.core.services import log_audit_event
 
 from .serializers import (
     CAPACreateSerializer,
+    InteractionCreateSerializer,
+    InteractionDetailSerializer,
     NoConformityCreateSerializer,
     NoConformityDetailSerializer,
     PNCCreateSerializer,
@@ -146,6 +149,48 @@ class PNCListView(generics.ListAPIView):
         if severity:
             queryset = queryset.filter(severity=severity)
         return queryset.order_by("-detected_at")
+
+
+class InteractionCreateView(generics.CreateAPIView):
+    """POST /api/interaction/create/ — Crear Interacción desde bot de Telegram."""
+
+    serializer_class = InteractionCreateSerializer
+
+    def perform_create(self, serializer):
+        interaction = serializer.save()
+        log_audit_event(
+            actor=self.request.user,
+            action="core.interaction.created",
+            instance=interaction,
+            metadata={"source": "telegram_bot", "code": interaction.code},
+        )
+
+
+class InteractionListView(generics.ListAPIView):
+    """GET /api/interaction/ — Listar Interacciones."""
+
+    serializer_class = InteractionDetailSerializer
+
+    def get_queryset(self):
+        org = Organization.objects.filter(is_active=True).first()
+        qs = CustomerInteraction.objects.filter(organization=org, is_active=True)
+        interaction_type = self.request.query_params.get("interaction_type")
+        if interaction_type:
+            qs = qs.filter(interaction_type=interaction_type)
+        perception = self.request.query_params.get("perception")
+        if perception:
+            qs = qs.filter(perception=perception)
+        return qs.order_by("-date")
+
+
+class InteractionDetailView(generics.RetrieveAPIView):
+    """GET /api/interaction/<id>/ — Ver detalle de Interacción."""
+
+    serializer_class = InteractionDetailSerializer
+
+    def get_queryset(self):
+        org = Organization.objects.filter(is_active=True).first()
+        return CustomerInteraction.objects.filter(organization=org)
 
 
 @api_view(["GET"])

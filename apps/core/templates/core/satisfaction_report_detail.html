@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle Informe de Satisfacción{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+    <a href="{% url 'core:satisfaction_report_list' %}" class="btn btn-secondary btn-sm">← Volver a Informes</a>
+    <div class="flex flex-wrap gap-2">
+        <a href="{% url 'core:satisfaction_report_pdf' report.pk %}" class="btn btn-info">📄 Descargar PDF</a>
+        <a href="{% url 'core:satisfaction_report_edit' report.pk %}" class="btn btn-primary">✏️ Editar</a>
+        <form method="post" action="{% url 'core:satisfaction_report_generate_ai' report.pk %}" style="display:inline;" id="ai-generate-form">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success" id="ai-generate-button">
+                <span id="ai-button-default">🤖 {% if report.ai_generated %}Regenerar IA{% else %}Generar con IA{% endif %}</span>
+                <span id="ai-button-loading" class="hidden inline-flex items-center gap-2">
+                    <svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                    </svg>
+                    Generando...
+                </span>
+            </button>
+        </form>
+    </div>
+</div>
+
+<div id="ai-loader-overlay" class="hidden fixed inset-0 z-50 bg-black/30 backdrop-blur-[1px] flex items-center justify-center p-4">
+    <div class="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+        <div class="inline-flex items-center gap-3 text-sm text-slate-800 dark:text-slate-100">
+            <svg class="h-5 w-5 animate-spin text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+            </svg>
+            <div class="flex flex-col">
+                <span id="ai-loader-message">Generando análisis con IA...</span>
+                <span id="ai-loader-elapsed" class="text-xs text-slate-500 dark:text-slate-400">Tiempo transcurrido: 0s</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+    <h1 class="mb-2 text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">{{ report.code }}</h1>
+    <p class="mb-6 text-sm text-slate-500 dark:text-slate-400">Período: {{ report.period_label }} ({{ report.period_start|date:"d/m/Y" }} - {{ report.period_end|date:"d/m/Y" }})</p>
+
+    <div class="grid grid-cols-1 gap-5 md:grid-cols-3 mb-8">
+        <div><strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">Fecha del Informe</strong><span class="text-sm text-slate-900 dark:text-slate-100">{{ report.report_date|date:"d/m/Y" }}</span></div>
+        <div><strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">Total de Registros</strong><span class="text-sm text-slate-900 dark:text-slate-100">{{ report.total_interactions }}</span></div>
+        <div><strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">Índice de Satisfacción</strong><span class="text-sm text-slate-900 dark:text-slate-100">{{ report.satisfaction_index }}%</span></div>
+        <div><strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">% Reclamos</strong><span class="text-sm text-slate-900 dark:text-slate-100">{{ report.claim_percentage }}%</span></div>
+        <div><strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">Promedio Resolución</strong><span class="text-sm text-slate-900 dark:text-slate-100">{{ report.avg_resolution_days }} días</span></div>
+        <div><strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">Resultado</strong><span class="text-sm text-slate-900 dark:text-slate-100">{{ report.get_satisfaction_result_display|default:"-" }}</span></div>
+    </div>
+
+    <div class="mb-8 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+            <thead class="bg-slate-50 dark:bg-slate-800">
+                <tr>
+                    <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Métrica</th>
+                    <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Valor</th>
+                    <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Métrica</th>
+                    <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Valor</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
+                <tr><td class="px-4 py-2">Consultas</td><td class="px-4 py-2">{{ report.count_query }}</td><td class="px-4 py-2">Percepción Positiva</td><td class="px-4 py-2">{{ report.count_positive }}</td></tr>
+                <tr><td class="px-4 py-2">Reclamos</td><td class="px-4 py-2">{{ report.count_claim }}</td><td class="px-4 py-2">Percepción Neutra</td><td class="px-4 py-2">{{ report.count_neutral }}</td></tr>
+                <tr><td class="px-4 py-2">Sugerencias</td><td class="px-4 py-2">{{ report.count_suggestion }}</td><td class="px-4 py-2">Percepción Negativa</td><td class="px-4 py-2">{{ report.count_negative }}</td></tr>
+                <tr><td class="px-4 py-2">Felicitaciones</td><td class="px-4 py-2">{{ report.count_compliment }}</td><td class="px-4 py-2">Impacto Alto</td><td class="px-4 py-2">{{ report.count_high_impact }}</td></tr>
+                <tr><td class="px-4 py-2">Postventa</td><td class="px-4 py-2">{{ report.count_after_sales }}</td><td class="px-4 py-2">Impacto Medio</td><td class="px-4 py-2">{{ report.count_medium_impact }}</td></tr>
+                <tr><td class="px-4 py-2">Menciones</td><td class="px-4 py-2">{{ report.count_mention }}</td><td class="px-4 py-2">Impacto Bajo</td><td class="px-4 py-2">{{ report.count_low_impact }}</td></tr>
+                <tr><td class="px-4 py-2">WhatsApp</td><td class="px-4 py-2">{{ report.count_whatsapp }}</td><td class="px-4 py-2">Mail</td><td class="px-4 py-2">{{ report.count_mail }}</td></tr>
+                <tr><td class="px-4 py-2">Llamada</td><td class="px-4 py-2">{{ report.count_phone }}</td><td class="px-4 py-2">Presencial / Redes</td><td class="px-4 py-2">{{ report.count_in_person }} / {{ report.count_social }}</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+        <div><strong>Estado General</strong><p class="mt-1">{{ report.general_status|default:"-"|linebreaksbr }}</p></div>
+        <div><strong>Tendencia vs Período Anterior</strong><p class="mt-1">{{ report.trend_vs_previous|default:"-"|linebreaksbr }}</p></div>
+        <div><strong>Situación General</strong><p class="mt-1">{{ report.general_situation|default:"-"|linebreaksbr }}</p></div>
+        <div><strong>Tendencias Observadas</strong><p class="mt-1">{{ report.observed_trends|default:"-"|linebreaksbr }}</p></div>
+        <div><strong>Comparación con Períodos Anteriores</strong><p class="mt-1">{{ report.comparison_previous|default:"-"|linebreaksbr }}</p></div>
+        <div><strong>Identificación de Desvíos</strong><p class="mt-1">{{ report.deviations|default:"-"|linebreaksbr }}</p></div>
+        <div><strong>Oportunidades de Mejora</strong><p class="mt-1">{{ report.improvement_opportunities|default:"-"|linebreaksbr }}</p></div>
+        <div><strong>Justificación</strong><p class="mt-1">{{ report.justification|default:"-"|linebreaksbr }}</p></div>
+        <div><strong>Acciones Requeridas</strong><p class="mt-1">{{ report.get_action_required_display|default:"-" }}</p></div>
+        <div><strong>Descripción de Acciones</strong><p class="mt-1">{{ report.actions_description|default:"-"|linebreaksbr }}</p></div>
+        <div><strong>Aprobado por</strong><p class="mt-1">{{ report.approved_by|default:"-" }}</p></div>
+        <div><strong>Fecha de Aprobación</strong><p class="mt-1">{{ report.approval_date|date:"d/m/Y"|default:"-" }}</p></div>
+        <div class="md:col-span-2"><strong>Observaciones</strong><p class="mt-1">{{ report.observations|default:"-"|linebreaksbr }}</p></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("ai-generate-form");
+    const button = document.getElementById("ai-generate-button");
+    const defaultLabel = document.getElementById("ai-button-default");
+    const loadingLabel = document.getElementById("ai-button-loading");
+    const overlay = document.getElementById("ai-loader-overlay");
+    const loaderMessage = document.getElementById("ai-loader-message");
+    const loaderElapsed = document.getElementById("ai-loader-elapsed");
+
+    if (!form || !button || !defaultLabel || !loadingLabel || !overlay || !loaderMessage || !loaderElapsed) {
+        return;
+    }
+
+    form.addEventListener("submit", function () {
+        button.disabled = true;
+        button.classList.add("opacity-70", "cursor-not-allowed");
+        defaultLabel.classList.add("hidden");
+        loadingLabel.classList.remove("hidden");
+        overlay.classList.remove("hidden");
+
+        const progressMessages = [
+            "Generando análisis con IA...",
+            "Analizando métricas del período...",
+            "Evaluando tendencias y desvíos...",
+            "Redactando conclusiones y acciones..."
+        ];
+        let messageIndex = 0;
+        let elapsedSeconds = 0;
+
+        loaderMessage.textContent = progressMessages[0];
+        loaderElapsed.textContent = "Tiempo transcurrido: 0s";
+
+        setInterval(function () {
+            messageIndex = (messageIndex + 1) % progressMessages.length;
+            loaderMessage.textContent = progressMessages[messageIndex];
+        }, 2200);
+
+        setInterval(function () {
+            elapsedSeconds += 1;
+            loaderElapsed.textContent = "Tiempo transcurrido: " + elapsedSeconds + "s";
+        }, 1000);
+    });
+});
+</script>
+{% endblock %}

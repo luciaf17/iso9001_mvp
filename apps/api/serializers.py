@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 from apps.core.models import (
     CAPAAction,
+    CustomerInteraction,
     NoConformity,
     NonconformingOutput,
     Organization,
@@ -182,3 +183,80 @@ class PNCDetailSerializer(serializers.ModelSerializer):
             name = f"{obj.responsible.first_name} {obj.responsible.last_name}".strip()
             return name or obj.responsible.username
         return ""
+
+
+class InteractionCreateSerializer(serializers.ModelSerializer):
+    """Serializer para CREAR una Interacción con Cliente desde el bot de Telegram."""
+
+    class Meta:
+        model = CustomerInteraction
+        fields = [
+            "date",
+            "customer_name",
+            "project",
+            "channel",
+            "interaction_type",
+            "topic",
+            "perception",
+            "impact",
+            "requires_action",
+            "responsible",
+            "observations",
+            "source",
+            "contact_person",
+            "communication_objective",
+        ]
+
+    def create(self, validated_data):
+        org = Organization.objects.filter(is_active=True).first()
+        validated_data["organization"] = org
+        return super().create(validated_data)
+
+    def to_representation(self, instance):
+        """Incluir id y code en la respuesta."""
+        data = super().to_representation(instance)
+        data["id"] = instance.id
+        data["code"] = instance.code
+        return data
+
+
+class InteractionDetailSerializer(serializers.ModelSerializer):
+    """Serializer para leer detalle de Interacción."""
+
+    interaction_type_display = serializers.CharField(source="get_interaction_type_display", read_only=True)
+    perception_display = serializers.CharField(source="get_perception_display", read_only=True)
+    channel_display = serializers.CharField(source="get_channel_display", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    customer_display = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CustomerInteraction
+        fields = [
+            "id",
+            "code",
+            "date",
+            "customer_name",
+            "project",
+            "channel",
+            "channel_display",
+            "interaction_type",
+            "interaction_type_display",
+            "topic",
+            "perception",
+            "perception_display",
+            "impact",
+            "requires_action",
+            "responsible",
+            "status",
+            "status_display",
+            "result",
+            "observations",
+            "source",
+            "contact_person",
+            "communication_objective",
+            "customer_display",
+            "created_at",
+        ]
+
+    def get_customer_display(self, obj):
+        return obj.get_customer_display()

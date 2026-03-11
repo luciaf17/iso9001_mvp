@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Interacciones con Clientes{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100">📞 Interacciones con Clientes</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Organización: {{ organization.name }}</p>
+        </div>
+        {% if can_edit %}
+        <a class="btn btn-success" href="{% url 'core:interaction_new' %}">+ Nueva Interacción</a>
+        {% endif %}
+    </div>
+
+    <form method="get" class="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl p-6 shadow-sm" hx-get="{% url 'core:interaction_list' %}" hx-target="#results" hx-push-url="true" hx-trigger="change delay:300ms, submit">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+            <div>
+                <label for="interaction_type" class="block text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300 mb-2">Tipo</label>
+                <select id="interaction_type" name="interaction_type" class="w-full rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-900/50 px-3 py-2 text-slate-900 dark:text-slate-100">
+                    <option value="">Todos</option>
+                    {% for value, label in interaction_types %}
+                    <option value="{{ value }}" {% if selected_interaction_type == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="perception" class="block text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300 mb-2">Percepción</label>
+                <select id="perception" name="perception" class="w-full rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-900/50 px-3 py-2 text-slate-900 dark:text-slate-100">
+                    <option value="">Todas</option>
+                    {% for value, label in perceptions %}
+                    <option value="{{ value }}" {% if selected_perception == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="status" class="block text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300 mb-2">Estado</label>
+                <select id="status" name="status" class="w-full rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-900/50 px-3 py-2 text-slate-900 dark:text-slate-100">
+                    <option value="">Todos</option>
+                    {% for value, label in statuses %}
+                    <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="channel" class="block text-xs uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300 mb-2">Canal</label>
+                <select id="channel" name="channel" class="w-full rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-900/50 px-3 py-2 text-slate-900 dark:text-slate-100">
+                    <option value="">Todos</option>
+                    {% for value, label in channels %}
+                    <option value="{{ value }}" {% if selected_channel == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="flex justify-end gap-3 mt-4 pt-4 border-t border-slate-200 dark:border-white/10">
+            <a class="btn btn-secondary btn-sm" href="{% url 'core:interaction_list' %}">Limpiar</a>
+        </div>
+    </form>
+
+    <div id="results">
+        {% include "core/interactions/_list_results.html" %}
+    </div>
+</div>
+{% endblock %}

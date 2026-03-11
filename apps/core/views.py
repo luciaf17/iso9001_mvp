@@ -7,9 +7,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LogoutView
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Count, Q
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render, get_object_or_404
 
+from apps.core.ai_services import generate_satisfaction_analysis
+from apps.core.pdf_generator import generate_interaction_pdf, generate_satisfaction_report_pdf
 from apps.core.forms import (
 	OrganizationContextForm,
 	StakeholderForm,
@@ -27,6 +29,8 @@ from apps.core.forms import (
 	NonconformingOutputForm,
 	SupplierForm,
 	SupplierEvaluationForm,
+	CustomerInteractionForm,
+	SatisfactionReportForm,
 )
 from apps.core.models import (
 	Organization,
@@ -48,6 +52,8 @@ from apps.core.models import (
 	NonconformingOutput,
 	Supplier,
 	SupplierEvaluation,
+	CustomerInteraction,
+	SatisfactionReport,
 )
 from apps.core.services import log_audit_event
 from apps.core.utils import (
@@ -223,6 +229,28 @@ def _configure_risk_form(form, organization):
 	form.fields["evidence_document"].queryset = Document.objects.filter(is_active=True)
 
 
+def _configure_interaction_form(form, organization):
+	"""Configura querysets del form de interacción con clientes."""
+	form.fields["customer"].queryset = Stakeholder.objects.filter(
+		organization=organization,
+		is_active=True,
+		stakeholder_type=Stakeholder.StakeholderType.CUSTOMER,
+	).order_by("name")
+	form.fields["linked_nc"].queryset = NoConformity.objects.filter(
+		organization=organization,
+		is_active=True,
+	).order_by("-detected_at")
+	form.fields["site"].queryset = Site.objects.filter(
+		organization=organization,
+		is_active=True,
+	)
+
+
+def _configure_satisfaction_form(form):
+	User = get_user_model()
+	form.fields["approved_by"].queryset = User.objects.filter(is_active=True).order_by("username")
+
+
 @login_required
 def stakeholder_list(request):
 	organization = _get_current_organization()
@@ -396,6 +424,349 @@ def stakeholder_edit(request, pk):
 			"is_edit": True,
 		},
 	)
+
+
+@login_required
+def interaction_list(request):
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	interactions = CustomerInteraction.objects.filter(
+		organization=organization,
+		is_active=True,
+	).select_related("customer", "linked_nc", "site")
+
+	interaction_type = request.GET.get("interaction_type", "")
+	perception = request.GET.get("perception", "")
+	status = request.GET.get("status", "")
+	channel = request.GET.get("channel", "")
+
+	if interaction_type:
+		interactions = interactions.filter(interaction_type=interaction_type)
+	if perception:
+		interactions = interactions.filter(perception=perception)
+	if status:
+		interactions = interactions.filter(status=status)
+	if channel:
+		interactions = interactions.filter(channel=channel)
+
+	context = {
+		"organization": organization,
+		"interactions": interactions,
+		"can_edit": can_edit_nc(request.user),
+		"interaction_types": CustomerInteraction.InteractionType.choices,
+		"perceptions": CustomerInteraction.Perception.choices,
+		"statuses": CustomerInteraction.Status.choices,
+		"channels": CustomerInteraction.Channel.choices,
+		"selected_interaction_type": interaction_type,
+		"selected_perception": perception,
+		"selected_status": status,
+		"selected_channel": channel,
+	}
+
+	if request.headers.get("HX-Request") == "true":
+		return render(request, "core/interactions/_list_results.html", context)
+	return render(request, "core/interaction_list.html", context)
+
+
+@login_required
+def interaction_detail(request, pk):
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	interaction = get_object_or_404(
+		CustomerInteraction,
+		pk=pk,
+		organization=organization,
+	)
+
+	return render(
+		request,
+		"core/interaction_detail.html",
+		{
+			"organization": organization,
+			"interaction": interaction,
+			"can_edit": can_edit_nc(request.user),
+		},
+	)
+
+
+@login_required
+def interaction_pdf(request, pk):
+	"""Genera y descarga PDF R-07-02 de una interacción con cliente."""
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	interaction = get_object_or_404(
+		CustomerInteraction,
+		pk=pk,
+		organization=organization,
+	)
+	buffer = generate_interaction_pdf(interaction)
+	response = HttpResponse(buffer.getvalue(), content_type="application/pdf")
+	filename = f"R-07-02_{interaction.code}.pdf"
+	response["Content-Disposition"] = f'attachment; filename="{filename}"'
+	return response
+
+
+@login_required
+def interaction_create(request):
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	if not can_edit_nc(request.user):
+		messages.error(request, "No tiene permisos para crear interacciones con clientes.")
+		return redirect("core:interaction_list")
+
+	if request.method == "POST":
+		form = CustomerInteractionForm(request.POST)
+		_configure_interaction_form(form, organization)
+		if form.is_valid():
+			interaction = form.save(commit=False)
+			interaction.organization = organization
+			interaction.save()
+			log_audit_event(
+				actor=request.user,
+				action="core.interaction.created",
+				instance=interaction,
+				metadata={
+					"interaction_type": interaction.interaction_type,
+					"perception": interaction.perception,
+					"status": interaction.status,
+					"linked_nc_id": interaction.linked_nc_id,
+					"customer_id": interaction.customer_id,
+				},
+				object_type_override="CustomerInteraction",
+			)
+			messages.success(request, "Interacción creada correctamente.")
+			return redirect("core:interaction_detail", pk=interaction.pk)
+	else:
+		form = CustomerInteractionForm()
+		_configure_interaction_form(form, organization)
+
+	return render(
+		request,
+		"core/interaction_form.html",
+		{
+			"form": form,
+			"organization": organization,
+			"is_edit": False,
+		},
+	)
+
+
+@login_required
+def interaction_edit(request, pk):
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	interaction = get_object_or_404(
+		CustomerInteraction,
+		pk=pk,
+		organization=organization,
+	)
+
+	if not can_edit_nc(request.user):
+		messages.error(request, "No tiene permisos para editar interacciones con clientes.")
+		return redirect("core:interaction_detail", pk=interaction.pk)
+
+	if request.method == "POST":
+		form = CustomerInteractionForm(request.POST, instance=interaction)
+		_configure_interaction_form(form, organization)
+		if form.is_valid():
+			interaction = form.save(commit=False)
+			interaction.organization = organization
+			interaction.save()
+			log_audit_event(
+				actor=request.user,
+				action="core.interaction.updated",
+				instance=interaction,
+				metadata={
+					"interaction_type": interaction.interaction_type,
+					"perception": interaction.perception,
+					"status": interaction.status,
+					"linked_nc_id": interaction.linked_nc_id,
+					"customer_id": interaction.customer_id,
+				},
+				object_type_override="CustomerInteraction",
+			)
+			messages.success(request, "Interacción actualizada correctamente.")
+			return redirect("core:interaction_detail", pk=interaction.pk)
+	else:
+		form = CustomerInteractionForm(instance=interaction)
+		_configure_interaction_form(form, organization)
+
+	return render(
+		request,
+		"core/interaction_form.html",
+		{
+			"form": form,
+			"organization": organization,
+			"interaction": interaction,
+			"is_edit": True,
+		},
+	)
+
+
+@login_required
+def satisfaction_report_list(request):
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	reports = SatisfactionReport.objects.filter(
+		organization=organization,
+		is_active=True,
+	).order_by("-period_end")
+	return render(
+		request,
+		"core/satisfaction_report_list.html",
+		{"organization": organization, "reports": reports},
+	)
+
+
+@login_required
+def satisfaction_report_detail(request, pk):
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	report = get_object_or_404(
+		SatisfactionReport,
+		pk=pk,
+		organization=organization,
+	)
+	return render(
+		request,
+		"core/satisfaction_report_detail.html",
+		{"organization": organization, "report": report},
+	)
+
+
+@login_required
+def satisfaction_report_create(request):
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	if request.method == "POST":
+		form = SatisfactionReportForm(request.POST)
+		_configure_satisfaction_form(form)
+		if form.is_valid():
+			report = form.save(commit=False)
+			report.organization = organization
+			report.save()
+			report.calculate_metrics()
+			messages.success(request, "Informe de satisfacción creado correctamente.")
+			return redirect("core:satisfaction_report_detail", pk=report.pk)
+	else:
+		form = SatisfactionReportForm()
+		_configure_satisfaction_form(form)
+
+	return render(
+		request,
+		"core/satisfaction_report_form.html",
+		{"organization": organization, "form": form},
+	)
+
+
+@login_required
+def satisfaction_report_edit(request, pk):
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	report = get_object_or_404(
+		SatisfactionReport,
+		pk=pk,
+		organization=organization,
+	)
+
+	if request.method == "POST":
+		form = SatisfactionReportForm(request.POST, instance=report)
+		_configure_satisfaction_form(form)
+		if form.is_valid():
+			report = form.save()
+			report.calculate_metrics()
+			messages.success(request, "Informe de satisfacción actualizado correctamente.")
+			return redirect("core:satisfaction_report_detail", pk=report.pk)
+	else:
+		form = SatisfactionReportForm(instance=report)
+		_configure_satisfaction_form(form)
+
+	return render(
+		request,
+		"core/satisfaction_report_form.html",
+		{
+			"organization": organization,
+			"form": form,
+			"report": report,
+			"is_edit": True,
+		},
+	)
+
+
+@login_required
+def satisfaction_report_generate_ai(request, pk):
+	"""Genera análisis IA para un informe de satisfacción."""
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	report = get_object_or_404(SatisfactionReport, pk=pk, organization=organization)
+	report.calculate_metrics()
+
+	result = generate_satisfaction_analysis(report)
+
+	if result:
+		report.general_status = result.get("general_status", "")
+		report.trend_vs_previous = result.get("trend_vs_previous", "")
+		report.general_situation = result.get("general_situation", "")
+		report.observed_trends = result.get("observed_trends", "")
+		report.comparison_previous = result.get("comparison_previous", "")
+		report.deviations = result.get("deviations", "")
+		report.improvement_opportunities = result.get("improvement_opportunities", "")
+		report.satisfaction_result = result.get("satisfaction_result", "")
+		report.justification = result.get("justification", "")
+		report.action_required = result.get("action_required", "")
+		report.actions_description = result.get("actions_description", "")
+		report.ai_generated = True
+		report.save()
+		messages.success(request, "✅ Análisis generado por IA exitosamente. Revisá y editá si es necesario.")
+	else:
+		messages.error(request, "❌ No se pudo generar el análisis. Verificá la configuración de OpenAI.")
+
+	return redirect("core:satisfaction_report_detail", pk=report.pk)
+
+
+@login_required
+def satisfaction_report_pdf(request, pk):
+	organization = _get_current_organization()
+	if organization is None:
+		messages.error(request, "No hay organizacion activa.")
+		return redirect("home")
+
+	report = get_object_or_404(SatisfactionReport, pk=pk, organization=organization)
+	buffer = generate_satisfaction_report_pdf(report)
+	response = HttpResponse(buffer.getvalue(), content_type="application/pdf")
+	filename = f"R-15-02_{report.code}.pdf"
+	response["Content-Disposition"] = f'attachment; filename="{filename}"'
+	return response
 
 
 @login_required
@@ -3177,6 +3548,33 @@ def dashboard_card_suppliers(request):
 		"suppliers": suppliers,
 		"count": count,
 	})
+
+
+@login_required
+def dashboard_card_interactions(request):
+	"""Card: Interacciones con clientes - resumen de satisfacción."""
+	organization = _get_current_organization()
+	if not organization:
+		return render(request, "core/interactions/_dashboard_card.html", {
+			"total": 0,
+			"open_count": 0,
+			"positive": 0,
+			"negative": 0,
+		})
+
+	interactions = CustomerInteraction.objects.filter(
+		organization=organization,
+		is_active=True,
+	)
+
+	context = {
+		"total": interactions.count(),
+		"open_count": interactions.filter(status=CustomerInteraction.Status.OPEN).count(),
+		"positive": interactions.filter(perception=CustomerInteraction.Perception.POSITIVE).count(),
+		"negative": interactions.filter(perception=CustomerInteraction.Perception.NEGATIVE).count(),
+	}
+
+	return render(request, "core/interactions/_dashboard_card.html", context)
 
 
 @login_required

@@ -135,6 +135,30 @@ class APITestCase(TestCase):
         pnc = NonconformingOutput.objects.get(product_or_service="Lote de tornillos")
         self.assertEqual(pnc.quantity, Decimal("12.50"))
 
+    def test_create_interaction(self):
+        response = self.client.post(
+            "/api/interaction/create/",
+            {
+                "date": "2026-03-10",
+                "customer_name": "Gauss Maquinarias",
+                "project": "Pala M1001",
+                "channel": "WHATSAPP",
+                "interaction_type": "CLAIM",
+                "topic": "QUALITY",
+                "perception": "NEGATIVE",
+                "impact": "HIGH",
+                "observations": "Reclamo por soldadura defectuosa",
+                "source": "TELEGRAM_AUDIO",
+            },
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(response.data["code"].startswith("IC-"))
+        self.assertIn("id", response.data)
+
+    def test_interaction_list(self):
+        response = self.client.get("/api/interaction/")
+        self.assertEqual(response.status_code, 200)
+
     def test_unauthenticated(self):
         client = APIClient()
         response = client.get("/api/health/")

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle Interacción{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+    <a href="{% url 'core:interaction_list' %}" class="btn btn-secondary btn-sm">← Volver a Interacciones</a>
+    <div class="flex flex-wrap gap-2">
+        <a href="{% url 'core:interaction_pdf' interaction.pk %}" class="btn btn-info">📄 Descargar PDF</a>
+        {% if can_edit %}
+        <a href="{% url 'core:interaction_edit' interaction.pk %}" class="btn btn-primary">✏️ Editar</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+    <h1 class="mb-6 text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">{{ interaction.code }}</h1>
+
+    <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
+        <div><strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">📅 Fecha</strong><span class="text-sm text-slate-900 dark:text-slate-100">{{ interaction.date|date:"d/m/Y" }}</span></div>
+        <div><strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">👤 Cliente</strong><span class="text-sm text-slate-900 dark:text-slate-100">{{ interaction.get_customer_display }}</span></div>
+        <div><strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">🏷️ Proyecto</strong><span class="text-sm text-slate-900 dark:text-slate-100">{{ interaction.project|default:"-" }}</span></div>
+
+        <div><strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">📨 Canal</strong><span class="text-sm text-slate-900 dark:text-slate-100">{{ interaction.get_channel_display }}</span></div>
+        <div><strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">🧭 Tipo</strong><span class="text-sm text-slate-900 dark:text-slate-100">{{ interaction.get_interaction_type_display }}</span></div>
+        <div><strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">📌 Tema</strong><span class="text-sm text-slate-900 dark:text-slate-100">{{ interaction.get_topic_display }}</span></div>
+
+        <div><strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">🙂 Percepción</strong><span class="text-sm text-slate-900 dark:text-slate-100">{{ interaction.get_perception_display }}</span></div>
+        <div><strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">💥 Impacto</strong><span class="text-sm text-slate-900 dark:text-slate-100">{{ interaction.get_impact_display }}</span></div>
+        <div><strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">📊 Score</strong><span class="text-sm text-slate-900 dark:text-slate-100">{{ interaction.perception_score }}</span></div>
+
+        <div><strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">🛠 Requiere Acción</strong><span class="text-sm text-slate-900 dark:text-slate-100">{% if interaction.requires_action %}Sí{% else %}No{% endif %}</span></div>
+        <div><strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">👥 Responsable</strong><span class="text-sm text-slate-900 dark:text-slate-100">{{ interaction.get_responsible_display|default:"-" }}</span></div>
+        <div><strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">📍 Estado</strong><span class="text-sm text-slate-900 dark:text-slate-100">{{ interaction.get_status_display }}</span></div>
+
+        <div><strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">✅ Resultado</strong><span class="text-sm text-slate-900 dark:text-slate-100">{{ interaction.get_result_display|default:"-" }}</span></div>
+        <div><strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">🔒 Fecha de Cierre</strong><span class="text-sm text-slate-900 dark:text-slate-100">{% if interaction.closed_date %}{{ interaction.closed_date|date:"d/m/Y" }}{% else %}-{% endif %}</span></div>
+        <div><strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">🏢 Sede</strong><span class="text-sm text-slate-900 dark:text-slate-100">{{ interaction.site|default:"-" }}</span></div>
+
+        <div class="md:col-span-3"><strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">📝 Observaciones</strong><span class="text-sm text-slate-900 dark:text-slate-100">{{ interaction.observations|default:"-" }}</span></div>
+
+        <div class="md:col-span-3">
+            <div class="detail-section" style="border: 2px solid #0891b2; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                <h3 style="color: #0891b2;">📝 Detalle de la Comunicación</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div><strong>Persona de Contacto:</strong> {{ interaction.contact_person|default:"-" }}</div>
+                    <div><strong>Proyecto / Producto:</strong> {{ interaction.project|default:"-" }}</div>
+                </div>
+                <div style="margin-top: 12px;">
+                    <strong>Objetivo de la Comunicación:</strong>
+                    <p>{{ interaction.communication_objective|default:"-"|linebreaksbr }}</p>
+                </div>
+                <div>
+                    <strong>Propuestas Realizadas:</strong>
+                    <p>{{ interaction.proposals|default:"-"|linebreaksbr }}</p>
+                </div>
+                <div>
+                    <strong>Objeciones del Cliente:</strong>
+                    <p>{{ interaction.client_objections|default:"-"|linebreaksbr }}</p>
+                </div>
+                <div>
+                    <strong>Tareas a Realizar:</strong>
+                    <p>{{ interaction.tasks_to_do|default:"-"|linebreaksbr }}</p>
+                </div>
+                <div>
+                    <strong>Conclusión Final:</strong>
+                    <p>{{ interaction.conclusion|default:"-"|linebreaksbr }}</p>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;">
+                    <div><strong>Próxima Comunicación:</strong> {% if interaction.next_communication_date %}{{ interaction.next_communication_date|date:"d/m/Y H:i" }}{% else %}-{% endif %}</div>
+                    <div><strong>Responsable:</strong> {{ interaction.next_communication_responsible|default:"-" }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="md:col-span-3"><strong class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">🔗 NC Asociada</strong>
+            {% if interaction.linked_nc %}
+            <a href="{% url 'core:nc_detail' interaction.linked_nc.pk %}" class="text-blue-600 dark:text-blue-400 hover:underline">{{ interaction.linked_nc.code }} - {{ interaction.linked_nc.title }}</a>
+            {% else %}
+            <span class="text-sm text-slate-900 dark:text-slate-100">-</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

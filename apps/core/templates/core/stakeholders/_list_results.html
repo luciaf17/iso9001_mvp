@@ -10,6 +10,7 @@
                 <div class="flex flex-wrap gap-3 text-sm text-slate-600 dark:text-slate-400">
                     <span class="flex items-center gap-1">📇 {{ stakeholder.cuit|default:"-" }}</span>
                     <span class="flex items-center gap-1">📞 {{ stakeholder.phone|default:"-" }}</span>
+                    <span class="flex items-center gap-1">📍 {{ stakeholder.address|default:"-" }}</span>
                     <span class="flex items-center gap-1">📋 {{ stakeholder.get_stakeholder_type_display }}</span>
                     <span class="flex items-center gap-1">🔗 {% if stakeholder.related_process %}{{ stakeholder.related_process }}{% else %}<span class="text-slate-500">Sin proceso</span>{% endif %}</span>
                     <span class="flex items-center gap-1">📅 {% if stakeholder.review_date %}{{ stakeholder.review_date|date:"d/m/Y" }}{% else %}<span class="text-slate-500">Sin fecha</span>{% endif %}</span>

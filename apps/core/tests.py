@@ -6,7 +6,9 @@ from django.core.exceptions import ValidationError
 from django.urls import reverse
 from django.utils import timezone
 from datetime import timedelta, date
+from unittest.mock import patch
 
+from .pdf_generator import generate_interaction_pdf, generate_satisfaction_report_pdf
 from .models import (
     AuditEvent,
     Organization,
@@ -28,6 +30,8 @@ from .models import (
     NonconformingOutput,
     Supplier,
     SupplierEvaluation,
+    CustomerInteraction,
+    SatisfactionReport,
     Employee,
     Competency,
     EmployeeCompetency,
@@ -294,6 +298,231 @@ class StakeholderViewsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Regulador")
+
+
+class CustomerInteractionTestCase(TestCase):
+    def setUp(self):
+        self.org = Organization.objects.create(name="Test Org Interactions")
+        self.site = Site.objects.create(organization=self.org, name="Sede 1")
+        self.stakeholder = Stakeholder.objects.create(
+            organization=self.org,
+            name="Cliente Test",
+            phone="+54 9 351 1234567",
+            address="Av. Siempre Viva 123",
+            stakeholder_type=Stakeholder.StakeholderType.CUSTOMER,
+            expectations="Test",
+        )
+
+    def test_create_interaction(self):
+        interaction = CustomerInteraction.objects.create(
+            organization=self.org,
+            date="2026-03-10",
+            customer=self.stakeholder,
+            channel=CustomerInteraction.Channel.WHATSAPP,
+            interaction_type=CustomerInteraction.InteractionType.QUERY,
+            topic=CustomerInteraction.Topic.PRICE,
+            perception=CustomerInteraction.Perception.POSITIVE,
+            impact=CustomerInteraction.Impact.HIGH,
+        )
+        self.assertTrue(interaction.code.startswith("IC-"))
+        self.assertEqual(interaction.perception_score, 1)
+
+    def test_auto_code_generation(self):
+        i1 = CustomerInteraction.objects.create(
+            organization=self.org,
+            date="2026-03-10",
+            channel=CustomerInteraction.Channel.MAIL,
+            interaction_type=CustomerInteraction.InteractionType.CLAIM,
+            topic=CustomerInteraction.Topic.QUALITY,
+            perception=CustomerInteraction.Perception.NEGATIVE,
+            impact=CustomerInteraction.Impact.HIGH,
+        )
+        i2 = CustomerInteraction.objects.create(
+            organization=self.org,
+            date="2026-03-11",
+            channel=CustomerInteraction.Channel.PHONE,
+            interaction_type=CustomerInteraction.InteractionType.SUGGESTION,
+            topic=CustomerInteraction.Topic.SERVICE,
+            perception=CustomerInteraction.Perception.NEUTRAL,
+            impact=CustomerInteraction.Impact.MEDIUM,
+        )
+        self.assertNotEqual(i1.code, i2.code)
+
+    def test_perception_score(self):
+        pos = CustomerInteraction.objects.create(
+            organization=self.org,
+            date="2026-03-10",
+            channel=CustomerInteraction.Channel.WHATSAPP,
+            interaction_type=CustomerInteraction.InteractionType.COMPLIMENT,
+            topic=CustomerInteraction.Topic.QUALITY,
+            perception=CustomerInteraction.Perception.POSITIVE,
+            impact=CustomerInteraction.Impact.HIGH,
+        )
+        neg = CustomerInteraction.objects.create(
+            organization=self.org,
+            date="2026-03-10",
+            channel=CustomerInteraction.Channel.MAIL,
+            interaction_type=CustomerInteraction.InteractionType.CLAIM,
+            topic=CustomerInteraction.Topic.DELIVERY,
+            perception=CustomerInteraction.Perception.NEGATIVE,
+            impact=CustomerInteraction.Impact.HIGH,
+        )
+        self.assertEqual(pos.perception_score, 1)
+        self.assertEqual(neg.perception_score, -1)
+
+    def test_auto_close_date(self):
+        interaction = CustomerInteraction.objects.create(
+            organization=self.org,
+            date="2026-03-10",
+            channel=CustomerInteraction.Channel.WHATSAPP,
+            interaction_type=CustomerInteraction.InteractionType.QUERY,
+            topic=CustomerInteraction.Topic.PRICE,
+            perception=CustomerInteraction.Perception.NEUTRAL,
+            impact=CustomerInteraction.Impact.LOW,
+            status=CustomerInteraction.Status.CLOSED,
+        )
+        self.assertIsNotNone(interaction.closed_date)
+
+    def test_r0702_fields_are_persisted(self):
+        next_date = timezone.now() + timedelta(days=3)
+        interaction = CustomerInteraction.objects.create(
+            organization=self.org,
+            date="2026-03-10",
+            customer=self.stakeholder,
+            channel=CustomerInteraction.Channel.PHONE,
+            interaction_type=CustomerInteraction.InteractionType.AFTER_SALES,
+            topic=CustomerInteraction.Topic.SERVICE,
+            perception=CustomerInteraction.Perception.NEUTRAL,
+            impact=CustomerInteraction.Impact.MEDIUM,
+            contact_person="Juan Perez",
+            communication_objective="Relevar avance de postventa.",
+            proposals="Enviar repuesto en 48 hs.",
+            client_objections="Solicita confirmación por escrito.",
+            tasks_to_do="Coordinar despacho y seguimiento.",
+            next_communication_date=next_date,
+            next_communication_responsible="Equipo Postventa",
+            conclusion="Cliente conforme con el plan.",
+        )
+
+        self.assertEqual(interaction.contact_person, "Juan Perez")
+        self.assertEqual(interaction.next_communication_responsible, "Equipo Postventa")
+        self.assertEqual(interaction.customer.address, "Av. Siempre Viva 123")
+        self.assertIsNotNone(interaction.next_communication_date)
+
+    def test_generate_interaction_pdf_returns_pdf_buffer(self):
+        interaction = CustomerInteraction.objects.create(
+            organization=self.org,
+            date="2026-03-10",
+            customer=self.stakeholder,
+            channel=CustomerInteraction.Channel.WHATSAPP,
+            interaction_type=CustomerInteraction.InteractionType.QUERY,
+            topic=CustomerInteraction.Topic.QUALITY,
+            perception=CustomerInteraction.Perception.POSITIVE,
+            impact=CustomerInteraction.Impact.LOW,
+            communication_objective="Consultar estado del pedido.",
+            proposals="Se comparte fecha estimada.",
+            client_objections="Ninguna.",
+            tasks_to_do="Enviar seguimiento.",
+            conclusion="Interacción resuelta.",
+        )
+
+        pdf_buffer = generate_interaction_pdf(interaction)
+
+        self.assertTrue(pdf_buffer.getvalue().startswith(b"%PDF"))
+
+
+class SatisfactionReportTestCase(TestCase):
+    def setUp(self):
+        self.org = Organization.objects.create(name="Test Org Satisfaction", is_active=True)
+        Organization.objects.exclude(pk=self.org.pk).update(is_active=False)
+        self.site = Site.objects.create(organization=self.org, name="Sede SAT")
+        self.customer = Stakeholder.objects.create(
+            organization=self.org,
+            name="Cliente SAT",
+            stakeholder_type=Stakeholder.StakeholderType.CUSTOMER,
+            expectations="Seguimiento",
+        )
+        self.user = User.objects.create_user(username="sat_admin", password="testpass")
+
+    def _create_report(self):
+        return SatisfactionReport.objects.create(
+            organization=self.org,
+            report_date=date(2026, 3, 15),
+            period_start=date(2026, 3, 1),
+            period_end=date(2026, 3, 31),
+            period_label="Marzo 2026",
+        )
+
+    def test_calculate_metrics_updates_totals_and_indicators(self):
+        CustomerInteraction.objects.create(
+            organization=self.org,
+            site=self.site,
+            customer=self.customer,
+            date=date(2026, 3, 10),
+            channel=CustomerInteraction.Channel.WHATSAPP,
+            interaction_type=CustomerInteraction.InteractionType.CLAIM,
+            topic=CustomerInteraction.Topic.QUALITY,
+            perception=CustomerInteraction.Perception.NEGATIVE,
+            impact=CustomerInteraction.Impact.HIGH,
+            status=CustomerInteraction.Status.CLOSED,
+            closed_date=date(2026, 3, 12),
+        )
+        CustomerInteraction.objects.create(
+            organization=self.org,
+            site=self.site,
+            customer=self.customer,
+            date=date(2026, 3, 11),
+            channel=CustomerInteraction.Channel.MAIL,
+            interaction_type=CustomerInteraction.InteractionType.COMPLIMENT,
+            topic=CustomerInteraction.Topic.SERVICE,
+            perception=CustomerInteraction.Perception.POSITIVE,
+            impact=CustomerInteraction.Impact.LOW,
+        )
+
+        report = self._create_report()
+        report.calculate_metrics()
+
+        self.assertEqual(report.total_interactions, 2)
+        self.assertEqual(report.count_claim, 1)
+        self.assertEqual(report.count_positive, 1)
+        self.assertEqual(report.count_negative, 1)
+        self.assertEqual(report.satisfaction_index, 50.0)
+        self.assertEqual(report.claim_percentage, 50.0)
+        self.assertEqual(report.avg_resolution_days, 2.0)
+
+    def test_generate_satisfaction_pdf_returns_pdf_buffer(self):
+        report = self._create_report()
+        report.calculate_metrics()
+
+        pdf_buffer = generate_satisfaction_report_pdf(report)
+
+        self.assertTrue(pdf_buffer.getvalue().startswith(b"%PDF"))
+
+    @patch("apps.core.views.generate_satisfaction_analysis")
+    def test_generate_ai_view_updates_report_fields(self, mock_generate_ai):
+        mock_generate_ai.return_value = {
+            "general_status": "Estado general correcto.",
+            "trend_vs_previous": "Tendencia estable.",
+            "general_situation": "Situación satisfactoria.",
+            "observed_trends": "Más interacciones positivas.",
+            "comparison_previous": "Mejora frente al período previo.",
+            "deviations": "Sin desvíos críticos.",
+            "improvement_opportunities": "Automatizar seguimiento.",
+            "satisfaction_result": SatisfactionReport.SatisfactionResult.ADEQUATE,
+            "justification": "Predominan interacciones positivas.",
+            "action_required": SatisfactionReport.ActionRequired.NONE,
+            "actions_description": "No aplica.",
+        }
+
+        report = self._create_report()
+        self.client.login(username="sat_admin", password="testpass")
+        response = self.client.post(reverse("core:satisfaction_report_generate_ai", args=[report.pk]))
+
+        self.assertEqual(response.status_code, 302)
+        report.refresh_from_db()
+        self.assertTrue(report.ai_generated)
+        self.assertEqual(report.satisfaction_result, SatisfactionReport.SatisfactionResult.ADEQUATE)
+        self.assertEqual(report.action_required, SatisfactionReport.ActionRequired.NONE)
 
 
 class RiskOpportunityTests(TestCase):

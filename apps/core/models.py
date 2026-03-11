@@ -197,6 +197,11 @@ class Stakeholder(models.Model):
         verbose_name="Teléfono",
         help_text="Teléfono de contacto",
     )
+    address = models.CharField(
+        max_length=300,
+        blank=True,
+        verbose_name="Dirección",
+    )
     stakeholder_type = models.CharField(
         max_length=20,
         choices=StakeholderType.choices,
@@ -2522,3 +2527,529 @@ class TrainingAttendance(models.Model):
 
     def __str__(self):
         return f"{self.employee} - {self.training}"
+
+
+class CustomerInteraction(models.Model):
+    """Interacción con cliente - unifica comunicación y satisfacción (ISO 7.4, 9.1.2)."""
+
+    class Channel(models.TextChoices):
+        WHATSAPP = "WHATSAPP", "WhatsApp"
+        MAIL = "MAIL", "Mail"
+        PHONE = "PHONE", "Llamada Telefónica"
+        IN_PERSON = "IN_PERSON", "Presencial"
+        DEALER = "DEALER", "Concesionario"
+        INSTAGRAM = "INSTAGRAM", "Instagram"
+        FACEBOOK = "FACEBOOK", "Facebook"
+        OTHER = "OTHER", "Otro"
+
+    class InteractionType(models.TextChoices):
+        QUERY = "QUERY", "Consulta"
+        CLAIM = "CLAIM", "Reclamo"
+        SUGGESTION = "SUGGESTION", "Sugerencia"
+        COMPLIMENT = "COMPLIMENT", "Felicitación"
+        MENTION = "MENTION", "Mención"
+        AFTER_SALES = "AFTER_SALES", "Postventa"
+
+    class Topic(models.TextChoices):
+        QUALITY = "QUALITY", "Calidad"
+        DELIVERY = "DELIVERY", "Plazo"
+        PRICE = "PRICE", "Precio"
+        SERVICE = "SERVICE", "Servicio"
+        PERFORMANCE = "PERFORMANCE", "Funcionamiento"
+        DESIGN = "DESIGN", "Diseño"
+        OTHER = "OTHER", "Otro"
+
+    class Perception(models.TextChoices):
+        POSITIVE = "POSITIVE", "Positiva"
+        NEUTRAL = "NEUTRAL", "Neutra"
+        NEGATIVE = "NEGATIVE", "Negativa"
+
+    class Impact(models.TextChoices):
+        HIGH = "HIGH", "Alto"
+        MEDIUM = "MEDIUM", "Medio"
+        LOW = "LOW", "Bajo"
+
+    class Status(models.TextChoices):
+        OPEN = "OPEN", "Abierto"
+        FOLLOW_UP = "FOLLOW_UP", "Seguimiento"
+        CLOSED = "CLOSED", "Cerrado"
+
+    class Result(models.TextChoices):
+        SIMPLE_QUERY = "SIMPLE_QUERY", "Consulta Simple"
+        COMPLIMENT = "COMPLIMENT", "Felicitación"
+        PREVENTIVE_ACTION = "PREVENTIVE_ACTION", "Acción Preventiva"
+        CORRECTIVE_ACTION = "CORRECTIVE_ACTION", "Acción Correctiva"
+        DERIVES_NC = "DERIVES_NC", "Deriva No Conformidad"
+        CLAIM_RESOLVED = "CLAIM_RESOLVED", "Reclamo Resuelto"
+
+    class Responsible(models.TextChoices):
+        SALES = "SALES", "Ventas"
+        AFTER_SALES = "AFTER_SALES", "Postventa"
+        PURCHASING = "PURCHASING", "Compras"
+        ADMIN = "ADMIN", "Administración"
+        DESIGN = "DESIGN", "Diseño"
+        PRODUCTION = "PRODUCTION", "Producción"
+
+    class Source(models.TextChoices):
+        WEB = "WEB", "Web"
+        TELEGRAM_TEXT = "TELEGRAM_TEXT", "Telegram texto"
+        TELEGRAM_AUDIO = "TELEGRAM_AUDIO", "Telegram audio"
+
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.PROTECT,
+        related_name="customer_interactions",
+        verbose_name="Organización",
+    )
+    site = models.ForeignKey(
+        Site,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="customer_interactions",
+        verbose_name="Sede",
+    )
+    code = models.CharField(
+        max_length=20,
+        unique=True,
+        verbose_name="Código",
+        help_text="IC-2026-001, IC-2026-002, etc.",
+        editable=False,
+    )
+    date = models.DateField(
+        verbose_name="Fecha",
+    )
+    customer = models.ForeignKey(
+        Stakeholder,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="customer_interactions",
+        verbose_name="Cliente",
+        help_text="Seleccionar parte interesada (cliente)",
+    )
+    customer_name = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name="Nombre del Cliente",
+        help_text="Si el cliente no está en Partes Interesadas, escribir nombre acá",
+    )
+    project = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name="Proyecto / Producto",
+        help_text="Ej: Pala M1001, Retroexcavadora RT-210, Acoplado 1 Eje",
+    )
+    channel = models.CharField(
+        max_length=20,
+        choices=Channel.choices,
+        verbose_name="Canal",
+    )
+    interaction_type = models.CharField(
+        max_length=20,
+        choices=InteractionType.choices,
+        verbose_name="Tipo de Interacción",
+    )
+    topic = models.CharField(
+        max_length=20,
+        choices=Topic.choices,
+        verbose_name="Tema",
+    )
+    perception = models.CharField(
+        max_length=20,
+        choices=Perception.choices,
+        verbose_name="Percepción",
+    )
+    perception_score = models.IntegerField(
+        default=0,
+        editable=False,
+        verbose_name="Score de Percepción",
+        help_text="1=Positiva, 0=Neutra, -1=Negativa",
+    )
+    impact = models.CharField(
+        max_length=20,
+        choices=Impact.choices,
+        verbose_name="Impacto",
+    )
+    requires_action = models.BooleanField(
+        default=False,
+        verbose_name="Requiere Acción",
+    )
+    responsible = models.CharField(
+        max_length=20,
+        choices=Responsible.choices,
+        blank=True,
+        verbose_name="Responsable",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.OPEN,
+        verbose_name="Estado",
+    )
+    result = models.CharField(
+        max_length=25,
+        choices=Result.choices,
+        blank=True,
+        verbose_name="Resultado",
+    )
+    closed_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de Cierre",
+    )
+    observations = models.TextField(
+        blank=True,
+        verbose_name="Observaciones",
+    )
+    contact_person = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name="Persona de Contacto",
+        help_text="Nombre de la persona con quien se comunicó",
+    )
+    communication_objective = models.TextField(
+        blank=True,
+        verbose_name="Objetivo de la Comunicación",
+    )
+    proposals = models.TextField(
+        blank=True,
+        verbose_name="Propuestas Realizadas",
+    )
+    client_objections = models.TextField(
+        blank=True,
+        verbose_name="Objeciones del Cliente",
+    )
+    tasks_to_do = models.TextField(
+        blank=True,
+        verbose_name="Tareas a Realizar",
+    )
+    next_communication_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Próxima Comunicación - Fecha y Hora",
+    )
+    next_communication_responsible = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name="Próxima Comunicación - Responsable",
+    )
+    conclusion = models.TextField(
+        blank=True,
+        verbose_name="Conclusión Final",
+    )
+    linked_nc = models.ForeignKey(
+        NoConformity,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="customer_interactions",
+        verbose_name="NC Asociada",
+    )
+    source = models.CharField(
+        max_length=20,
+        choices=Source.choices,
+        default=Source.WEB,
+        verbose_name="Origen de carga",
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Activo",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Creado el",
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Actualizado el",
+    )
+
+    class Meta:
+        ordering = ["-date", "-created_at"]
+        verbose_name = "Interacción con Cliente"
+        verbose_name_plural = "Interacciones con Clientes"
+
+    def __str__(self):
+        customer_display = self.customer.name if self.customer else self.customer_name or "-"
+        return f"{self.code}: {self.get_interaction_type_display()} - {customer_display}"
+
+    def get_customer_display(self):
+        """Devuelve nombre del cliente desde FK o campo libre."""
+        if self.customer:
+            return self.customer.name
+        return self.customer_name or "-"
+
+    def save(self, *args, **kwargs):
+        from django.utils import timezone
+
+        if not self.code:
+            year = timezone.now().year
+            last = CustomerInteraction.objects.filter(
+                organization=self.organization,
+                code__startswith=f"IC-{year}",
+            ).order_by("-code").first()
+
+            if last and last.code:
+                try:
+                    last_num = int(last.code.split("-")[-1])
+                    new_num = last_num + 1
+                except (ValueError, IndexError):
+                    new_num = 1
+            else:
+                new_num = 1
+
+            self.code = f"IC-{year}-{new_num:03d}"
+
+        perception_map = {
+            self.Perception.POSITIVE: 1,
+            self.Perception.NEUTRAL: 0,
+            self.Perception.NEGATIVE: -1,
+        }
+        self.perception_score = perception_map.get(self.perception, 0)
+
+        if self.status == self.Status.CLOSED and not self.closed_date:
+            self.closed_date = timezone.now().date()
+
+        super().save(*args, **kwargs)
+
+
+class SatisfactionReport(models.Model):
+    """Informe de Evaluación de Satisfacción del Cliente (R-15-02, ISO 9.1.2)."""
+
+    class SatisfactionResult(models.TextChoices):
+        ADEQUATE = "ADEQUATE", "Adecuada"
+        PARTIALLY = "PARTIALLY", "Parcialmente adecuada"
+        NOT_ADEQUATE = "NOT_ADEQUATE", "No adecuada"
+
+    class ActionRequired(models.TextChoices):
+        NONE = "NONE", "No se requieren acciones"
+        PREVENTIVE = "PREVENTIVE", "Se requieren acciones preventivas"
+        CORRECTIVE = "CORRECTIVE", "Se requieren acciones correctivas"
+
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.PROTECT,
+        related_name="satisfaction_reports",
+        verbose_name="Organización",
+    )
+    code = models.CharField(
+        max_length=20,
+        unique=True,
+        verbose_name="Código",
+        help_text="SAT-2026-001, SAT-2026-002, etc.",
+        editable=False,
+    )
+    report_date = models.DateField(
+        verbose_name="Fecha del Informe",
+    )
+    period_start = models.DateField(
+        verbose_name="Inicio del Período",
+    )
+    period_end = models.DateField(
+        verbose_name="Fin del Período",
+    )
+    period_label = models.CharField(
+        max_length=100,
+        verbose_name="Período Evaluado",
+        help_text="Ej: Octubre a Diciembre de 2025",
+    )
+
+    total_interactions = models.IntegerField(default=0, verbose_name="Total de Registros", editable=False)
+    count_query = models.IntegerField(default=0, verbose_name="Consultas", editable=False)
+    count_claim = models.IntegerField(default=0, verbose_name="Reclamos", editable=False)
+    count_suggestion = models.IntegerField(default=0, verbose_name="Sugerencias", editable=False)
+    count_compliment = models.IntegerField(default=0, verbose_name="Felicitaciones", editable=False)
+    count_after_sales = models.IntegerField(default=0, verbose_name="Postventa", editable=False)
+    count_mention = models.IntegerField(default=0, verbose_name="Menciones", editable=False)
+    count_positive = models.IntegerField(default=0, verbose_name="Percepción Positiva", editable=False)
+    count_neutral = models.IntegerField(default=0, verbose_name="Percepción Neutra", editable=False)
+    count_negative = models.IntegerField(default=0, verbose_name="Percepción Negativa", editable=False)
+    count_high_impact = models.IntegerField(default=0, verbose_name="Impacto Alto", editable=False)
+    count_medium_impact = models.IntegerField(default=0, verbose_name="Impacto Medio", editable=False)
+    count_low_impact = models.IntegerField(default=0, verbose_name="Impacto Bajo", editable=False)
+    count_whatsapp = models.IntegerField(default=0, verbose_name="WhatsApp", editable=False)
+    count_mail = models.IntegerField(default=0, verbose_name="Mail", editable=False)
+    count_phone = models.IntegerField(default=0, verbose_name="Llamada", editable=False)
+    count_in_person = models.IntegerField(default=0, verbose_name="Presencial", editable=False)
+    count_social = models.IntegerField(default=0, verbose_name="Redes Sociales", editable=False)
+
+    satisfaction_index = models.FloatField(default=0, verbose_name="Índice Global de Satisfacción (%)", editable=False)
+    claim_percentage = models.FloatField(default=0, verbose_name="% Reclamos sobre Total", editable=False)
+    avg_resolution_days = models.FloatField(default=0, verbose_name="Tiempo Promedio Resolución (días)", editable=False)
+
+    general_status = models.TextField(
+        blank=True,
+        verbose_name="Estado General de la Satisfacción del Cliente",
+    )
+    trend_vs_previous = models.TextField(
+        blank=True,
+        verbose_name="Tendencia con Respecto al Período Anterior",
+    )
+    general_situation = models.TextField(
+        blank=True,
+        verbose_name="Situación General",
+        help_text="Satisfactoria / A mejorar / Crítica - Comentarios",
+    )
+
+    observed_trends = models.TextField(
+        blank=True,
+        verbose_name="Tendencias Observadas",
+    )
+    comparison_previous = models.TextField(
+        blank=True,
+        verbose_name="Comparación con Períodos Anteriores",
+    )
+    deviations = models.TextField(
+        blank=True,
+        verbose_name="Identificación de Desvíos",
+    )
+    improvement_opportunities = models.TextField(
+        blank=True,
+        verbose_name="Oportunidades de Mejora",
+    )
+
+    satisfaction_result = models.CharField(
+        max_length=20,
+        choices=SatisfactionResult.choices,
+        blank=True,
+        verbose_name="Resultado de Satisfacción",
+    )
+    justification = models.TextField(
+        blank=True,
+        verbose_name="Justificación Breve",
+    )
+
+    action_required = models.CharField(
+        max_length=20,
+        choices=ActionRequired.choices,
+        blank=True,
+        verbose_name="Acciones Requeridas",
+    )
+    actions_description = models.TextField(
+        blank=True,
+        verbose_name="Descripción de Acciones",
+    )
+
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="approved_satisfaction_reports",
+        verbose_name="Aprobado por",
+    )
+    approval_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de Aprobación",
+    )
+
+    observations = models.TextField(
+        blank=True,
+        verbose_name="Observaciones",
+    )
+
+    ai_generated = models.BooleanField(
+        default=False,
+        verbose_name="Análisis generado por IA",
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Activo",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Creado el",
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Actualizado el",
+    )
+
+    class Meta:
+        ordering = ["-period_end"]
+        verbose_name = "Informe de Satisfacción"
+        verbose_name_plural = "Informes de Satisfacción"
+
+    def __str__(self):
+        return f"{self.code}: {self.period_label}"
+
+    def save(self, *args, **kwargs):
+        from django.utils import timezone
+
+        if not self.code:
+            year = timezone.now().year
+            last = SatisfactionReport.objects.filter(
+                organization=self.organization,
+                code__startswith=f"SAT-{year}",
+            ).order_by("-code").first()
+
+            if last and last.code:
+                try:
+                    last_num = int(last.code.split("-")[-1])
+                    new_num = last_num + 1
+                except (ValueError, IndexError):
+                    new_num = 1
+            else:
+                new_num = 1
+
+            self.code = f"SAT-{year}-{new_num:03d}"
+
+        super().save(*args, **kwargs)
+
+    def calculate_metrics(self):
+        """Calcula todas las métricas del período basándose en CustomerInteraction."""
+        qs = CustomerInteraction.objects.filter(
+            organization=self.organization,
+            date__gte=self.period_start,
+            date__lte=self.period_end,
+            is_active=True,
+        )
+
+        self.total_interactions = qs.count()
+
+        self.count_query = qs.filter(interaction_type="QUERY").count()
+        self.count_claim = qs.filter(interaction_type="CLAIM").count()
+        self.count_suggestion = qs.filter(interaction_type="SUGGESTION").count()
+        self.count_compliment = qs.filter(interaction_type="COMPLIMENT").count()
+        self.count_after_sales = qs.filter(interaction_type="AFTER_SALES").count()
+        self.count_mention = qs.filter(interaction_type="MENTION").count()
+
+        self.count_positive = qs.filter(perception="POSITIVE").count()
+        self.count_neutral = qs.filter(perception="NEUTRAL").count()
+        self.count_negative = qs.filter(perception="NEGATIVE").count()
+
+        self.count_high_impact = qs.filter(impact="HIGH").count()
+        self.count_medium_impact = qs.filter(impact="MEDIUM").count()
+        self.count_low_impact = qs.filter(impact="LOW").count()
+
+        self.count_whatsapp = qs.filter(channel="WHATSAPP").count()
+        self.count_mail = qs.filter(channel="MAIL").count()
+        self.count_phone = qs.filter(channel="PHONE").count()
+        self.count_in_person = qs.filter(channel="IN_PERSON").count()
+        self.count_social = qs.filter(channel__in=["INSTAGRAM", "FACEBOOK"]).count()
+
+        if self.total_interactions > 0:
+            self.satisfaction_index = round((self.count_positive / self.total_interactions) * 100, 1)
+            self.claim_percentage = round((self.count_claim / self.total_interactions) * 100, 1)
+        else:
+            self.satisfaction_index = 0
+            self.claim_percentage = 0
+
+        closed_claims = qs.filter(
+            interaction_type="CLAIM",
+            status="CLOSED",
+            closed_date__isnull=False,
+        )
+        if closed_claims.exists():
+            total_days = sum(
+                (c.closed_date - c.date).days
+                for c in closed_claims
+                if c.closed_date and c.date
+            )
+            self.avg_resolution_days = round(total_days / closed_claims.count(), 1)
+        else:
+            self.avg_resolution_days = 0
+
+        self.save()

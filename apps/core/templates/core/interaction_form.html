@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Editar{% else %}Nueva{% endif %} Interacción{% endblock %}
+
+{% block content %}
+<div class="form-container" style="max-width: 900px;">
+    <h1>{% if is_edit %}✏️ Editar{% else %}📞 Nueva{% endif %} Interacción con Cliente</h1>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="form-section" style="border: 2px solid #2563eb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+            <h3 style="color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 8px; margin-bottom: 16px;">📋 Datos de la Interacción</h3>
+            <div class="form-row" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                <div class="form-group"><label for="{{ form.date.id_for_label }}">Fecha *</label>{{ form.date }}</div>
+                <div class="form-group"><label for="{{ form.site.id_for_label }}">Sede</label>{{ form.site }}</div>
+                <div class="form-group"><label for="{{ form.customer.id_for_label }}">Cliente (Partes Interesadas)</label>{{ form.customer }}</div>
+                <div class="form-group"><label for="{{ form.customer_name.id_for_label }}">Nombre del Cliente (manual)</label>{{ form.customer_name }}</div>
+            </div>
+            <p class="helptext" style="margin-top:4px;">Si el cliente no está en la lista, escribí su nombre abajo.</p>
+            <div class="form-row" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;">
+                <div class="form-group"><label for="{{ form.channel.id_for_label }}">Canal *</label>{{ form.channel }}</div>
+                <div class="form-group"><label for="{{ form.interaction_type.id_for_label }}">Tipo de Interacción *</label>{{ form.interaction_type }}</div>
+                <div class="form-group"><label for="{{ form.topic.id_for_label }}">Tema *</label>{{ form.topic }}</div>
+                <div class="form-group"><label for="{{ form.perception.id_for_label }}">Percepción *</label>{{ form.perception }}</div>
+                <div class="form-group"><label for="{{ form.impact.id_for_label }}">Impacto *</label>{{ form.impact }}</div>
+                <div class="form-group"><label for="{{ form.requires_action.id_for_label }}">Requiere Acción</label>{{ form.requires_action }}</div>
+            </div>
+            <div class="form-group"><label for="{{ form.observations.id_for_label }}">Observaciones</label>{{ form.observations }}</div>
+        </div>
+
+        <div class="form-section" style="border: 2px solid #0891b2; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+            <h3 style="color: #0891b2; border-bottom: 2px solid #0891b2; padding-bottom: 8px; margin-bottom: 16px;">
+                📝 Detalle de la Comunicación
+            </h3>
+
+            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label for="{{ form.contact_person.id_for_label }}">Persona de Contacto</label>
+                    {{ form.contact_person }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.project.id_for_label }}">Proyecto / Producto</label>
+                    {{ form.project }}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.communication_objective.id_for_label }}">Objetivo de la Comunicación</label>
+                {{ form.communication_objective }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.proposals.id_for_label }}">Propuestas Realizadas</label>
+                {{ form.proposals }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.client_objections.id_for_label }}">Objeciones del Cliente</label>
+                {{ form.client_objections }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.tasks_to_do.id_for_label }}">Tareas a Realizar</label>
+                {{ form.tasks_to_do }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.conclusion.id_for_label }}">Conclusión Final</label>
+                {{ form.conclusion }}
+            </div>
+
+            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label for="id_next_communication_date_0">Próxima Comunicación - Fecha</label>
+                    {{ form.next_communication_date.0 }}
+                </div>
+                <div class="form-group">
+                    <label for="id_next_communication_date_1">Próxima Comunicación - Hora</label>
+                    {{ form.next_communication_date.1 }}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.next_communication_responsible.id_for_label }}">Próxima Comunicación - Responsable</label>
+                {{ form.next_communication_responsible }}
+            </div>
+        </div>
+
+        <div class="form-section" style="border: 2px solid #16a34a; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+            <h3 style="color: #16a34a; border-bottom: 2px solid #16a34a; padding-bottom: 8px; margin-bottom: 16px;">✅ Gestión y Cierre</h3>
+            <div class="form-row" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;">
+                <div class="form-group"><label for="{{ form.responsible.id_for_label }}">Responsable</label>{{ form.responsible }}</div>
+                <div class="form-group"><label for="{{ form.status.id_for_label }}">Estado</label>{{ form.status }}</div>
+                <div class="form-group"><label for="{{ form.result.id_for_label }}">Resultado</label>{{ form.result }}</div>
+                <div class="form-group"><label for="{{ form.closed_date.id_for_label }}">Fecha de Cierre</label>{{ form.closed_date }}</div>
+                <div class="form-group"><label for="{{ form.linked_nc.id_for_label }}">NC Asociada</label>{{ form.linked_nc }}</div>
+                <div class="form-group"><label for="{{ form.is_active.id_for_label }}">Activo</label>{{ form.is_active }}</div>
+            </div>
+        </div>
+
+        <div class="form-actions" style="display:flex; gap:12px; margin-top:24px; padding-top:16px; border-top:2px solid #e5e7eb;">
+            <button type="submit" class="btn btn-success">✅ Guardar</button>
+            <a href="{% url 'core:interaction_list' %}" class="btn btn-secondary">← Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

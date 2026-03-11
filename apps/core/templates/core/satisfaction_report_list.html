@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Informes de Satisfacción{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100">📊 Informes de Satisfacción del Cliente</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Organización: {{ organization.name }}</p>
+        </div>
+        <a class="btn btn-success" href="{% url 'core:satisfaction_report_new' %}">+ Nuevo Informe</a>
+    </div>
+
+    <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+            <thead class="bg-slate-50 dark:bg-slate-800">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Código</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Período</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Fecha</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Índice</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Resultado</th>
+                    <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                {% for report in reports %}
+                <tr>
+                    <td class="px-4 py-3 text-sm text-slate-900 dark:text-slate-100">{{ report.code }}</td>
+                    <td class="px-4 py-3 text-sm text-slate-900 dark:text-slate-100">{{ report.period_label }}</td>
+                    <td class="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">{{ report.report_date|date:"d/m/Y" }}</td>
+                    <td class="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">{{ report.satisfaction_index }}%</td>
+                    <td class="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">{{ report.get_satisfaction_result_display|default:"-" }}</td>
+                    <td class="px-4 py-3 text-right">
+                        <a class="btn btn-info btn-sm" href="{% url 'core:satisfaction_report_detail' report.pk %}">Ver</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="px-4 py-6 text-center text-sm text-slate-500 dark:text-slate-400">No hay informes cargados todavía.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

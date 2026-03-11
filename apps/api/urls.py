@@ -16,5 +16,8 @@ urlpatterns = [
     path("pnc/", views.PNCListView.as_view(), name="api_pnc_list"),
     path("pnc/create/", views.PNCCreateView.as_view(), name="api_pnc_create"),
     path("pnc/<int:pk>/", views.PNCDetailView.as_view(), name="api_pnc_detail"),
+    path("interaction/", views.InteractionListView.as_view(), name="api_interaction_list"),
+    path("interaction/create/", views.InteractionCreateView.as_view(), name="api_interaction_create"),
+    path("interaction/<int:pk>/", views.InteractionDetailView.as_view(), name="api_interaction_detail"),
     path("capa/create/", views.CAPACreateView.as_view(), name="capa_create"),
 ]

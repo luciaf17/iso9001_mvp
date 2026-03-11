@@ -26,6 +26,8 @@ from .models import (
     SupplierEvaluation,
     Training,
     TrainingAttendance,
+    CustomerInteraction,
+    SatisfactionReport,
 )
 
 
@@ -146,6 +148,7 @@ class StakeholderAdmin(admin.ModelAdmin):
         "name",
         "cuit",
         "phone",
+        "address",
         "stakeholder_type",
         "organization",
         "related_process",
@@ -153,7 +156,7 @@ class StakeholderAdmin(admin.ModelAdmin):
         "is_active",
     )
     list_filter = ("stakeholder_type", "organization", "is_active")
-    search_fields = ("name", "cuit", "phone", "expectations")
+    search_fields = ("name", "cuit", "phone", "address", "expectations")
 
 
 @admin.register(RiskOpportunity)
@@ -654,3 +657,74 @@ class TrainingAttendanceAdmin(admin.ModelAdmin):
         "employee__last_name",
         "notes",
     )
+
+
+@admin.register(CustomerInteraction)
+class CustomerInteractionAdmin(admin.ModelAdmin):
+    list_display = ["code", "date", "get_customer_display", "interaction_type", "perception", "status"]
+    list_filter = ["interaction_type", "perception", "status", "channel", "impact"]
+    search_fields = [
+        "code",
+        "customer_name",
+        "customer__name",
+        "project",
+        "contact_person",
+        "observations",
+        "communication_objective",
+        "proposals",
+        "client_objections",
+        "tasks_to_do",
+        "conclusion",
+    ]
+    readonly_fields = ["code", "perception_score", "created_at", "updated_at"]
+    fieldsets = (
+        ("Identificación", {
+            "fields": ("organization", "code", "date", "site", "customer", "customer_name", "project"),
+        }),
+        ("Interacción", {
+            "fields": ("channel", "interaction_type", "topic", "perception", "perception_score", "impact"),
+        }),
+        ("Gestión", {
+            "fields": ("requires_action", "responsible", "status", "result", "closed_date"),
+        }),
+        ("Detalle Comunicación (R-07-02)", {
+            "fields": (
+                "contact_person", "communication_objective",
+                "proposals", "client_objections",
+                "tasks_to_do", "next_communication_date",
+                "next_communication_responsible", "conclusion",
+            ),
+            "classes": ("collapse",),
+        }),
+        ("Observaciones y Vínculos", {
+            "fields": ("observations", "linked_nc"),
+        }),
+        ("Metadata", {
+            "fields": ("source", "is_active", "created_at", "updated_at"),
+            "classes": ("collapse",),
+        }),
+    )
+
+
+@admin.register(SatisfactionReport)
+class SatisfactionReportAdmin(admin.ModelAdmin):
+    list_display = [
+        "code",
+        "period_label",
+        "report_date",
+        "satisfaction_index",
+        "satisfaction_result",
+        "ai_generated",
+    ]
+    list_filter = ["satisfaction_result", "ai_generated"]
+    search_fields = ["code", "period_label"]
+    readonly_fields = [
+        "code", "total_interactions",
+        "count_query", "count_claim", "count_suggestion", "count_compliment",
+        "count_after_sales", "count_mention",
+        "count_positive", "count_neutral", "count_negative",
+        "count_high_impact", "count_medium_impact", "count_low_impact",
+        "count_whatsapp", "count_mail", "count_phone", "count_in_person", "count_social",
+        "satisfaction_index", "claim_percentage", "avg_resolution_days",
+        "created_at", "updated_at",
+    ]

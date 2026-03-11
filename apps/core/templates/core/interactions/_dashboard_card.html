@@ -1,0 +1,25 @@
+<div class="card-header">
+  <h3 class="card-title">📞 Interacciones con Clientes</h3>
+  <span class="badge badge-counter badge-info">{{ total }}</span>
+</div>
+
+<div class="card-body">
+  <ul class="card-list">
+    <li class="card-list-item">
+      <span class="card-link">Abiertas</span>
+      <div class="card-meta"><span class="status-badge status-open">{{ open_count }}</span></div>
+    </li>
+    <li class="card-list-item">
+      <span class="card-link">Percepción Positiva</span>
+      <div class="card-meta"><span class="badge badge-success">{{ positive }}</span></div>
+    </li>
+    <li class="card-list-item">
+      <span class="card-link">Percepción Negativa</span>
+      <div class="card-meta"><span class="badge badge-danger">{{ negative }}</span></div>
+    </li>
+  </ul>
+</div>
+
+<div class="card-footer">
+  <a href="{% url 'core:interaction_list' %}" class="card-footer-link">Ver todas</a>
+</div>

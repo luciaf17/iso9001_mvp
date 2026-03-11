@@ -26,6 +26,8 @@ from apps.core.models import (
     EmployeeCompetency,
     Training,
     TrainingAttendance,
+    CustomerInteraction,
+    SatisfactionReport,
 )
 
 
@@ -75,6 +77,7 @@ class StakeholderForm(forms.ModelForm):
             "name",
             "cuit",
             "phone",
+            "address",
             "stakeholder_type",
             "expectations",
             "related_process",
@@ -487,6 +490,88 @@ class NonconformingOutputForm(forms.ModelForm):
         self.fields["detected_at"].input_formats = ["%Y-%m-%d"]
         self.fields["closed_at"].input_formats = ["%Y-%m-%d"]
         self.fields["verification_date"].input_formats = ["%Y-%m-%d"]
+
+
+class CustomerInteractionForm(forms.ModelForm):
+    next_communication_date = forms.SplitDateTimeField(
+        required=False,
+        widget=forms.SplitDateTimeWidget(
+            date_attrs={"type": "date"},
+            time_attrs={"type": "time"},
+        ),
+        input_date_formats=["%Y-%m-%d"],
+        input_time_formats=["%H:%M"],
+    )
+
+    class Meta:
+        model = CustomerInteraction
+        fields = [
+            "date", "customer", "customer_name", "project",
+            "channel", "interaction_type", "topic",
+            "perception", "impact", "requires_action",
+            "responsible", "status", "result",
+            "closed_date", "observations",
+            "contact_person", "communication_objective",
+            "proposals", "client_objections",
+            "tasks_to_do", "next_communication_date",
+            "next_communication_responsible", "conclusion",
+            "linked_nc",
+            "site", "is_active",
+        ]
+        widgets = {
+            "date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "closed_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "observations": forms.Textarea(attrs={"rows": 3}),
+            "communication_objective": forms.Textarea(attrs={"rows": 3}),
+            "proposals": forms.Textarea(attrs={"rows": 3}),
+            "client_objections": forms.Textarea(attrs={"rows": 3}),
+            "tasks_to_do": forms.Textarea(attrs={"rows": 3}),
+            "conclusion": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["date"].input_formats = ["%Y-%m-%d"]
+        self.fields["closed_date"].input_formats = ["%Y-%m-%d"]
+
+
+class SatisfactionReportForm(forms.ModelForm):
+    class Meta:
+        model = SatisfactionReport
+        fields = [
+            "report_date", "period_start", "period_end", "period_label",
+            "general_status", "trend_vs_previous", "general_situation",
+            "observed_trends", "comparison_previous", "deviations",
+            "improvement_opportunities",
+            "satisfaction_result", "justification",
+            "action_required", "actions_description",
+            "approved_by", "approval_date",
+            "observations",
+            "is_active",
+        ]
+        widgets = {
+            "report_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "period_start": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "period_end": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "approval_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "general_status": forms.Textarea(attrs={"rows": 3}),
+            "trend_vs_previous": forms.Textarea(attrs={"rows": 3}),
+            "general_situation": forms.Textarea(attrs={"rows": 3}),
+            "observed_trends": forms.Textarea(attrs={"rows": 4}),
+            "comparison_previous": forms.Textarea(attrs={"rows": 3}),
+            "deviations": forms.Textarea(attrs={"rows": 3}),
+            "improvement_opportunities": forms.Textarea(attrs={"rows": 4}),
+            "justification": forms.Textarea(attrs={"rows": 3}),
+            "actions_description": forms.Textarea(attrs={"rows": 3}),
+            "observations": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["report_date"].input_formats = ["%Y-%m-%d"]
+        self.fields["period_start"].input_formats = ["%Y-%m-%d"]
+        self.fields["period_end"].input_formats = ["%Y-%m-%d"]
+        self.fields["approval_date"].input_formats = ["%Y-%m-%d"]
 
 
 class SupplierForm(forms.ModelForm):

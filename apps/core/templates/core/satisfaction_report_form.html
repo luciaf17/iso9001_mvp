@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Editar{% else %}Nuevo{% endif %} Informe de Satisfacción{% endblock %}
+
+{% block content %}
+<div class="form-container" style="max-width: 980px;">
+    <h1>{% if is_edit %}✏️ Editar{% else %}📊 Nuevo{% endif %} Informe de Satisfacción del Cliente</h1>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="form-section" style="border: 2px solid #2563eb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+            <h3 style="color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 8px; margin-bottom: 16px;">📋 Datos del Informe</h3>
+            <div class="form-row" style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:16px;">
+                <div class="form-group"><label for="{{ form.report_date.id_for_label }}">Fecha del Informe *</label>{{ form.report_date }}</div>
+                <div class="form-group"><label for="{{ form.period_start.id_for_label }}">Inicio del Período *</label>{{ form.period_start }}</div>
+                <div class="form-group"><label for="{{ form.period_end.id_for_label }}">Fin del Período *</label>{{ form.period_end }}</div>
+                <div class="form-group"><label for="{{ form.is_active.id_for_label }}">Activo</label>{{ form.is_active }}</div>
+            </div>
+            <div class="form-group"><label for="{{ form.period_label.id_for_label }}">Período Evaluado *</label>{{ form.period_label }}</div>
+        </div>
+
+        <div class="form-section" style="border: 2px solid #0891b2; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+            <h3 style="color: #0891b2; border-bottom: 2px solid #0891b2; padding-bottom: 8px; margin-bottom: 16px;">🧠 Análisis</h3>
+            <div class="form-group"><label for="{{ form.general_status.id_for_label }}">Estado General</label>{{ form.general_status }}</div>
+            <div class="form-group"><label for="{{ form.trend_vs_previous.id_for_label }}">Tendencia vs Período Anterior</label>{{ form.trend_vs_previous }}</div>
+            <div class="form-group"><label for="{{ form.general_situation.id_for_label }}">Situación General</label>{{ form.general_situation }}</div>
+            <div class="form-group"><label for="{{ form.observed_trends.id_for_label }}">Tendencias Observadas</label>{{ form.observed_trends }}</div>
+            <div class="form-group"><label for="{{ form.comparison_previous.id_for_label }}">Comparación con Períodos Anteriores</label>{{ form.comparison_previous }}</div>
+            <div class="form-group"><label for="{{ form.deviations.id_for_label }}">Identificación de Desvíos</label>{{ form.deviations }}</div>
+            <div class="form-group"><label for="{{ form.improvement_opportunities.id_for_label }}">Oportunidades de Mejora</label>{{ form.improvement_opportunities }}</div>
+        </div>
+
+        <div class="form-section" style="border: 2px solid #16a34a; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+            <h3 style="color: #16a34a; border-bottom: 2px solid #16a34a; padding-bottom: 8px; margin-bottom: 16px;">✅ Conclusión y Aprobación</h3>
+            <div class="form-row" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                <div class="form-group"><label for="{{ form.satisfaction_result.id_for_label }}">Resultado de Satisfacción</label>{{ form.satisfaction_result }}</div>
+                <div class="form-group"><label for="{{ form.action_required.id_for_label }}">Acciones Requeridas</label>{{ form.action_required }}</div>
+            </div>
+            <div class="form-group"><label for="{{ form.justification.id_for_label }}">Justificación</label>{{ form.justification }}</div>
+            <div class="form-group"><label for="{{ form.actions_description.id_for_label }}">Descripción de Acciones</label>{{ form.actions_description }}</div>
+            <div class="form-row" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                <div class="form-group"><label for="{{ form.approved_by.id_for_label }}">Aprobado por</label>{{ form.approved_by }}</div>
+                <div class="form-group"><label for="{{ form.approval_date.id_for_label }}">Fecha de Aprobación</label>{{ form.approval_date }}</div>
+            </div>
+            <div class="form-group"><label for="{{ form.observations.id_for_label }}">Observaciones</label>{{ form.observations }}</div>
+        </div>
+
+        <div class="form-actions" style="display:flex; gap:12px; margin-top:24px; padding-top:16px; border-top:2px solid #e5e7eb;">
+            <button type="submit" class="btn btn-success">✅ Guardar</button>
+            <a href="{% url 'core:satisfaction_report_list' %}" class="btn btn-secondary">← Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
