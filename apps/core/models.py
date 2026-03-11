@@ -185,6 +185,18 @@ class Stakeholder(models.Model):
         max_length=150,
         verbose_name="Nombre",
     )
+    cuit = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name="CUIT",
+        help_text="CUIT/CUIL del cliente o parte interesada",
+    )
+    phone = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name="Teléfono",
+        help_text="Teléfono de contacto",
+    )
     stakeholder_type = models.CharField(
         max_length=20,
         choices=StakeholderType.choices,

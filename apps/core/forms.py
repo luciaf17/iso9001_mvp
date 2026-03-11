@@ -73,6 +73,8 @@ class StakeholderForm(forms.ModelForm):
         model = Stakeholder
         fields = [
             "name",
+            "cuit",
+            "phone",
             "stakeholder_type",
             "expectations",
             "related_process",
