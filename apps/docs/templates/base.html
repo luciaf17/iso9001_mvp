@@ -273,6 +273,109 @@
             color: rgb(241 245 249);
         }
 
+        /* Dark mode fixes para controles nativos y listas */
+        html.dark select,
+        html.dark select option,
+        html.dark input,
+        html.dark textarea,
+        html[data-theme='dark'] select,
+        html[data-theme='dark'] select option,
+        html[data-theme='dark'] input,
+        html[data-theme='dark'] textarea {
+            background-color: #1e1e2e;
+            color: #e0e0e0;
+            border-color: #444;
+        }
+
+        html.dark select option,
+        html[data-theme='dark'] select option {
+            background-color: #1e1e2e;
+            color: #e0e0e0;
+        }
+
+        html.dark .dropdown-menu,
+        html.dark .list-group-item,
+        html.dark ul.list-group,
+        html[data-theme='dark'] .dropdown-menu,
+        html[data-theme='dark'] .list-group-item,
+        html[data-theme='dark'] ul.list-group {
+            background-color: #1e1e2e;
+            color: #e0e0e0;
+            border-color: #444;
+        }
+
+        html.dark table,
+        html.dark th,
+        html.dark td,
+        html[data-theme='dark'] table,
+        html[data-theme='dark'] th,
+        html[data-theme='dark'] td {
+            border-color: #444 !important;
+        }
+
+        html.dark th,
+        html[data-theme='dark'] th {
+            background-color: #2a2a3a !important;
+            color: #e0e0e0 !important;
+        }
+
+        html.dark .card,
+        html.dark .form-section,
+        html.dark .detail-section,
+        html[data-theme='dark'] .card,
+        html[data-theme='dark'] .form-section,
+        html[data-theme='dark'] .detail-section {
+            background-color: #1e1e2e;
+            border-color: #444;
+        }
+
+        html.dark input[type='text'],
+        html.dark input[type='email'],
+        html.dark input[type='password'],
+        html.dark input[type='date'],
+        html.dark input[type='number'],
+        html.dark input[type='url'],
+        html.dark textarea,
+        html.dark select,
+        html[data-theme='dark'] input[type='text'],
+        html[data-theme='dark'] input[type='email'],
+        html[data-theme='dark'] input[type='password'],
+        html[data-theme='dark'] input[type='date'],
+        html[data-theme='dark'] input[type='number'],
+        html[data-theme='dark'] input[type='url'],
+        html[data-theme='dark'] textarea,
+        html[data-theme='dark'] select {
+            background-color: #2a2a3a !important;
+            color: #e0e0e0 !important;
+            border: 1px solid #555 !important;
+        }
+
+        html.dark ::placeholder,
+        html[data-theme='dark'] ::placeholder {
+            color: #888 !important;
+        }
+
+        html.dark input:focus,
+        html.dark select:focus,
+        html.dark textarea:focus,
+        html[data-theme='dark'] input:focus,
+        html[data-theme='dark'] select:focus,
+        html[data-theme='dark'] textarea:focus {
+            border-color: #6366f1 !important;
+            outline-color: #6366f1;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            html:not(.dark)[data-theme='light'] select,
+            html:not(.dark)[data-theme='light'] select option,
+            html:not(.dark)[data-theme='light'] input,
+            html:not(.dark)[data-theme='light'] textarea {
+                background-color: inherit;
+                color: inherit;
+                border-color: inherit;
+            }
+        }
+
         .filter-form input:focus,
         .filter-form select:focus,
         .filter-form textarea:focus,
