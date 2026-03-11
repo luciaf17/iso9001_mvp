@@ -124,7 +124,7 @@ def _draw_vertical_text(c, x, y_bottom, y_top, text, bg_color):
     c.restoreState()
 
 
-def _draw_multiline(c, x, y, text, max_width, font=FONT, size=7, leading=9, max_lines=12):
+def _draw_multiline(c, x, y, text, max_width, font=FONT, size=8, leading=10, max_lines=12):
     """Dibuja texto multilínea respetando max_width."""
     text = _safe(text, "")
     if not text or text == "-":
@@ -248,7 +248,7 @@ def generate_nc_pdf(nc):
     # ========================================
     s1_top = y
     row_h = 5 * mm
-    data_h = 6.5 * mm
+    data_h = 10 * mm
 
     sector = f"{nc.related_process.code} - {nc.related_process.name}" if nc.related_process else "-"
 
@@ -260,7 +260,7 @@ def generate_nc_pdf(nc):
     c.setFillColor(colors.HexColor("#f0f0f0"))
     c.rect(CONTENT_L, y - row_h, CONTENT_W, row_h, fill=1, stroke=1)
     c.setFillColor(colors.black)
-    cols = [0.2, 0.35, 0.25, 0.2]
+    cols = [0.15, 0.40, 0.25, 0.20]
     x = CONTENT_L
     labels = ["Fecha", "Sector", "Orden de Trabajo", "Nº Reporte"]
     for i, (w, lbl) in enumerate(zip(cols, labels)):
@@ -281,8 +281,16 @@ def generate_nc_pdf(nc):
         if i > 0:
             c.line(x, y, x, y - data_h)
         font = FONT_B if i == 3 else FONT
-        c.setFont(font, 7)
-        c.drawString(x + 2 * mm, y - data_h + 2 * mm, val[:40])
+        c.setFont(font, 8)
+        if i == 1 and len(val) > 20:
+            c.setFont(font, 7)
+            mid = val[:30].rfind(" ")
+            if mid <= 0:
+                mid = 20
+            c.drawString(x + 2 * mm, y - 3.5 * mm, val[:mid])
+            c.drawString(x + 2 * mm, y - 7 * mm, val[mid:].strip()[:30])
+        else:
+            c.drawString(x + 2 * mm, y - data_h + 3 * mm, val[:40])
         x += cw
     y -= data_h
 
@@ -291,7 +299,7 @@ def generate_nc_pdf(nc):
     c.line(CONTENT_L + CONTENT_W * 0.4, y, CONTENT_L + CONTENT_W * 0.4, y - row_h)
     c.setFont(FONT_B, 7)
     c.drawString(CONTENT_L + 2 * mm, y - row_h + 1.5 * mm, "No Conformidad observada durante")
-    c.setFont(FONT, 7)
+    c.setFont(FONT, 8)
     c.drawString(CONTENT_L + CONTENT_W * 0.4 + 2 * mm, y - row_h + 1.5 * mm, _safe(nc.observed_during))
     y -= row_h
 
@@ -300,7 +308,7 @@ def generate_nc_pdf(nc):
     c.line(CONTENT_L + CONTENT_W * 0.4, y, CONTENT_L + CONTENT_W * 0.4, y - row_h)
     c.setFont(FONT_B, 7)
     c.drawString(CONTENT_L + 2 * mm, y - row_h + 1.5 * mm, "Norma y Cláusula:")
-    c.setFont(FONT, 7)
+    c.setFont(FONT, 8)
     c.drawString(CONTENT_L + CONTENT_W * 0.4 + 2 * mm, y - row_h + 1.5 * mm, _safe(nc.norm_clause))
     y -= row_h
 
@@ -309,7 +317,7 @@ def generate_nc_pdf(nc):
     c.line(CONTENT_L + CONTENT_W * 0.4, y, CONTENT_L + CONTENT_W * 0.4, y - row_h)
     c.setFont(FONT_B, 7)
     c.drawString(CONTENT_L + 2 * mm, y - row_h + 1.5 * mm, "No Conformidad observada en Proceso")
-    c.setFont(FONT, 7)
+    c.setFont(FONT, 8)
     c.drawString(CONTENT_L + CONTENT_W * 0.4 + 2 * mm, y - row_h + 1.5 * mm, sector[:50])
     y -= row_h
 
@@ -348,7 +356,7 @@ def generate_nc_pdf(nc):
         cw = CONTENT_W * w
         if i > 0:
             c.line(x, y, x, y - data_h)
-        c.setFont(FONT, 7)
+        c.setFont(FONT, 8)
         c.drawString(x + 1.5 * mm, y - data_h + 2 * mm, val[:25])
         x += cw
     y -= data_h
@@ -364,23 +372,23 @@ def generate_nc_pdf(nc):
     # Análisis de Causa Raíz
     c.rect(CONTENT_L, y - rca_h, CONTENT_W, rca_h)
     c.setFillColor(colors.HexColor("#f0f0f0"))
-    c.rect(CONTENT_L, y - 6 * mm, CONTENT_W, 6 * mm, fill=1, stroke=0)
+    c.rect(CONTENT_L, y - 6 * mm, CONTENT_W, 6 * mm, fill=1, stroke=1)
     c.setFillColor(colors.black)
     c.setFont(FONT_B, 7)
     c.drawString(CONTENT_L + 2 * mm, y - 4 * mm,
                  "Análisis de la Causa Raíz (¿Qué falló en el sistema para permitir que ocurra esta NC?)")
-    _draw_multiline(c, CONTENT_L + 3 * mm, y - 8 * mm, nc.root_cause_analysis, CONTENT_W - 6 * mm)
+    _draw_multiline(c, CONTENT_L + 3 * mm, y - 10 * mm, nc.root_cause_analysis, CONTENT_W - 6 * mm)
     y -= rca_h
 
     # Corrección y Acción Correctiva
     c.rect(CONTENT_L, y - ca_h, CONTENT_W, ca_h)
     c.setFillColor(colors.HexColor("#f0f0f0"))
-    c.rect(CONTENT_L, y - 6 * mm, CONTENT_W, 6 * mm, fill=1, stroke=0)
+    c.rect(CONTENT_L, y - 6 * mm, CONTENT_W, 6 * mm, fill=1, stroke=1)
     c.setFillColor(colors.black)
     c.setFont(FONT_B, 7)
     c.drawString(CONTENT_L + 2 * mm, y - 4 * mm,
                  "Corrección y Acción Correctiva (Que se hizo para resolver este problema y prevenir la recurrencia)")
-    _draw_multiline(c, CONTENT_L + 3 * mm, y - 8 * mm, nc.corrective_action, CONTENT_W - 6 * mm)
+    _draw_multiline(c, CONTENT_L + 3 * mm, y - 10 * mm, nc.corrective_action, CONTENT_W - 6 * mm)
     y -= ca_h
 
     # Verificación de acciones - Fecha de Terminación / Representante
@@ -396,12 +404,12 @@ def generate_nc_pdf(nc):
 
     c.setFont(FONT_B, 7)
     c.drawString(mid_x + 2 * mm, y - 4 * mm, "Fecha de Terminación:")
-    c.setFont(FONT, 7)
+    c.setFont(FONT, 8)
     c.drawString(mid_x + 35 * mm, y - 4 * mm, _fmt_date(nc.closed_date))
 
     c.setFont(FONT_B, 7)
     c.drawString(mid_x + 2 * mm, y - 8 * mm, "Representante:")
-    c.setFont(FONT, 7)
+    c.setFont(FONT, 8)
     rep_name = _user_name(nc.verification_representative) if hasattr(nc, 'verification_representative') else "-"
     c.drawString(mid_x + 25 * mm, y - 8 * mm, rep_name)
     y -= verif_h
@@ -416,7 +424,6 @@ def generate_nc_pdf(nc):
 
     # Verificación - celda unida izquierda + 3 columnas derecha
     verif_block_h = 12 * mm
-    c.line(CONTENT_L, y, CONTENT_L + CONTENT_W, y)
     c.rect(CONTENT_L, y - verif_block_h, CONTENT_W, verif_block_h)
 
     # Columna izquierda: "Verificación de las Acciones Correctivas" (ocupa toda la altura)
@@ -437,7 +444,7 @@ def generate_nc_pdf(nc):
 
     # Fondo gris para headers derecha
     c.setFillColor(colors.HexColor("#f0f0f0"))
-    c.rect(right_start, y - verif_block_h / 2, right_w, verif_block_h / 2, fill=1, stroke=0)
+    c.rect(right_start, y - verif_block_h / 2, right_w, verif_block_h / 2, fill=1, stroke=1)
     c.setFillColor(colors.black)
 
     # Redibujar líneas sobre el fondo
@@ -463,7 +470,7 @@ def generate_nc_pdf(nc):
     rx = right_start
     for i, (w, val) in enumerate(zip(r_cols, r_values)):
         cw = right_w * w
-        c.setFont(FONT, 7)
+        c.setFont(FONT, 8)
         c.drawString(rx + 1.5 * mm, y - verif_block_h / 2 - 4.5 * mm, val[:25])
         rx += cw
 
@@ -513,7 +520,7 @@ def generate_nc_pdf(nc):
     cx = CONTENT_L + 3 * mm
     cy = y - 5 * mm
     _draw_checkbox(c, cx, cy, checked=is_problem)
-    c.setFont(FONT, 7)
+    c.setFont(FONT, 8)
     c.drawString(cx + 11, cy + 1, "Problema")
 
     _draw_checkbox(c, cx + 30 * mm, cy, checked=is_finding)
@@ -521,25 +528,22 @@ def generate_nc_pdf(nc):
 
     # Descripción del problema
     c.setFont(FONT_B, 7)
-    c.drawString(CONTENT_L + 3 * mm, y - 12 * mm, "Descripción del problema o hallazgo:")
-    c.setFont(FONT, 7)
-    c.drawString(CONTENT_L + CONTENT_W * 0.45, y - 12 * mm, _safe(nc.title)[:50])
+    c.drawString(CONTENT_L + 3 * mm, y - 13 * mm, "Descripción del problema o hallazgo:")
+    c.setFont(FONT, 8)
+    c.drawString(CONTENT_L + CONTENT_W * 0.45 + 2 * mm, y - 13 * mm, _safe(nc.title)[:50])
 
     # Detectado en proceso
     c.setFont(FONT_B, 7)
-    c.drawString(CONTENT_L + 3 * mm, y - 17 * mm, "Detectado en proceso o procedimiento:")
-    c.setFillColor(colors.white)
-    c.rect(CONTENT_L + CONTENT_W * 0.45, y - 20 * mm, CONTENT_W * 0.55, 7 * mm, fill=1, stroke=0)
-    c.setFillColor(colors.black)
-    c.setFont(FONT, 7)
-    c.drawString(CONTENT_L + CONTENT_W * 0.45, y - 17 * mm, _safe(nc.observed_during)[:50])
+    c.drawString(CONTENT_L + 3 * mm, y - 20 * mm, "Detectado en proceso o procedimiento:")
+    c.setFont(FONT, 8)
+    c.drawString(CONTENT_L + CONTENT_W * 0.45, y - 20 * mm, _safe(nc.observed_during)[:50])
 
     # Impacta en
     c.setFont(FONT_B, 7)
-    c.drawString(CONTENT_L + 3 * mm, y - 22 * mm, "Impacta o afecta en:")
+    c.drawString(CONTENT_L + 3 * mm, y - 27 * mm, "Impacta o afecta en:")
 
-    ix = CONTENT_L + CONTENT_W * 0.45
-    iy = y - 23 * mm
+    ix = CONTENT_L + CONTENT_W * 0.45 + 2 * mm
+    iy = y - 28 * mm
     _draw_checkbox(c, ix, iy, checked=getattr(nc, 'impacts_procedure', False))
     c.setFont(FONT, 7)
     c.drawString(ix + 11, iy + 1, "El Procedimiento")
@@ -551,6 +555,10 @@ def generate_nc_pdf(nc):
 
     s4_bot = y
     sections["sistemas"] = (s4_top, s4_bot)
+
+    c.line(CONTENT_L, s1_bot, CONTENT_L + CONTENT_W, s1_bot)
+    c.line(CONTENT_L, s2_bot, CONTENT_L + CONTENT_W, s2_bot)
+    c.line(CONTENT_L, s3_bot, CONTENT_L + CONTENT_W, s3_bot)
 
     # ========================================
     # FRANJAS LATERALES VERTICALES
@@ -628,7 +636,7 @@ def generate_pnc_pdf(pnc):
     # ========================================
     s1_top = y
     row_h = 5 * mm
-    data_h = 6.5 * mm
+    data_h = 10 * mm
 
     sector = f"{pnc.related_process.code} - {pnc.related_process.name}" if pnc.related_process else "-"
 
@@ -636,9 +644,9 @@ def generate_pnc_pdf(pnc):
     c.setStrokeColor(colors.black)
     c.setLineWidth(0.5)
     c.setFillColor(colors.HexColor("#f0f0f0"))
-    c.rect(CONTENT_L, y - row_h, CONTENT_W, row_h, fill=1, stroke=0)
+    c.rect(CONTENT_L, y - row_h, CONTENT_W, row_h, fill=1, stroke=1)
     c.setFillColor(colors.black)
-    cols = [0.2, 0.35, 0.25, 0.2]
+    cols = [0.15, 0.40, 0.25, 0.20]
     labels = ["Fecha", "Sector", "Orden de Trabajo", "Nº Reporte"]
     x = CONTENT_L
     for i, (w, lbl) in enumerate(zip(cols, labels)):
@@ -659,8 +667,16 @@ def generate_pnc_pdf(pnc):
         if i > 0:
             c.line(x, y, x, y - data_h)
         font = FONT_B if i == 3 else FONT
-        c.setFont(font, 7)
-        c.drawString(x + 2 * mm, y - data_h + 2 * mm, val[:40])
+        c.setFont(font, 8)
+        if i == 1 and len(val) > 20:
+            c.setFont(font, 7)
+            mid = val[:30].rfind(" ")
+            if mid <= 0:
+                mid = 20
+            c.drawString(x + 2 * mm, y - 3.5 * mm, val[:mid])
+            c.drawString(x + 2 * mm, y - 7 * mm, val[mid:].strip()[:30])
+        else:
+            c.drawString(x + 2 * mm, y - data_h + 3 * mm, val[:40])
         x += cw
     y -= data_h
 
@@ -669,7 +685,7 @@ def generate_pnc_pdf(pnc):
     c.line(CONTENT_L + CONTENT_W * 0.35, y, CONTENT_L + CONTENT_W * 0.35, y - row_h)
     c.setFont(FONT_B, 7)
     c.drawString(CONTENT_L + 2 * mm, y - row_h + 1.5 * mm, "Producto/Servicio No Conforme")
-    c.setFont(FONT, 7)
+    c.setFont(FONT, 8)
     c.drawString(CONTENT_L + CONTENT_W * 0.35 + 2 * mm, y - row_h + 1.5 * mm, _safe(pnc.product_or_service)[:50])
     y -= row_h
 
@@ -678,7 +694,7 @@ def generate_pnc_pdf(pnc):
     c.line(CONTENT_L + CONTENT_W * 0.35, y, CONTENT_L + CONTENT_W * 0.35, y - row_h)
     c.setFont(FONT_B, 7)
     c.drawString(CONTENT_L + 2 * mm, y - row_h + 1.5 * mm, "Observada durante")
-    c.setFont(FONT, 7)
+    c.setFont(FONT, 8)
     c.drawString(CONTENT_L + CONTENT_W * 0.35 + 2 * mm, y - row_h + 1.5 * mm,
                  _safe(pnc.observed_during) if hasattr(pnc, 'observed_during') else "-")
     y -= row_h
@@ -688,7 +704,7 @@ def generate_pnc_pdf(pnc):
     c.line(CONTENT_L + CONTENT_W * 0.35, y, CONTENT_L + CONTENT_W * 0.35, y - row_h)
     c.setFont(FONT_B, 7)
     c.drawString(CONTENT_L + 2 * mm, y - row_h + 1.5 * mm, "Norma y Cláusula:")
-    c.setFont(FONT, 7)
+    c.setFont(FONT, 8)
     c.drawString(CONTENT_L + CONTENT_W * 0.35 + 2 * mm, y - row_h + 1.5 * mm,
                  _safe(pnc.norm_clause) if hasattr(pnc, 'norm_clause') else "-")
     y -= row_h
@@ -711,31 +727,31 @@ def generate_pnc_pdf(pnc):
     # Análisis de Causa Raíz
     c.rect(CONTENT_L, y - rca_h, CONTENT_W, rca_h)
     c.setFillColor(colors.HexColor("#f0f0f0"))
-    c.rect(CONTENT_L, y - 6 * mm, CONTENT_W, 6 * mm, fill=1, stroke=0)
+    c.rect(CONTENT_L, y - 6 * mm, CONTENT_W, 6 * mm, fill=1, stroke=1)
     c.setFillColor(colors.black)
     c.setFont(FONT_B, 7)
     c.drawString(CONTENT_L + 2 * mm, y - 4 * mm,
                  "Análisis de la Causa Raíz (¿Qué falló en el sistema para permitir que ocurra este PNC?)")
     rca_text = _safe(pnc.root_cause_analysis, "") if hasattr(pnc, 'root_cause_analysis') else ""
-    _draw_multiline(c, CONTENT_L + 3 * mm, y - 8 * mm, rca_text, CONTENT_W - 6 * mm)
+    _draw_multiline(c, CONTENT_L + 3 * mm, y - 10 * mm, rca_text, CONTENT_W - 6 * mm)
     y -= rca_h
 
     # Corrección y Acción Correctiva
     c.rect(CONTENT_L, y - ca_h, CONTENT_W, ca_h)
     c.setFillColor(colors.HexColor("#f0f0f0"))
-    c.rect(CONTENT_L, y - 6 * mm, CONTENT_W, 6 * mm, fill=1, stroke=0)
+    c.rect(CONTENT_L, y - 6 * mm, CONTENT_W, 6 * mm, fill=1, stroke=1)
     c.setFillColor(colors.black)
     c.setFont(FONT_B, 7)
     c.drawString(CONTENT_L + 2 * mm, y - 4 * mm,
                  "Corrección y Acción Correctiva (Que se hizo para resolver este problema y prevenir la recurrencia)")
     ca_text = _safe(pnc.corrective_action, "") if hasattr(pnc, 'corrective_action') else ""
-    _draw_multiline(c, CONTENT_L + 3 * mm, y - 8 * mm, ca_text, CONTENT_W - 6 * mm)
+    _draw_multiline(c, CONTENT_L + 3 * mm, y - 10 * mm, ca_text, CONTENT_W - 6 * mm)
     y -= ca_h
 
     # Producto | Cantidad | Disposición | Responsable
     c.line(CONTENT_L, y, CONTENT_L + CONTENT_W, y)
     c.setFillColor(colors.HexColor("#f0f0f0"))
-    c.rect(CONTENT_L, y - row_h, CONTENT_W, row_h, fill=1, stroke=0)
+    c.rect(CONTENT_L, y - row_h, CONTENT_W, row_h, fill=1, stroke=1)
     c.setFillColor(colors.black)
     p_cols = [0.25, 0.15, 0.25, 0.35]
     p_labels = ["Severidad", "Cantidad", "Disposición", "Responsable"]
@@ -751,7 +767,7 @@ def generate_pnc_pdf(pnc):
 
     c.rect(CONTENT_L, y - data_h, CONTENT_W, data_h)
     sev = pnc.get_severity_display() if pnc.severity else "-"
-    qty = str(pnc.quantity) if pnc.quantity else "-"
+    qty = str(int(pnc.quantity)) if pnc.quantity else "-"
     disp = pnc.get_disposition_display() if pnc.disposition else "-"
     resp = _user_name(pnc.responsible)
     p_values = [sev, qty, disp, resp]
@@ -760,7 +776,7 @@ def generate_pnc_pdf(pnc):
         cw = CONTENT_W * w
         if i > 0:
             c.line(x, y, x, y - data_h)
-        c.setFont(FONT, 7)
+        c.setFont(FONT, 8)
         c.drawString(x + 1.5 * mm, y - data_h + 2 * mm, val[:25])
         x += cw
     y -= data_h
@@ -792,7 +808,6 @@ def generate_pnc_pdf(pnc):
 
     # Verificación - celda unida izquierda + 3 columnas derecha
     verif_block_h = 12 * mm
-    c.line(CONTENT_L, y, CONTENT_L + CONTENT_W, y)
     c.rect(CONTENT_L, y - verif_block_h, CONTENT_W, verif_block_h)
 
     # Columna izquierda: "Verificación de las Acciones Correctivas" (ocupa toda la altura)
@@ -813,7 +828,7 @@ def generate_pnc_pdf(pnc):
 
     # Fondo gris para headers derecha
     c.setFillColor(colors.HexColor("#f0f0f0"))
-    c.rect(right_start, y - verif_block_h / 2, right_w, verif_block_h / 2, fill=1, stroke=0)
+    c.rect(right_start, y - verif_block_h / 2, right_w, verif_block_h / 2, fill=1, stroke=1)
     c.setFillColor(colors.black)
 
     # Redibujar líneas sobre el fondo
@@ -839,7 +854,7 @@ def generate_pnc_pdf(pnc):
     rx = right_start
     for i, (w, val) in enumerate(zip(r_cols, r_values)):
         cw = right_w * w
-        c.setFont(FONT, 7)
+        c.setFont(FONT, 8)
         c.drawString(rx + 1.5 * mm, y - verif_block_h / 2 - 4.5 * mm, val[:25])
         rx += cw
 
@@ -891,7 +906,7 @@ def generate_pnc_pdf(pnc):
     cx = CONTENT_L + 3 * mm
     cy = y - 5 * mm
     _draw_checkbox(c, cx, cy, checked=is_problem)
-    c.setFont(FONT, 7)
+    c.setFont(FONT, 8)
     c.drawString(cx + 11, cy + 1, "Problema")
 
     _draw_checkbox(c, cx + 30 * mm, cy, checked=is_finding)
@@ -899,26 +914,23 @@ def generate_pnc_pdf(pnc):
 
     # Descripción del problema
     c.setFont(FONT_B, 7)
-    c.drawString(CONTENT_L + 3 * mm, y - 12 * mm, "Descripción del problema o hallazgo:")
-    c.setFont(FONT, 7)
-    c.drawString(CONTENT_L + CONTENT_W * 0.45, y - 12 * mm, _safe(pnc.product_or_service)[:50])
+    c.drawString(CONTENT_L + 3 * mm, y - 13 * mm, "Descripción del problema o hallazgo:")
+    c.setFont(FONT, 8)
+    c.drawString(CONTENT_L + CONTENT_W * 0.45 + 2 * mm, y - 13 * mm, _safe(pnc.product_or_service)[:50])
 
     # Detectado en proceso
     c.setFont(FONT_B, 7)
-    c.drawString(CONTENT_L + 3 * mm, y - 17 * mm, "Detectado en proceso o procedimiento:")
-    c.setFillColor(colors.white)
-    c.rect(CONTENT_L + CONTENT_W * 0.45, y - 20 * mm, CONTENT_W * 0.55, 7 * mm, fill=1, stroke=0)
-    c.setFillColor(colors.black)
-    c.setFont(FONT, 7)
+    c.drawString(CONTENT_L + 3 * mm, y - 20 * mm, "Detectado en proceso o procedimiento:")
+    c.setFont(FONT, 8)
     obs = _safe(pnc.observed_during) if hasattr(pnc, 'observed_during') else "-"
-    c.drawString(CONTENT_L + CONTENT_W * 0.45, y - 17 * mm, obs[:50])
+    c.drawString(CONTENT_L + CONTENT_W * 0.45 + 2 * mm, y - 20 * mm, obs[:50])
 
     # Impacta en
     c.setFont(FONT_B, 7)
-    c.drawString(CONTENT_L + 3 * mm, y - 22 * mm, "Impacta o afecta en:")
+    c.drawString(CONTENT_L + 3 * mm, y - 27 * mm, "Impacta o afecta en:")
 
-    ix = CONTENT_L + CONTENT_W * 0.45
-    iy = y - 23 * mm
+    ix = CONTENT_L + CONTENT_W * 0.45 + 2 * mm
+    iy = y - 28 * mm
     _draw_checkbox(c, ix, iy, checked=getattr(pnc, 'impacts_procedure', False))
     c.setFont(FONT, 7)
     c.drawString(ix + 11, iy + 1, "El Procedimiento")
@@ -930,6 +942,10 @@ def generate_pnc_pdf(pnc):
 
     s4_bot = y
     sections["sistemas"] = (s4_top, s4_bot)
+
+    c.line(CONTENT_L, s1_bot, CONTENT_L + CONTENT_W, s1_bot)
+    c.line(CONTENT_L, s2_bot, CONTENT_L + CONTENT_W, s2_bot)
+    c.line(CONTENT_L, s3_bot, CONTENT_L + CONTENT_W, s3_bot)
 
     # ========================================
     # FRANJAS LATERALES VERTICALES
