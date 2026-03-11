@@ -33,9 +33,9 @@
                 <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ nc.owner|default:"-" }}</td>
                 <td class="px-6 py-4 text-sm">
                     <div class="flex gap-2">
-                        <a href="{% url 'core:nc_detail' nc.pk %}" class="btn-secondary btn-small">Ver</a>
+                        <a href="{% url 'core:nc_detail' nc.pk %}" class="btn btn-outline btn-sm">Ver</a>
                         {% if can_edit %}
-                        <a href="{% url 'core:nc_edit' nc.pk %}" class="btn-primary btn-small">Editar</a>
+                        <a href="{% url 'core:nc_edit' nc.pk %}" class="btn btn-warning btn-sm">Editar</a>
                         {% endif %}
                     </div>
                 </td>

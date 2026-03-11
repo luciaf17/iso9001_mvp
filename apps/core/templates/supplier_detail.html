@@ -168,7 +168,7 @@
             <p class="text-slate-500 dark:text-slate-400">{{ supplier.get_category_display }}</p>
         </div>
         {% if can_edit %}
-        <a href="{% url 'core:supplier_edit' supplier.pk %}" class="btn btn-secondary">✏️ Editar</a>
+        <a href="{% url 'core:supplier_edit' supplier.pk %}" class="btn btn-warning">✏️ Editar</a>
         {% endif %}
     </div>
 
@@ -260,7 +260,7 @@
         <div class="card-header card-header-split">
             <h3>Evaluaciones</h3>
             {% if can_edit %}
-            <a href="{% url 'core:supplier_evaluation_new' supplier.pk %}" class="btn btn-sm btn-primary">➕ Nueva Evaluación</a>
+            <a href="{% url 'core:supplier_evaluation_new' supplier.pk %}" class="btn btn-sm btn-success">➕ Nueva Evaluación</a>
             {% endif %}
         </div>
 

@@ -8,7 +8,7 @@
     <div class="flex items-center justify-between">
         <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100">📊 Indicadores de Calidad</h1>
         {% if can_edit %}
-        <a href="{% url 'core:indicator_new' %}" class="btn-primary">➕ Nuevo Indicador</a>
+        <a href="{% url 'core:indicator_new' %}" class="btn btn-success">➕ Nuevo Indicador</a>
         {% endif %}
     </div>
 
@@ -24,7 +24,7 @@
                     {% endfor %}
                 </select>
             </div>
-            <a class="btn-secondary" href="{% url 'core:indicator_list' %}">Limpiar</a>
+            <a class="btn btn-secondary" href="{% url 'core:indicator_list' %}">Limpiar</a>
         </div>
     </form>
 

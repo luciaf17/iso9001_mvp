@@ -25,13 +25,13 @@
                 </td>
                 <td class="px-6 py-4 text-sm">
                     <div class="flex items-center gap-2">
-                        <a class="btn-secondary" href="{% url 'core:audit_question_edit' question.pk %}">Editar</a>
+                        <a class="btn btn-warning btn-sm" href="{% url 'core:audit_question_edit' question.pk %}">Editar</a>
                         <form method="post" action="{% url 'core:audit_question_toggle' question.pk %}">
                             {% csrf_token %}
                             {% if question.is_active %}
-                            <button type="submit" class="btn-secondary">Desactivar</button>
+                            <button type="submit" class="btn btn-danger btn-sm">Desactivar</button>
                             {% else %}
-                            <button type="submit" class="btn-primary">Activar</button>
+                            <button type="submit" class="btn btn-success btn-sm">Activar</button>
                             {% endif %}
                         </form>
                     </div>

@@ -32,9 +32,9 @@
                     <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ review.chairperson.get_full_name|default:"-" }}</td>
                     <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ review.attendees|truncatechars:50 }}</td>
                     <td class="px-6 py-4 text-sm flex gap-2">
-                        <a href="{% url 'core:management_review_detail' review.pk %}" class="btn btn-secondary">Ver</a>
+                        <a href="{% url 'core:management_review_detail' review.pk %}" class="btn btn-outline btn-sm">Ver</a>
                         {% if can_edit %}
-                        <a href="{% url 'core:management_review_edit' review.pk %}" class="btn btn-primary">Editar</a>
+                        <a href="{% url 'core:management_review_edit' review.pk %}" class="btn btn-warning btn-sm">Editar</a>
                         {% endif %}
                     </td>
                 </tr>

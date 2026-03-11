@@ -268,8 +268,8 @@
     <a href="{% url 'core:audit_list' %}">← Volver a Auditorias</a>
     <div>
         {% if can_edit %}
-        <a href="{% url 'core:audit_checklist' audit.pk %}" class="btn btn-secondary">Checklist</a>
-        <a href="{% url 'core:audit_edit' audit.pk %}" class="btn btn-primary">Editar</a>
+        <a href="{% url 'core:audit_checklist' audit.pk %}" class="btn btn-info">Checklist</a>
+        <a href="{% url 'core:audit_edit' audit.pk %}" class="btn btn-warning">Editar</a>
         {% endif %}
     </div>
 </div>
@@ -332,17 +332,17 @@
         <div class="subsection-spacing">
             {% if audit.plan_file %}
             <div class="doc-item">
-                <a href="{{ audit.plan_file.url }}" class="btn btn-secondary doc-link">📥 Descargar Planificacion</a>
+                <a href="{{ audit.plan_file.url }}" class="btn btn-info doc-link">📥 Descargar Planificacion</a>
             </div>
             {% endif %}
             {% if audit.report_file %}
             <div class="doc-item">
-                <a href="{{ audit.report_file.url }}" class="btn btn-secondary doc-link">📥 Descargar Informe</a>
+                <a href="{{ audit.report_file.url }}" class="btn btn-info doc-link">📥 Descargar Informe</a>
             </div>
             {% endif %}
             {% if audit.team_cv_file %}
             <div class="doc-item">
-                <a href="{{ audit.team_cv_file.url }}" class="btn btn-secondary doc-link">📥 Descargar CV Equipo Auditor</a>
+                <a href="{{ audit.team_cv_file.url }}" class="btn btn-info doc-link">📥 Descargar CV Equipo Auditor</a>
             </div>
             {% endif %}
         </div>
@@ -354,7 +354,7 @@
     <div class="section-header">
         <h2>Checklist</h2>
         {% if can_edit %}
-        <a href="{% url 'core:audit_checklist' audit.pk %}" class="btn btn-primary">Responder</a>
+        <a href="{% url 'core:audit_checklist' audit.pk %}" class="btn btn-success">Responder</a>
         {% endif %}
     </div>
     <div class="detail-grid">
@@ -377,7 +377,7 @@
     <div class="section-header">
         <h2>🔍 Hallazgos de Auditoria</h2>
         {% if can_edit %}
-        <a href="{% url 'core:audit_finding_new' audit.pk %}" class="btn btn-primary">➕ Nuevo Hallazgo</a>
+        <a href="{% url 'core:audit_finding_new' audit.pk %}" class="btn btn-success">➕ Nuevo Hallazgo</a>
         {% endif %}
     </div>
 
@@ -420,11 +420,11 @@
 
                     {% if can_edit %}
                     <div class="finding-actions">
-                        <a class="btn btn-secondary" href="{% url 'core:audit_finding_edit' finding.pk %}">✏️ Editar</a>
+                        <a class="btn btn-warning" href="{% url 'core:audit_finding_edit' finding.pk %}">✏️ Editar</a>
                         {% if finding.finding_type == "NONCONFORMITY" and not finding.nc %}
-                        <a class="btn btn-primary" href="{% url 'core:audit_finding_create_nc' finding.pk %}">🔗 Crear NC</a>
+                        <a class="btn btn-success" href="{% url 'core:audit_finding_create_nc' finding.pk %}">🔗 Crear NC</a>
                         {% elif finding.finding_type != "NONCONFORMITY" %}
-                        <a class="btn btn-primary" href="{% url 'core:audit_finding_action_new' finding.pk %}">✅ Crear acción</a>
+                        <a class="btn btn-success" href="{% url 'core:audit_finding_action_new' finding.pk %}">✅ Crear acción</a>
                         {% endif %}
                     </div>
                     {% endif %}

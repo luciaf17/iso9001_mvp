@@ -42,9 +42,9 @@
                 <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ item.obj.due_date|date:"d/m/Y" }}</td>
                 <td class="px-6 py-4 text-sm">
                     <div class="flex gap-2">
-                        <a class="btn-secondary" href="{% url 'core:quality_objective_detail' item.obj.pk %}">Ver</a>
+                        <a class="btn btn-outline btn-sm" href="{% url 'core:quality_objective_detail' item.obj.pk %}">Ver</a>
                         {% if can_edit %}
-                        <a class="btn-primary" href="{% url 'core:quality_objective_edit' item.obj.pk %}">Editar</a>
+                        <a class="btn btn-warning btn-sm" href="{% url 'core:quality_objective_edit' item.obj.pk %}">Editar</a>
                         {% endif %}
                     </div>
                 </td>

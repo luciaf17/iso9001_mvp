@@ -7,7 +7,7 @@
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <h1 class="text-3xl font-bold text-slate-900 dark:text-white">📊 Revisiones por la Dirección</h1>
         {% if can_edit %}
-        <a href="{% url 'core:review_new' %}" class="btn-primary">➕ Nueva Revisión</a>
+        <a href="{% url 'core:review_new' %}" class="btn btn-success">➕ Nueva Revisión</a>
         {% endif %}
     </div>
 
@@ -47,7 +47,7 @@
         <p class="text-sm text-slate-600 dark:text-slate-400">Las revisiones por la dirección son requeridas por ISO 9001 cláusula 9.3.</p>
         {% if can_edit %}
         <div class="mt-6">
-            <a href="{% url 'core:review_new' %}" class="btn-primary">Crear primera revisión</a>
+            <a href="{% url 'core:review_new' %}" class="btn btn-success">Crear primera revisión</a>
         </div>
         {% endif %}
     </div>
